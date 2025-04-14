@@ -9,7 +9,173 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      questions: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          is_fixed: boolean
+          options: Json | null
+          text: string
+          type: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          is_fixed: boolean
+          options?: Json | null
+          text: string
+          type: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          is_fixed?: boolean
+          options?: Json | null
+          text?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          correct_answer: number | null
+          created_at: string
+          id: string
+          priority_order: Json | null
+          question_id: string
+          quiz_id: string
+        }
+        Insert: {
+          correct_answer?: number | null
+          created_at?: string
+          id?: string
+          priority_order?: Json | null
+          question_id: string
+          quiz_id: string
+        }
+        Update: {
+          correct_answer?: number | null
+          created_at?: string
+          id?: string
+          priority_order?: Json | null
+          question_id?: string
+          quiz_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          name: string
+          shareable_link: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          name: string
+          shareable_link: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          name?: string
+          shareable_link?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responses: {
+        Row: {
+          answers: Json
+          aura_points: number
+          created_at: string
+          id: string
+          quiz_id: string
+          respondent_id: string
+        }
+        Insert: {
+          answers: Json
+          aura_points: number
+          created_at?: string
+          id?: string
+          quiz_id: string
+          respondent_id: string
+        }
+        Update: {
+          answers?: Json
+          aura_points?: number
+          created_at?: string
+          id?: string
+          quiz_id?: string
+          respondent_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responses_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responses_respondent_id_fkey"
+            columns: ["respondent_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
