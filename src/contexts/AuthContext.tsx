@@ -17,30 +17,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkUser();
-  }, []);
-
-  async function checkUser() {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      
-      if (session?.user) {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id, username')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userError) throw userError;
-        setUser(userData);
+    // Check for user in localStorage on initial load
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
       }
-    } catch (error) {
-      console.error('Error checking user:', error);
-    } finally {
-      setLoading(false);
     }
-  }
+    setLoading(false);
+  }, []);
 
   const login = async (username: string) => {
     try {
@@ -52,14 +39,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: `${username.toLowerCase()}@aurahai.com`,
-        password: username.toLowerCase(),
-      });
-
-      if (signInError) throw signInError;
-
       setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
     } catch (error) {
       console.error('Error logging in:', error);
       throw error;
@@ -68,22 +49,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signup = async (username: string) => {
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: `${username.toLowerCase()}@aurahai.com`,
-        password: username.toLowerCase(),
-      });
-
-      if (signUpError) throw signUpError;
-
-      const { data: user, error: insertError } = await supabase
+      const { data: user, error } = await supabase
         .from('users')
         .insert([{ username: username.toLowerCase() }])
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (error) throw error;
 
       setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
     } catch (error) {
       console.error('Error signing up:', error);
       throw error;
@@ -91,9 +66,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
     setUser(null);
+    localStorage.removeItem('user');
   };
 
   return (
