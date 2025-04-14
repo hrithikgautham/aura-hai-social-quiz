@@ -2,26 +2,30 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const Index = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold mb-4">Welcome, {user.username}!</h1>
-          <Button onClick={logout} variant="outline">Logout</Button>
-        </div>
-      </div>
-    );
-  }
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Aura Hai!</h1>
+      <div className="text-center mb-8 space-y-4">
+        <h1 className="text-5xl font-bold uppercase mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+          Aura Hai!
+        </h1>
         <p className="text-xl text-gray-600">Discover your social aura</p>
+        <p className="text-gray-500 max-w-md mx-auto">
+          Create quizzes, share them with friends, and see how your aura measures up!
+        </p>
       </div>
       <LoginForm />
     </div>

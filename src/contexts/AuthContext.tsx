@@ -2,8 +2,14 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
+type User = {
+  id: string;
+  username: string;
+  is_admin?: boolean;
+};
+
 type AuthContextType = {
-  user: { id: string; username: string } | null;
+  user: User | null;
   loading: boolean;
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
@@ -13,7 +19,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<{ id: string; username: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const { data: user, error } = await supabase
         .from('users')
-        .select()
+        .select('*')
         .eq('username', username.toLowerCase())
         .single();
 

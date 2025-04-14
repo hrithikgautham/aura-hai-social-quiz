@@ -21,6 +21,12 @@ export const LoginForm = () => {
         return;
       }
 
+      // Validate username format
+      const usernameRegex = /^[a-zA-Z0-9_]+$/;
+      if (!usernameRegex.test(username)) {
+        return;
+      }
+
       setIsChecking(true);
       try {
         const { data, error } = await supabase
@@ -44,6 +50,17 @@ export const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username) return;
+
+    // Validate username format
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid username",
+        description: "Only letters, numbers, and underscores allowed",
+      });
+      return;
+    }
 
     try {
       if (exists) {
@@ -73,13 +90,13 @@ export const LoginForm = () => {
             placeholder="Enter your username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className={`pr-10 border-2 ${
+            className={`pr-10 border-2 focus:animate-bounce ${
               username && !isChecking
                 ? exists
                   ? 'border-green-500'
                   : 'border-red-500'
-                : 'border-pink-500'
-            }`}
+                : 'border-[#FF007F]'
+            } font-bold`}
             pattern="[a-zA-Z0-9_]+"
             title="Only letters, numbers, and underscores allowed"
           />
@@ -102,7 +119,7 @@ export const LoginForm = () => {
       <Button
         type="submit"
         disabled={!username || isChecking}
-        className="w-full bg-pink-500 hover:bg-pink-600"
+        className="w-full bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
       >
         {exists ? 'Login' : 'Sign Up'}
       </Button>
