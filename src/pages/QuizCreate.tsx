@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -109,20 +108,25 @@ const QuizCreate = () => {
         setFixedQuestions(fixedData?.map(q => ({
           ...q,
           type: q.type as 'mcq' | 'number',
-          options: q.options ? JSON.parse(q.options as string) : undefined
+          options: q.options ? 
+            (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : 
+            undefined
         })) || []);
         
         setCustomQuestions(customData?.map(q => ({
           ...q,
           type: q.type as 'mcq' | 'number',
-          options: q.options ? JSON.parse(q.options as string) : undefined
+          options: q.options ? 
+            (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : 
+            undefined
         })) || []);
         
         const initialAnswers: Record<string, any> = {};
         
         fixedData?.forEach(q => {
           if (q.type === 'mcq' && q.options) {
-            initialAnswers[q.id] = JSON.parse(q.options as string);
+            const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+            initialAnswers[q.id] = options;
           } else if (q.type === 'number') {
             initialAnswers[q.id] = '';
           }
@@ -193,7 +197,9 @@ const QuizCreate = () => {
       selectedQuestions.forEach(q => {
         if (q.type === 'mcq' && q.options) {
           if (!updatedAnswers[q.id]) {
-            updatedAnswers[q.id] = JSON.parse(q.options).map((opt: string) => opt);
+            const options = Array.isArray(q.options) ? q.options : 
+              (typeof q.options === 'string' ? JSON.parse(q.options) : []);
+            updatedAnswers[q.id] = options;
           }
         } else if (q.type === 'number') {
           if (!updatedAnswers[q.id]) {
@@ -295,17 +301,20 @@ const QuizCreate = () => {
         ...customQuestions.filter(q => selectedCustomQuestions.includes(q.id))
       ];
 
-      const quizQuestionsData = allSelectedQuestions.map(question => ({
-        quiz_id: quizData.id,
-        question_id: question.id,
-        // Fix: Stringify array if it's not already a string
-        priority_order: question.type === 'mcq' ? 
-          (typeof answers[question.id] === 'string' ? 
-            answers[question.id] : 
-            JSON.stringify(answers[question.id])) : 
-          null,
-        correct_answer: question.type === 'number' ? Number(answers[question.id]) : null,
-      }));
+      const quizQuestionsData = allSelectedQuestions.map(question => {
+        let priorityOrder = null;
+        if (question.type === 'mcq') {
+          const answerValue = answers[question.id];
+          priorityOrder = Array.isArray(answerValue) ? JSON.stringify(answerValue) : answerValue;
+        }
+
+        return {
+          quiz_id: quizData.id,
+          question_id: question.id,
+          priority_order: priorityOrder,
+          correct_answer: question.type === 'number' ? Number(answers[question.id]) : null,
+        };
+      });
 
       const { error: qError } = await supabase
         .from('quiz_questions')
