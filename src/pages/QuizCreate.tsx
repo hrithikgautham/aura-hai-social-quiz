@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -297,7 +298,12 @@ const QuizCreate = () => {
       const quizQuestionsData = allSelectedQuestions.map(question => ({
         quiz_id: quizData.id,
         question_id: question.id,
-        priority_order: question.type === 'mcq' ? JSON.stringify(answers[question.id]) : null,
+        // Fix: Stringify array if it's not already a string
+        priority_order: question.type === 'mcq' ? 
+          (typeof answers[question.id] === 'string' ? 
+            answers[question.id] : 
+            JSON.stringify(answers[question.id])) : 
+          null,
         correct_answer: question.type === 'number' ? Number(answers[question.id]) : null,
       }));
 

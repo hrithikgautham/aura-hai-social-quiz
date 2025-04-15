@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -105,7 +106,11 @@ const QuizAnalytics = () => {
             const questionType = question.questions.type;
             
             if (questionType === 'mcq') {
-              const options = JSON.parse(question.questions.options);
+              // Fixed: Parse options as string if needed
+              const options = typeof question.questions.options === 'string' 
+                ? JSON.parse(question.questions.options) 
+                : question.questions.options;
+              
               const optionCounts = options.reduce((acc: Record<string, number>, opt: string) => {
                 acc[opt] = 0;
                 return acc;
@@ -127,7 +132,7 @@ const QuizAnalytics = () => {
               const values = responseData
                 .map(response => {
                   const answer = response.answers[questionId];
-                  return answer ? parseInt(answer) : null;
+                  return answer ? parseInt(answer.toString()) : null;
                 })
                 .filter(val => val !== null);
               
@@ -232,7 +237,9 @@ const QuizAnalytics = () => {
               <CardTitle className="text-center">Average Aura Score</CardTitle>
             </CardHeader>
             <CardContent className="p-6 text-center">
-              <div className="text-5xl font-bold">{averageAuraScore.toLocaleString()}</div>
+              <div className="text-5xl font-bold">{responses.length > 0
+                ? Math.round(responses.reduce((sum, r) => sum + r.aura_points, 0) / responses.length).toLocaleString()
+                : '0'}</div>
             </CardContent>
           </Card>
           
