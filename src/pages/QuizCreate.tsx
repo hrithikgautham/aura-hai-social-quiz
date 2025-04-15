@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,8 +78,10 @@ const QuizCreate = () => {
   const [customQuestions, setCustomQuestions] = useState<Question[]>([]);
   const [selectedCustomQuestions, setSelectedCustomQuestions] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [customQuestionIndex, setCustomQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [configuredCustomQuestions, setConfiguredCustomQuestions] = useState<string[]>([]);
   
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -161,6 +164,17 @@ const QuizCreate = () => {
       }
       setCurrentStep('fixed');
     }
+    else if (currentStep === 'fixed') {
+      if (!canProceedFromFixed()) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please answer all fixed questions before proceeding.",
+        });
+        return;
+      }
+      setCurrentStep('custom');
+    }
     else if (currentStep === 'custom') {
       if (selectedCustomQuestions.length !== 3) {
         toast({
@@ -171,26 +185,15 @@ const QuizCreate = () => {
         return;
       }
       
-      const updatedAnswers = { ...answers };
-      const selectedQuestions = customQuestions.filter(q => 
-        selectedCustomQuestions.includes(q.id)
-      );
+      if (!canProceedFromCustom()) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please configure all selected custom questions before proceeding.",
+        });
+        return;
+      }
       
-      selectedQuestions.forEach(q => {
-        if (q.type === 'mcq' && q.options) {
-          if (!updatedAnswers[q.id]) {
-            const options = Array.isArray(q.options) ? q.options : 
-              (typeof q.options === 'string' ? JSON.parse(q.options) : []);
-            updatedAnswers[q.id] = options;
-          }
-        } else if (q.type === 'number') {
-          if (!updatedAnswers[q.id]) {
-            updatedAnswers[q.id] = '';
-          }
-        }
-      });
-      
-      setAnswers(updatedAnswers);
       setCurrentStep('review');
     }
   };
@@ -232,6 +235,8 @@ const QuizCreate = () => {
     }
     else if (currentStep === 'custom') {
       setCurrentStep('fixed');
+      setCustomQuestionIndex(0);
+      setConfiguredCustomQuestions([]);
     }
     else if (currentStep === 'review') {
       setCurrentStep('custom');
@@ -256,6 +261,21 @@ const QuizCreate = () => {
     if (checked) {
       if (selectedCustomQuestions.length < 3) {
         setSelectedCustomQuestions(prev => [...prev, id]);
+        
+        // Initialize answers for the selected question
+        const question = customQuestions.find(q => q.id === id);
+        if (question) {
+          setAnswers(prev => {
+            const updated = { ...prev };
+            if (question.type === 'mcq' && question.options) {
+              updated[id] = Array.isArray(question.options) ? [...question.options] : 
+                (typeof question.options === 'string' ? JSON.parse(question.options) : []);
+            } else if (question.type === 'number') {
+              updated[id] = '';
+            }
+            return updated;
+          });
+        }
       } else {
         toast({
           title: "Selection Limit",
@@ -265,19 +285,39 @@ const QuizCreate = () => {
       }
     } else {
       setSelectedCustomQuestions(prev => prev.filter(qId => qId !== id));
+      setConfiguredCustomQuestions(prev => prev.filter(qId => qId !== id));
+      
+      // Remove answers for the deselected question
+      setAnswers(prev => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
     }
   };
 
-  const navigateQuestion = (direction: 'next' | 'prev') => {
-    const currentQuestions = currentStep === 'fixed' 
-      ? fixedQuestions 
-      : customQuestions.filter(q => selectedCustomQuestions.includes(q.id));
-    
-    if (direction === 'next' && currentQuestionIndex < currentQuestions.length - 1) {
+  const navigateFixedQuestion = (direction: 'next' | 'prev') => {
+    if (direction === 'next' && currentQuestionIndex < fixedQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
     else if (direction === 'prev' && currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+  
+  const navigateCustomQuestion = (direction: 'next' | 'prev') => {
+    const selectedQuestions = customQuestions.filter(q => selectedCustomQuestions.includes(q.id));
+    
+    if (direction === 'next' && customQuestionIndex < selectedQuestions.length - 1) {
+      // Save current question as configured
+      const currentQuestionId = selectedQuestions[customQuestionIndex].id;
+      if (!configuredCustomQuestions.includes(currentQuestionId)) {
+        setConfiguredCustomQuestions(prev => [...prev, currentQuestionId]);
+      }
+      setCustomQuestionIndex(prev => prev + 1);
+    }
+    else if (direction === 'prev' && customQuestionIndex > 0) {
+      setCustomQuestionIndex(prev => prev - 1);
     }
   };
 
@@ -290,7 +330,14 @@ const QuizCreate = () => {
   };
 
   const handleCreateQuiz = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to create a quiz.",
+      });
+      return;
+    }
 
     setLoading(true);
     
@@ -307,7 +354,10 @@ const QuizCreate = () => {
         .select()
         .single();
       
-      if (quizError) throw quizError;
+      if (quizError) {
+        console.error('Quiz creation error:', quizError);
+        throw quizError;
+      }
 
       const allSelectedQuestions = [
         ...fixedQuestions,
@@ -350,6 +400,52 @@ const QuizCreate = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const isCustomQuestionConfigured = (questionId: string) => {
+    const question = customQuestions.find(q => q.id === questionId);
+    if (!question) return false;
+    
+    if (question.type === 'number') {
+      const answer = answers[questionId];
+      return answer !== '' && !isNaN(Number(answer)) && Number(answer) > 0;
+    }
+    if (question.type === 'mcq') {
+      return Array.isArray(answers[questionId]) && answers[questionId].length === (question.options?.length || 0);
+    }
+    return false;
+  };
+
+  const handleCompleteCustomQuestionConfig = () => {
+    const selectedQuestions = customQuestions.filter(q => selectedCustomQuestions.includes(q.id));
+    const currentQuestionId = selectedQuestions[customQuestionIndex].id;
+    
+    if (!configuredCustomQuestions.includes(currentQuestionId)) {
+      setConfiguredCustomQuestions(prev => [...prev, currentQuestionId]);
+    }
+    
+    // If all questions are configured, move to the review step
+    if (selectedCustomQuestions.length === configuredCustomQuestions.length + 1) {
+      setCurrentStep('review');
+    } else {
+      // Find the next unconfigured question
+      const nextUnconfiguredIndex = selectedQuestions.findIndex((q, idx) => 
+        idx > customQuestionIndex && !configuredCustomQuestions.includes(q.id)
+      );
+      
+      if (nextUnconfiguredIndex !== -1) {
+        setCustomQuestionIndex(nextUnconfiguredIndex);
+      } else {
+        // If no next unconfigured, find any unconfigured
+        const anyUnconfiguredIndex = selectedQuestions.findIndex((q) => 
+          !configuredCustomQuestions.includes(q.id)
+        );
+        
+        if (anyUnconfiguredIndex !== -1) {
+          setCustomQuestionIndex(anyUnconfiguredIndex);
+        }
+      }
     }
   };
 
@@ -398,7 +494,11 @@ const QuizCreate = () => {
             {currentStep === 'custom' && (
               <>
                 <CardTitle>Custom Questions</CardTitle>
-                <CardDescription>Select 3 custom questions for your quiz ({selectedCustomQuestions.length}/3)</CardDescription>
+                <CardDescription>
+                  {selectedCustomQuestions.length < 3 
+                    ? `Select 3 custom questions for your quiz (${selectedCustomQuestions.length}/3)`
+                    : `Configure custom question ${customQuestionIndex + 1} of ${selectedCustomQuestions.length}`}
+                </CardDescription>
               </>
             )}
             
@@ -484,7 +584,7 @@ const QuizCreate = () => {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => navigateQuestion('prev')}
+                        onClick={() => navigateFixedQuestion('prev')}
                         disabled={currentQuestionIndex === 0}
                       >
                         <ChevronLeft size={16} className="mr-2" /> Previous
@@ -493,15 +593,16 @@ const QuizCreate = () => {
                       {currentQuestionIndex < fixedQuestions.length - 1 ? (
                         <Button
                           type="button"
-                          onClick={() => navigateQuestion('next')}
+                          onClick={() => navigateFixedQuestion('next')}
                           className="bg-[#00DDEB] hover:bg-[#00BBCC]"
+                          disabled={!isCustomQuestionConfigured(fixedQuestions[currentQuestionIndex].id)}
                         >
                           Next <ChevronRight size={16} className="ml-2" />
                         </Button>
                       ) : (
                         <Button
                           type="button"
-                          onClick={() => canProceedFromFixed() && setCurrentStep('custom')}
+                          onClick={() => handleNextStep()}
                           className={cn(
                             "bg-[#FF007F] hover:bg-[#D6006C]",
                             !canProceedFromFixed() && "opacity-50 cursor-not-allowed"
@@ -519,35 +620,62 @@ const QuizCreate = () => {
 
             {currentStep === 'custom' && (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Select Custom Questions</h3>
-                  {customQuestions.map((question, idx) => (
-                    <div key={question.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-white">
-                      <Checkbox
-                        id={`question-${idx}`}
-                        checked={selectedCustomQuestions.includes(question.id)}
-                        onCheckedChange={(checked) => handleCustomQuestionSelect(!!checked, question.id)}
-                        className="mt-1"
-                        disabled={!selectedCustomQuestions.includes(question.id) && selectedCustomQuestions.length >= 3}
-                      />
-                      <div className="space-y-1">
-                        <Label htmlFor={`question-${idx}`} className="font-medium">
-                          {question.text}
-                        </Label>
-                        {selectedCustomQuestions.includes(question.id) && (
-                          <div className="mt-2">
-                            {question.type === 'mcq' && (
+                {/* Selection phase */}
+                {selectedCustomQuestions.length < 3 && (
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium">Select Custom Questions</h3>
+                    {customQuestions.map((question, idx) => (
+                      <div key={question.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-white">
+                        <Checkbox
+                          id={`question-${idx}`}
+                          checked={selectedCustomQuestions.includes(question.id)}
+                          onCheckedChange={(checked) => handleCustomQuestionSelect(!!checked, question.id)}
+                          className="mt-1"
+                          disabled={!selectedCustomQuestions.includes(question.id) && selectedCustomQuestions.length >= 3}
+                        />
+                        <div className="space-y-1">
+                          <Label htmlFor={`question-${idx}`} className="font-medium">
+                            {question.text} <span className="text-xs text-gray-500">({question.type})</span>
+                          </Label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Configuration phase - after selecting 3 questions */}
+                {selectedCustomQuestions.length === 3 && (
+                  <div className="space-y-6">
+                    {(() => {
+                      const selectedQuestions = customQuestions.filter(q => 
+                        selectedCustomQuestions.includes(q.id)
+                      );
+                      const currentQuestion = selectedQuestions[customQuestionIndex];
+                      
+                      if (!currentQuestion) return null;
+
+                      return (
+                        <>
+                          <h3 className="text-lg font-medium">
+                            {currentQuestion.text}
+                          </h3>
+
+                          {currentQuestion.type === 'mcq' && (
+                            <div className="space-y-2">
+                              <p className="text-sm text-gray-500">
+                                Drag options to set their priority (1st is most like you, 4th is least)
+                              </p>
                               <DndContext 
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
-                                onDragEnd={(event) => handleDragEnd(event, question.id)}
+                                onDragEnd={(event) => handleDragEnd(event, currentQuestion.id)}
                                 modifiers={[restrictToVerticalAxis]}
                               >
                                 <SortableContext 
-                                  items={answers[question.id] || []}
+                                  items={answers[currentQuestion.id] || []}
                                   strategy={verticalListSortingStrategy}
                                 >
-                                  {answers[question.id]?.map((option: string, index: number) => (
+                                  {answers[currentQuestion.id]?.map((option: string, index: number) => (
                                     <SortableOption 
                                       key={option} 
                                       id={option} 
@@ -557,41 +685,62 @@ const QuizCreate = () => {
                                   ))}
                                 </SortableContext>
                               </DndContext>
-                            )}
-                            {question.type === 'number' && (
-                              <div className="space-y-2">
-                                <Label htmlFor={`number-${question.id}`}>Enter a positive number:</Label>
-                                <Input
-                                  id={`number-${question.id}`}
-                                  type="number"
-                                  min="1"
-                                  placeholder="Enter a positive number"
-                                  value={answers[question.id] || ''}
-                                  onChange={e => handleNumberChange(question.id, e.target.value)}
-                                  className="border-2 focus:border-[#FF007F]"
-                                />
-                              </div>
+                            </div>
+                          )}
+
+                          {currentQuestion.type === 'number' && (
+                            <div className="space-y-2">
+                              <Label htmlFor={`number-${currentQuestion.id}`}>Enter a positive number:</Label>
+                              <Input
+                                id={`number-${currentQuestion.id}`}
+                                type="number"
+                                min="1"
+                                placeholder="Enter a positive number"
+                                value={answers[currentQuestion.id] || ''}
+                                onChange={e => handleNumberChange(currentQuestion.id, e.target.value)}
+                                className="border-2 focus:border-[#FF007F]"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex justify-between pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => navigateCustomQuestion('prev')}
+                              disabled={customQuestionIndex === 0}
+                            >
+                              <ChevronLeft size={16} className="mr-2" /> Previous
+                            </Button>
+                          
+                            {customQuestionIndex < selectedQuestions.length - 1 ? (
+                              <Button
+                                type="button"
+                                onClick={() => navigateCustomQuestion('next')}
+                                className="bg-[#00DDEB] hover:bg-[#00BBCC]"
+                                disabled={!isCustomQuestionConfigured(currentQuestion.id)}
+                              >
+                                Next <ChevronRight size={16} className="ml-2" />
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                onClick={handleCompleteCustomQuestionConfig}
+                                className={cn(
+                                  "bg-[#FF007F] hover:bg-[#D6006C]",
+                                  !isCustomQuestionConfigured(currentQuestion.id) && "opacity-50 cursor-not-allowed"
+                                )}
+                                disabled={!isCustomQuestionConfigured(currentQuestion.id)}
+                              >
+                                Review Quiz <ChevronRight size={16} className="ml-2" />
+                              </Button>
                             )}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    onClick={handleNextStep}
-                    className={cn(
-                      "bg-[#FF007F] hover:bg-[#D6006C]",
-                      !canProceedFromCustom() && "opacity-50 cursor-not-allowed"
-                    )}
-                    disabled={!canProceedFromCustom()}
-                  >
-                    Review Quiz <ChevronRight size={16} className="ml-2" />
-                  </Button>
-                </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
 
@@ -606,7 +755,14 @@ const QuizCreate = () => {
                   <h3 className="font-medium">Fixed Questions ({fixedQuestions.length})</h3>
                   <ul className="mt-2 space-y-2">
                     {fixedQuestions.map(q => (
-                      <li key={q.id} className="text-sm">• {q.text}</li>
+                      <li key={q.id} className="text-sm">
+                        • {q.text} 
+                        <span className="ml-2 text-xs text-gray-500">
+                          {q.type === 'mcq' ? 
+                            `(Priority: ${answers[q.id]?.join(' > ')})` : 
+                            `(Answer: ${answers[q.id]})`}
+                        </span>
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -617,7 +773,14 @@ const QuizCreate = () => {
                     {customQuestions
                       .filter(q => selectedCustomQuestions.includes(q.id))
                       .map(q => (
-                        <li key={q.id} className="text-sm">• {q.text}</li>
+                        <li key={q.id} className="text-sm">
+                          • {q.text}
+                          <span className="ml-2 text-xs text-gray-500">
+                            {q.type === 'mcq' ? 
+                              `(Priority: ${answers[q.id]?.join(' > ')})` : 
+                              `(Answer: ${answers[q.id]})`}
+                          </span>
+                        </li>
                       ))}
                   </ul>
                 </div>
@@ -636,19 +799,20 @@ const QuizCreate = () => {
               </Button>
             )}
             
-            {currentStep !== 'review' ? (
+            {currentStep !== 'review' && currentStep !== 'fixed' && currentStep !== 'custom' && (
               <Button
                 type="button"
                 onClick={handleNextStep}
                 className="ml-auto bg-[#FF007F] hover:bg-[#D6006C]"
                 disabled={
-                  (currentStep === 'name' && quizName.trim().length < 3) ||
-                  (currentStep === 'custom' && selectedCustomQuestions.length !== 3)
+                  (currentStep === 'name' && quizName.trim().length < 3)
                 }
               >
                 Next Step <ChevronRight size={16} className="ml-2" />
               </Button>
-            ) : (
+            )}
+            
+            {currentStep === 'review' && (
               <Button
                 type="button"
                 onClick={handleCreateQuiz}
