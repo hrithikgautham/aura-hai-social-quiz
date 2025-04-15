@@ -21,6 +21,7 @@ import {
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { cn } from '@/lib/utils';
 
 type Question = {
   id: string;
@@ -160,25 +161,6 @@ const QuizCreate = () => {
       }
       setCurrentStep('fixed');
     }
-    else if (currentStep === 'fixed') {
-      const allAnswered = fixedQuestions.every(q => {
-        if (q.type === 'number') {
-          return answers[q.id] !== '' && !isNaN(Number(answers[q.id])) && Number(answers[q.id]) > 0;
-        }
-        return true;
-      });
-      
-      if (!allAnswered) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Please answer all questions with valid inputs.",
-        });
-        return;
-      }
-      
-      setCurrentStep('custom');
-    }
     else if (currentStep === 'custom') {
       if (selectedCustomQuestions.length !== 3) {
         toast({
@@ -211,6 +193,37 @@ const QuizCreate = () => {
       setAnswers(updatedAnswers);
       setCurrentStep('review');
     }
+  };
+
+  const canProceedFromFixed = () => {
+    return fixedQuestions.every(q => {
+      if (q.type === 'number') {
+        const answer = answers[q.id];
+        return answer !== '' && !isNaN(Number(answer)) && Number(answer) > 0;
+      }
+      if (q.type === 'mcq') {
+        return Array.isArray(answers[q.id]) && answers[q.id].length === (q.options?.length || 0);
+      }
+      return false;
+    });
+  };
+
+  const canProceedFromCustom = () => {
+    if (selectedCustomQuestions.length !== 3) return false;
+    
+    return selectedCustomQuestions.every(id => {
+      const question = customQuestions.find(q => q.id === id);
+      if (!question) return false;
+
+      if (question.type === 'number') {
+        const answer = answers[id];
+        return answer !== '' && !isNaN(Number(answer)) && Number(answer) > 0;
+      }
+      if (question.type === 'mcq') {
+        return Array.isArray(answers[id]) && answers[id].length === (question.options?.length || 0);
+      }
+      return false;
+    });
   };
 
   const handlePrevStep = () => {
@@ -476,7 +489,7 @@ const QuizCreate = () => {
                       >
                         <ChevronLeft size={16} className="mr-2" /> Previous
                       </Button>
-                      
+                    
                       {currentQuestionIndex < fixedQuestions.length - 1 ? (
                         <Button
                           type="button"
@@ -488,10 +501,14 @@ const QuizCreate = () => {
                       ) : (
                         <Button
                           type="button"
-                          onClick={handleNextStep}
-                          className="bg-[#FF007F] hover:bg-[#D6006C]"
+                          onClick={() => canProceedFromFixed() && setCurrentStep('custom')}
+                          className={cn(
+                            "bg-[#FF007F] hover:bg-[#D6006C]",
+                            !canProceedFromFixed() && "opacity-50 cursor-not-allowed"
+                          )}
+                          disabled={!canProceedFromFixed()}
                         >
-                          Continue <ChevronRight size={16} className="ml-2" />
+                          Continue to Custom Questions <ChevronRight size={16} className="ml-2" />
                         </Button>
                       )}
                     </div>
@@ -502,11 +519,8 @@ const QuizCreate = () => {
 
             {currentStep === 'custom' && (
               <div className="space-y-4">
-                <p className="text-sm text-gray-500">
-                  Select exactly 3 custom questions for your quiz. These will help measure your friends' aura.
-                </p>
-                
-                <div className="space-y-3">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Select Custom Questions</h3>
                   {customQuestions.map((question, idx) => (
                     <div key={question.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-white">
                       <Checkbox
@@ -517,18 +531,66 @@ const QuizCreate = () => {
                         disabled={!selectedCustomQuestions.includes(question.id) && selectedCustomQuestions.length >= 3}
                       />
                       <div className="space-y-1">
-                        <Label
-                          htmlFor={`question-${idx}`}
-                          className="font-medium"
-                        >
+                        <Label htmlFor={`question-${idx}`} className="font-medium">
                           {question.text}
                         </Label>
-                        <p className="text-sm text-gray-500">
-                          Type: {question.type === 'mcq' ? 'Multiple Choice' : 'Number'}
-                        </p>
+                        {selectedCustomQuestions.includes(question.id) && (
+                          <div className="mt-2">
+                            {question.type === 'mcq' && (
+                              <DndContext 
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={(event) => handleDragEnd(event, question.id)}
+                                modifiers={[restrictToVerticalAxis]}
+                              >
+                                <SortableContext 
+                                  items={answers[question.id] || []}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  {answers[question.id]?.map((option: string, index: number) => (
+                                    <SortableOption 
+                                      key={option} 
+                                      id={option} 
+                                      option={option}
+                                      index={index} 
+                                    />
+                                  ))}
+                                </SortableContext>
+                              </DndContext>
+                            )}
+                            {question.type === 'number' && (
+                              <div className="space-y-2">
+                                <Label htmlFor={`number-${question.id}`}>Enter a positive number:</Label>
+                                <Input
+                                  id={`number-${question.id}`}
+                                  type="number"
+                                  min="1"
+                                  placeholder="Enter a positive number"
+                                  value={answers[question.id] || ''}
+                                  onChange={e => handleNumberChange(question.id, e.target.value)}
+                                  className="border-2 focus:border-[#FF007F]"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
+                </div>
+              
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    onClick={handleNextStep}
+                    className={cn(
+                      "bg-[#FF007F] hover:bg-[#D6006C]",
+                      !canProceedFromCustom() && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={!canProceedFromCustom()}
+                  >
+                    Review Quiz <ChevronRight size={16} className="ml-2" />
+                  </Button>
                 </div>
               </div>
             )}
