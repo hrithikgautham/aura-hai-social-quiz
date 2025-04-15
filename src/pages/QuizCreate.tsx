@@ -22,7 +22,6 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
-// Define question types
 type Question = {
   id: string;
   text: string;
@@ -31,10 +30,8 @@ type Question = {
   options?: string[];
 };
 
-// Define quiz creation steps
 type Step = 'name' | 'fixed' | 'custom' | 'review';
 
-// Define sortable item component for drag and drop
 const SortableOption = ({ 
   id, 
   option,
@@ -82,7 +79,6 @@ const QuizCreate = () => {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   
-  // DnD sensors setup
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -90,11 +86,9 @@ const QuizCreate = () => {
     })
   );
 
-  // Fetch questions on component mount
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        // Fetch fixed questions
         const { data: fixedData, error: fixedError } = await supabase
           .from('questions')
           .select('*')
@@ -103,7 +97,6 @@ const QuizCreate = () => {
         
         if (fixedError) throw fixedError;
         
-        // Fetch custom questions
         const { data: customData, error: customError } = await supabase
           .from('questions')
           .select('*')
@@ -124,15 +117,12 @@ const QuizCreate = () => {
           options: q.options ? JSON.parse(q.options as string) : undefined
         })) || []);
         
-        // Initialize answers object
         const initialAnswers: Record<string, any> = {};
         
         fixedData?.forEach(q => {
           if (q.type === 'mcq' && q.options) {
-            // For MCQ, store the priority order
             initialAnswers[q.id] = JSON.parse(q.options as string);
           } else if (q.type === 'number') {
-            // For number questions, init with empty string
             initialAnswers[q.id] = '';
           }
         });
@@ -153,7 +143,6 @@ const QuizCreate = () => {
     fetchQuestions();
   }, [toast]);
 
-  // Handle next step in quiz creation
   const handleNextStep = () => {
     if (currentStep === 'name') {
       if (quizName.trim().length < 3) {
@@ -167,7 +156,6 @@ const QuizCreate = () => {
       setCurrentStep('fixed');
     }
     else if (currentStep === 'fixed') {
-      // Check if all fixed questions have answers
       const allAnswered = fixedQuestions.every(q => {
         if (q.type === 'number') {
           return answers[q.id] !== '' && !isNaN(Number(answers[q.id])) && Number(answers[q.id]) > 0;
@@ -196,7 +184,6 @@ const QuizCreate = () => {
         return;
       }
       
-      // Initialize answers for selected custom questions
       const updatedAnswers = { ...answers };
       const selectedQuestions = customQuestions.filter(q => 
         selectedCustomQuestions.includes(q.id)
@@ -219,7 +206,6 @@ const QuizCreate = () => {
     }
   };
 
-  // Handle previous step in quiz creation
   const handlePrevStep = () => {
     if (currentStep === 'fixed') {
       setCurrentStep('name');
@@ -232,7 +218,6 @@ const QuizCreate = () => {
     }
   };
 
-  // Handle drag end event for sortable lists
   const handleDragEnd = (event: any, questionId: string) => {
     const { active, over } = event;
 
@@ -247,7 +232,6 @@ const QuizCreate = () => {
     }
   };
 
-  // Handle custom question selection
   const handleCustomQuestionSelect = (checked: boolean, id: string) => {
     if (checked) {
       if (selectedCustomQuestions.length < 3) {
@@ -264,7 +248,6 @@ const QuizCreate = () => {
     }
   };
 
-  // Navigate to next or previous question during quiz creation
   const navigateQuestion = (direction: 'next' | 'prev') => {
     const currentQuestions = currentStep === 'fixed' 
       ? fixedQuestions 
@@ -278,9 +261,7 @@ const QuizCreate = () => {
     }
   };
 
-  // Handle number input change
   const handleNumberChange = (questionId: string, value: string) => {
-    // Only allow positive integers
     const parsedValue = value.replace(/[^0-9]/g, '');
     setAnswers(prev => ({
       ...prev,
@@ -288,17 +269,14 @@ const QuizCreate = () => {
     }));
   };
 
-  // Create quiz in database
   const handleCreateQuiz = async () => {
     if (!user) return;
 
     setLoading(true);
     
     try {
-      // Generate a unique shareable link
       const shareableLink = crypto.randomUUID();
 
-      // Create quiz
       const { data: quizData, error: quizError } = await supabase
         .from('quizzes')
         .insert({
@@ -311,13 +289,11 @@ const QuizCreate = () => {
       
       if (quizError) throw quizError;
 
-      // Get all questions to include in quiz
       const allSelectedQuestions = [
         ...fixedQuestions,
         ...customQuestions.filter(q => selectedCustomQuestions.includes(q.id))
       ];
 
-      // Create quiz_questions entries
       const quizQuestionsData = allSelectedQuestions.map(question => ({
         quiz_id: quizData.id,
         question_id: question.id,
@@ -363,7 +339,6 @@ const QuizCreate = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl md:text-3xl font-bold uppercase">Create Your Quiz</h1>
           
-          {/* Step indicator */}
           <div className="flex items-center space-x-2">
             {(['name', 'fixed', 'custom', 'review'] as Step[]).map((step, index) => (
               <div 
@@ -408,7 +383,6 @@ const QuizCreate = () => {
           </CardHeader>
 
           <CardContent>
-            {/* Name step */}
             {currentStep === 'name' && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -424,7 +398,6 @@ const QuizCreate = () => {
               </div>
             )}
 
-            {/* Fixed questions step */}
             {currentStep === 'fixed' && fixedQuestions.length > 0 && (
               <div>
                 {fixedQuestions[currentQuestionIndex] && (
@@ -479,7 +452,6 @@ const QuizCreate = () => {
                       </div>
                     )}
 
-                    {/* Navigation buttons */}
                     <div className="flex justify-between pt-4">
                       <Button
                         type="button"
@@ -513,7 +485,6 @@ const QuizCreate = () => {
               </div>
             )}
 
-            {/* Custom questions selection step */}
             {currentStep === 'custom' && (
               <div className="space-y-4">
                 <p className="text-sm text-gray-500">
@@ -547,7 +518,6 @@ const QuizCreate = () => {
               </div>
             )}
 
-            {/* Review step */}
             {currentStep === 'review' && (
               <div className="space-y-6">
                 <div>

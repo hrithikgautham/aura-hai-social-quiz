@@ -37,7 +37,6 @@ const QuizAnalytics = () => {
     const fetchQuizData = async () => {
       setLoading(true);
       try {
-        // Fetch quiz details
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('*')
@@ -46,7 +45,6 @@ const QuizAnalytics = () => {
 
         if (quizError) throw quizError;
 
-        // Check if user is the creator
         if (quizData.creator_id !== user.id) {
           toast({
             variant: "destructive",
@@ -59,7 +57,6 @@ const QuizAnalytics = () => {
 
         setQuiz(quizData);
 
-        // Fetch quiz questions
         const { data: questionData, error: questionError } = await supabase
           .from('quiz_questions')
           .select(`
@@ -73,7 +70,6 @@ const QuizAnalytics = () => {
         if (questionError) throw questionError;
 
         if (questionData) {
-          // Format questions
           const formattedQuestions = questionData.map(item => ({
             id: item.id,
             questionId: item.questions.id,
@@ -87,7 +83,6 @@ const QuizAnalytics = () => {
           setQuestions(formattedQuestions);
         }
 
-        // Fetch responses
         const { data: responseData, error: responseError } = await supabase
           .from('responses')
           .select(`
@@ -102,7 +97,6 @@ const QuizAnalytics = () => {
         if (responseError) throw responseError;
         setResponses(responseData || []);
 
-        // Prepare chart data
         if (questionData && responseData) {
           const charts: Record<string, any[]> = {};
 
@@ -117,7 +111,6 @@ const QuizAnalytics = () => {
                 return acc;
               }, {});
               
-              // Count responses for each option
               responseData.forEach(response => {
                 const answer = response.answers[questionId];
                 if (answer && optionCounts.hasOwnProperty(answer)) {
@@ -125,14 +118,12 @@ const QuizAnalytics = () => {
                 }
               });
               
-              // Convert to chart data format
               charts[questionId] = Object.entries(optionCounts).map(([option, count]) => ({
                 option,
                 count,
               }));
             } 
             else if (questionType === 'number') {
-              // For number questions, gather all values for a histogram
               const values = responseData
                 .map(response => {
                   const answer = response.answers[questionId];
@@ -140,9 +131,7 @@ const QuizAnalytics = () => {
                 })
                 .filter(val => val !== null);
               
-              // Simple numeric display for now
               if (values.length > 0) {
-                // Create histogram-like data
                 const min = Math.min(...values);
                 const max = Math.max(...values);
                 const range = max - min;
@@ -199,7 +188,6 @@ const QuizAnalytics = () => {
     fetchQuizData();
   }, [quizId, user, navigate, toast]);
 
-  // Calculate average aura score
   const averageAuraScore = responses.length > 0
     ? Math.round(responses.reduce((sum, r) => sum + r.aura_points, 0) / responses.length)
     : 0;
