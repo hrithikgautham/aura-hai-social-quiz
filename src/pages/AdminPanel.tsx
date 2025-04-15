@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -84,12 +83,14 @@ const AdminPanel = () => {
         // Format questions
         const formattedFixed = fixedData?.map(q => ({
           ...q,
-          options: q.options ? JSON.parse(q.options) : undefined
+          options: q.options ? JSON.parse(q.options as string) : undefined,
+          type: q.type as 'mcq' | 'number'
         })) || [];
         
         const formattedCustom = customData?.map(q => ({
           ...q,
-          options: q.options ? JSON.parse(q.options) : undefined
+          options: q.options ? JSON.parse(q.options as string) : undefined,
+          type: q.type as 'mcq' | 'number'
         })) || [];
         
         setFixedQuestions(formattedFixed);
@@ -255,12 +256,14 @@ const AdminPanel = () => {
       // Format questions
       const formattedFixed = fixedData?.map(q => ({
         ...q,
-        options: q.options ? JSON.parse(q.options) : undefined
+        options: q.options ? JSON.parse(q.options as string) : undefined,
+        type: q.type as 'mcq' | 'number'
       })) || [];
       
       const formattedCustom = customData?.map(q => ({
         ...q,
-        options: q.options ? JSON.parse(q.options) : undefined
+        options: q.options ? JSON.parse(q.options as string) : undefined,
+        type: q.type as 'mcq' | 'number'
       })) || [];
       
       setFixedQuestions(formattedFixed);
@@ -289,7 +292,7 @@ const AdminPanel = () => {
       const isFixedQuestion = questionToDelete.is_fixed;
       const activeCount = isFixedQuestion ? activeFixedCount : activeCustomCount;
       const requiredCount = isFixedQuestion ? 7 : 10;
-
+      
       if (questionToDelete.active && activeCount <= requiredCount) {
         toast({
           variant: "destructive",

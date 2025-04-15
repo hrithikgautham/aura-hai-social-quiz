@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -113,8 +112,17 @@ const QuizCreate = () => {
           
         if (customError) throw customError;
 
-        setFixedQuestions(fixedData || []);
-        setCustomQuestions(customData || []);
+        setFixedQuestions(fixedData?.map(q => ({
+          ...q,
+          type: q.type as 'mcq' | 'number',
+          options: q.options ? JSON.parse(q.options as string) : undefined
+        })) || []);
+        
+        setCustomQuestions(customData?.map(q => ({
+          ...q,
+          type: q.type as 'mcq' | 'number',
+          options: q.options ? JSON.parse(q.options as string) : undefined
+        })) || []);
         
         // Initialize answers object
         const initialAnswers: Record<string, any> = {};
@@ -122,7 +130,7 @@ const QuizCreate = () => {
         fixedData?.forEach(q => {
           if (q.type === 'mcq' && q.options) {
             // For MCQ, store the priority order
-            initialAnswers[q.id] = JSON.parse(q.options).map((opt: string) => opt);
+            initialAnswers[q.id] = JSON.parse(q.options as string);
           } else if (q.type === 'number') {
             // For number questions, init with empty string
             initialAnswers[q.id] = '';

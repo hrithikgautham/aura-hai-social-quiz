@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -97,9 +96,9 @@ const QuizTake = () => {
             id: item.id,
             questionId: item.questions.id,
             text: item.questions.text,
-            type: item.questions.type,
-            options: item.questions.options ? JSON.parse(item.questions.options) : undefined,
-            priority_order: item.priority_order ? JSON.parse(item.priority_order) : undefined,
+            type: item.questions.type as 'mcq' | 'number',
+            options: item.questions.options ? JSON.parse(item.questions.options as string) : undefined,
+            priority_order: item.priority_order ? JSON.parse(item.priority_order as string) : undefined,
             correct_answer: item.correct_answer,
           }));
           
