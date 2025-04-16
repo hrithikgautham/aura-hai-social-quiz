@@ -19,8 +19,6 @@ export default function QuizAnalytics() {
   const [quizName, setQuizName] = useState('');
   const [responses, setResponses] = useState<ResponseData[]>([]);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
-  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
-  const [chartData, setChartData] = useState<Record<string, { name: string; count: number }[]>>({});
   
   useEffect(() => {
     if (!quizId || !user) return;
