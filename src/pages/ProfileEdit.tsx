@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 const PLACEHOLDER_IMAGES = [
   'photo-1649972904349-6e44c42644a7',
   'photo-1582562124811-c09040d0a901',
-  'photo-1501286353178-1ec881214838'
+  'photo-1501286353178-1ec871214838'
 ];
 
 export default function ProfileEdit() {
@@ -22,6 +22,12 @@ export default function ProfileEdit() {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (user?.avatar_url) {
+      setAvatarUrl(user.avatar_url);
+    }
+  }, [user]);
 
   const getRandomPlaceholder = () => {
     const randomIndex = Math.floor(Math.random() * PLACEHOLDER_IMAGES.length);
@@ -38,12 +44,15 @@ export default function ProfileEdit() {
 
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      // Create a path that includes the user's ID as a folder
-      const filePath = `${user?.id}/${Math.random()}.${fileExt}`;
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = fileName;
 
+      // Upload directly to public bucket without specifying a folder
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          upsert: true
+        });
 
       if (uploadError) {
         throw uploadError;
@@ -62,6 +71,13 @@ export default function ProfileEdit() {
         if (updateError) throw updateError;
         
         setAvatarUrl(data.publicUrl);
+        
+        // Update the user in context
+        if (user) {
+          const updatedUser = { ...user, avatar_url: data.publicUrl };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        
         toast({
           title: "Success",
           description: "Profile picture updated successfully!",
@@ -90,6 +106,13 @@ export default function ProfileEdit() {
       if (updateError) throw updateError;
 
       setAvatarUrl(randomUrl);
+      
+      // Update the user in context
+      if (user) {
+        const updatedUser = { ...user, avatar_url: randomUrl };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
       toast({
         title: "Success",
         description: "Random profile picture set successfully!",
@@ -134,11 +157,11 @@ export default function ProfileEdit() {
                     htmlFor="avatar-upload"
                     className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 px-4 py-2"
                   >
-                    Upload Picture
+                    {uploading ? "Uploading..." : "Upload Picture"}
                   </Label>
                 </div>
                 
-                <Button onClick={handleRandomAvatar}>
+                <Button onClick={handleRandomAvatar} disabled={uploading}>
                   Use Random Picture
                 </Button>
               </div>

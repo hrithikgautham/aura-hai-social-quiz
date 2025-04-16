@@ -50,6 +50,11 @@ export default function QuizAnalytics() {
             .single();
             
           if (!userResponse) {
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "You don't have access to view this quiz's analytics.",
+            });
             navigate('/dashboard');
             return;
           }
@@ -90,7 +95,12 @@ export default function QuizAnalytics() {
         
         if (responseError) throw responseError;
         
-        const processedResponses = (responseData || []).map(response => {
+        if (!responseData || responseData.length === 0) {
+          setLoading(false);
+          return; // Early return if no responses
+        }
+        
+        const processedResponses = responseData.map(response => {
           const parsedAnswers = typeof response.answers === 'string' 
             ? JSON.parse(response.answers) 
             : response.answers;
@@ -104,26 +114,31 @@ export default function QuizAnalytics() {
         setResponses(processedResponses);
         
         // Process chart data
-        const newChartData: Record<string, { name: string; count: number }[]> = {};
-        
-        processedQuestions.forEach(question => {
-          const answerCounts: Record<string, number> = {};
+        if (processedQuestions.length > 0 && processedResponses.length > 0) {
+          const newChartData: Record<string, { name: string; count: number }[]> = {};
           
-          processedResponses.forEach(response => {
-            const answer = response.answers[question.id];
-            if (answer !== undefined) {
-              const answerText = question.options ? question.options[answer] : answer.toString();
-              answerCounts[answerText] = (answerCounts[answerText] || 0) + 1;
-            }
+          processedQuestions.forEach(question => {
+            const answerCounts: Record<string, number> = {};
+            
+            processedResponses.forEach(response => {
+              const answer = response.answers[question.id];
+              if (answer !== undefined) {
+                const answerText = question.options && Array.isArray(question.options) && answer < question.options.length 
+                  ? question.options[answer] 
+                  : String(answer);
+                
+                answerCounts[answerText] = (answerCounts[answerText] || 0) + 1;
+              }
+            });
+            
+            newChartData[question.id] = Object.entries(answerCounts).map(([name, count]) => ({
+              name,
+              count
+            }));
           });
           
-          newChartData[question.id] = Object.entries(answerCounts).map(([name, count]) => ({
-            name,
-            count
-          }));
-        });
-        
-        setChartData(newChartData);
+          setChartData(newChartData);
+        }
         
       } catch (error) {
         console.error('Error fetching quiz analytics:', error);
@@ -141,6 +156,8 @@ export default function QuizAnalytics() {
     fetchQuizData();
   }, [quizId, user, navigate, toast]);
 
+  const userResponse = responses.find(r => r.respondent_id === user?.id);
+
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-6xl mx-auto">
@@ -153,7 +170,13 @@ export default function QuizAnalytics() {
           </div>
         ) : (
           <div className="space-y-8">
-            <LeaderboardCard responses={responses} />
+            {responses.length > 0 ? (
+              <LeaderboardCard responses={responses} />
+            ) : (
+              <div className="bg-white p-6 rounded-lg shadow text-center">
+                <p className="text-gray-600">No responses yet for this quiz.</p>
+              </div>
+            )}
             
             {questions.length > 0 && (
               <QuestionAnalysis 
@@ -166,9 +189,9 @@ export default function QuizAnalytics() {
             )}
             
             {/* Get the user's response if it exists */}
-            {responses.filter(r => r.respondent_id === user?.id).length > 0 && (
+            {userResponse && (
               <UserAnswerCard 
-                response={responses.filter(r => r.respondent_id === user?.id)[0]} 
+                response={userResponse} 
                 questions={questions}
               />
             )}

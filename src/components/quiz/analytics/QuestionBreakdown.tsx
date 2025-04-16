@@ -7,6 +7,15 @@ interface QuestionBreakdownProps {
 }
 
 export function QuestionBreakdown({ chartData, totalResponses }: QuestionBreakdownProps) {
+  if (!chartData.length) {
+    return (
+      <div className="p-2">
+        <h4 className="text-sm md:text-base font-medium mb-3">Response Distribution</h4>
+        <p className="text-gray-500">No data available for this question</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-2">
       <h4 className="text-sm md:text-base font-medium mb-3">Response Distribution</h4>

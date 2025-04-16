@@ -18,14 +18,18 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
 
   useEffect(() => {
     const fetchUsername = async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('username')
-        .eq('id', response.respondent_id)
-        .single();
-      
-      if (data && !error) {
-        setUsername(data.username);
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', response.respondent_id)
+          .single();
+        
+        if (data && !error) {
+          setUsername(data.username);
+        }
+      } catch (error) {
+        console.error("Error fetching username:", error);
       }
     };
 
@@ -40,7 +44,7 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
     <Card className="shadow-sm">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm md:text-base">
-          Response from {username || 'Anonymous'} | {formattedDate}
+          Your Response | {formattedDate}
         </CardTitle>
         <div className="flex items-center gap-2">
           <span className="text-sm md:text-base font-medium">Aura Points: {response.aura_points}</span>
@@ -55,13 +59,22 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
           <div className="space-y-3">
             {questions.map((question) => {
               const answer = parsedAnswers[question.id];
+              let displayAnswer = "No answer provided";
+              
+              if (answer !== undefined) {
+                if (question.options && Array.isArray(question.options)) {
+                  displayAnswer = question.options[answer] || answer;
+                } else {
+                  displayAnswer = String(answer);
+                }
+              }
               
               return (
                 <div key={question.id} className="border-b pb-2 last:border-b-0">
                   <p className="font-medium text-sm md:text-base">{question.text}</p>
                   <p className="text-sm md:text-base mt-1">
                     <span className="text-gray-500">Answer:</span>{" "}
-                    {answer || "No answer provided"}
+                    {displayAnswer}
                   </p>
                 </div>
               );
