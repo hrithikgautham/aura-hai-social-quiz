@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
+import { Upload, Camera, Dice3 } from 'lucide-react';
 
 const PLACEHOLDER_IMAGES = [
   'photo-1649972904349-6e44c42644a7',
@@ -19,7 +20,7 @@ const PLACEHOLDER_IMAGES = [
   'photo-1518770660439-4636190af475',
   'photo-1461749280684-dccba630e2f6',
   'photo-1486312338219-ce68d2c6f44d',
-  'photo-1581091226825-a6a2a5aee158',
+  'photo-1581091226825-a6a2a5aee1b8',
   'photo-1485827404703-89b55fcc595e',
   'photo-1526374965328-7f61d4dc18c5',
   'photo-1487058792275-0ad4aaf24ca7',
@@ -39,6 +40,7 @@ export default function ProfileEdit() {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     if (user?.avatar_url) {
@@ -62,12 +64,10 @@ export default function ProfileEdit() {
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = fileName;
 
-      // Upload directly to public bucket without specifying a folder
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, {
+        .upload(fileName, file, {
           upsert: true
         });
 
@@ -77,7 +77,7 @@ export default function ProfileEdit() {
 
       const { data } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       if (data) {
         const { error: updateError } = await supabase
@@ -89,7 +89,6 @@ export default function ProfileEdit() {
         
         setAvatarUrl(data.publicUrl);
         
-        // Update the user in context
         if (user) {
           const updatedUser = { ...user, avatar_url: data.publicUrl };
           localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -109,6 +108,9 @@ export default function ProfileEdit() {
       });
     } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -124,7 +126,6 @@ export default function ProfileEdit() {
 
       setAvatarUrl(randomUrl);
       
-      // Update the user in context
       if (user) {
         const updatedUser = { ...user, avatar_url: randomUrl };
         localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -151,20 +152,29 @@ export default function ProfileEdit() {
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#FFA99F] to-[#FF719A] p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <Card>
+        <Card className="backdrop-blur-sm bg-white/90">
           <CardHeader>
-            <CardTitle>Edit Profile</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center text-gray-800">
+              Edit Your Profile
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center space-y-4">
-              <Avatar className="w-32 h-32">
-                <AvatarImage src={avatarUrl || user?.avatar_url} />
-                <AvatarFallback>
-                  {user?.username?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group">
+                <Avatar className="w-32 h-32 border-4 border-white shadow-lg transition-transform transform hover:scale-105">
+                  <AvatarImage src={avatarUrl || user?.avatar_url} />
+                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-2xl">
+                    {user?.username?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-black/50 rounded-full p-2">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+              </div>
               
-              <div className="flex gap-4">
+              <div className="flex gap-4 flex-wrap justify-center">
                 <div>
                   <Input
                     type="file"
@@ -173,23 +183,30 @@ export default function ProfileEdit() {
                     disabled={uploading}
                     className="hidden"
                     id="avatar-upload"
+                    ref={fileInputRef}
                   />
                   <Label
                     htmlFor="avatar-upload"
-                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 px-4 py-2"
+                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 px-4 py-2 gap-2"
                   >
+                    <Upload className="w-4 h-4" />
                     {uploading ? "Uploading..." : "Upload Picture"}
                   </Label>
                 </div>
                 
-                <Button onClick={handleRandomAvatar} disabled={uploading}>
-                  Use Random Picture
+                <Button 
+                  onClick={handleRandomAvatar} 
+                  disabled={uploading}
+                  className="gap-2"
+                >
+                  <Dice3 className="w-4 h-4" />
+                  Random Picture
                 </Button>
               </div>
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={() => navigate('/dashboard')}>
+              <Button onClick={() => navigate('/dashboard')} variant="outline">
                 Back to Dashboard
               </Button>
             </div>
