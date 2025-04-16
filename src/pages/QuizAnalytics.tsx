@@ -4,11 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ResponseData, QuestionData } from '@/types/quiz';
-import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { AnalyticsHeader } from '@/components/quiz/analytics/AnalyticsHeader';
 import { Skeleton } from '@/components/ui/skeleton';
-import { QuestionAnalysis } from '@/components/quiz/analytics/QuestionAnalysis';
+import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
 
 export default function QuizAnalytics() {
   const { quizId } = useParams<{ quizId: string }>();
@@ -94,49 +93,15 @@ export default function QuizAnalytics() {
         
         if (responseError) throw responseError;
         
-        if (!responseData || responseData.length === 0) {
-          setLoading(false);
-          return; // Early return if no responses
-        }
-        
-        const processedResponses = responseData.map(response => {
-          const parsedAnswers = typeof response.answers === 'string' 
-            ? JSON.parse(response.answers) 
-            : response.answers;
-            
-          return {
+        if (responseData) {
+          const processedResponses = responseData.map(response => ({
             ...response,
-            answers: parsedAnswers
-          };
-        }) as ResponseData[];
-        
-        setResponses(processedResponses);
-        
-        // Process chart data
-        if (processedQuestions.length > 0 && processedResponses.length > 0) {
-          const newChartData: Record<string, { name: string; count: number }[]> = {};
+            answers: typeof response.answers === 'string' 
+              ? JSON.parse(response.answers) 
+              : response.answers
+          }));
           
-          processedQuestions.forEach(question => {
-            const answerCounts: Record<string, number> = {};
-            
-            processedResponses.forEach(response => {
-              const answer = response.answers[question.id];
-              if (answer !== undefined) {
-                const answerText = question.options && Array.isArray(question.options) && answer < question.options.length 
-                  ? question.options[answer] 
-                  : String(answer);
-                
-                answerCounts[answerText] = (answerCounts[answerText] || 0) + 1;
-              }
-            });
-            
-            newChartData[question.id] = Object.entries(answerCounts).map(([name, count]) => ({
-              name,
-              count
-            }));
-          });
-          
-          setChartData(newChartData);
+          setResponses(processedResponses);
         }
         
       } catch (error) {
@@ -155,9 +120,6 @@ export default function QuizAnalytics() {
     fetchQuizData();
   }, [quizId, user, navigate, toast]);
 
-  // Find user's response
-  const userResponse = responses.find(r => r.respondent_id === user?.id);
-
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-6xl mx-auto">
@@ -171,28 +133,17 @@ export default function QuizAnalytics() {
         ) : (
           <div className="space-y-8">
             {responses.length > 0 ? (
-              <LeaderboardCard responses={responses} />
+              <>
+                <LeaderboardCard responses={responses} />
+                <ChartsSection 
+                  questions={questions}
+                  responses={responses}
+                />
+              </>
             ) : (
               <div className="bg-white p-6 rounded-lg shadow text-center">
                 <p className="text-gray-600">No responses yet for this quiz.</p>
               </div>
-            )}
-            
-            {questions.length > 0 && (
-              <QuestionAnalysis 
-                questions={questions}
-                selectedQuestionIndex={selectedQuestionIndex}
-                setSelectedQuestionIndex={setSelectedQuestionIndex}
-                chartData={chartData}
-                responses={responses}
-              />
-            )}
-            
-            {userResponse && (
-              <UserAnswerCard 
-                response={userResponse} 
-                questions={questions}
-              />
             )}
           </div>
         )}
