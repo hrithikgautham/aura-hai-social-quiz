@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { LoginForm } from '@/components/auth/LoginForm';
 import confetti from 'canvas-confetti';
+import { QuizWelcome } from '@/components/quiz/QuizWelcome';
 
 type QuizQuestion = {
   id: string;

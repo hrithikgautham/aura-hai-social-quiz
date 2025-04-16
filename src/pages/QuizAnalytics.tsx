@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -220,6 +221,7 @@ const QuizAnalytics = () => {
             </h1>
             <p className="text-gray-600">View how others responded to this quiz</p>
           </div>
+          
           <Button
             onClick={() => navigate('/dashboard')}
             variant="outline"
@@ -315,7 +317,7 @@ const QuizAnalytics = () => {
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="count"
-                        label={({ option, percentage }) => `${percentage}%`}
+                        label={({ option, percentage }) => `${String(percentage)}%`}
                       >
                         {chartData[question.id].map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
