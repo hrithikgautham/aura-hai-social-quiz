@@ -186,10 +186,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkIfUserExists = async (email: string): Promise<boolean> => {
     try {
+      // If we have admin access, use the admin API
       const { data, error } = await supabase.auth.admin.listUsers();
       
       if (error) {
         console.log("Using fallback method to check if user exists");
+        // Fallback: try to sign in without creating a user
         const { error: signInError } = await supabase.auth.signInWithOtp({
           email,
           options: {
@@ -200,7 +202,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return !signInError || !signInError.message.includes("User not found");
       }
       
-      return data.users.some(user => user.email === email);
+      if (data && data.users) {
+        return data.users.some(user => user.email === email);
+      }
+      
+      return false;
     } catch (error) {
       console.error("Error checking if user exists:", error);
       return false;
@@ -210,7 +216,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const loginWithGoogle = async (redirectTo?: string, isSignup?: boolean) => {
     try {
       const appUrl = window.location.origin;
-      const callbackURL = redirectTo || `${appUrl}/dashboard`;
+      const callbackURL = `${appUrl}/auth/callback${isSignup ? '?signup=true' : ''}`;
       
       console.log(`Starting Google OAuth ${isSignup ? 'signup' : 'login'} with redirect to:`, callbackURL);
       
@@ -220,8 +226,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           redirectTo: callbackURL,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-            ...(isSignup && { signup: 'true' })
+            prompt: 'consent'
           }
         }
       });
