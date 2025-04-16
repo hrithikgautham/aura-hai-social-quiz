@@ -17,7 +17,8 @@ export default function QuizAnalytics() {
   const { quizId } = useParams<{ quizId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [quizName, setQuizName] = useState('');
   const [responses, setResponses] = useState<ResponseData[]>([]);
