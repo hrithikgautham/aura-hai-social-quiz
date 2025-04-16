@@ -356,10 +356,13 @@ export default function QuizAnalytics() {
                                     outerRadius={80}
                                     dataKey="count"
                                     nameKey="name"
-                                    label={({ name, percent }) => {
-                                      if (!percent) return null;
-                                      const percentValue = typeof percent === 'number' ? percent : Number(percent);
-                                      return percentValue > 0 ? `${Math.round(percentValue * 100)}%` : null;
+                                    label={(labelProps) => {
+                                      // Fix: Check if percentValue exists and is > 0 before rendering label
+                                      if (!labelProps || !labelProps.value) return null;
+                                      // Calculate percentage manually if needed
+                                      const total = chartData[question.id].reduce((sum, entry) => sum + entry.count, 0);
+                                      const percentage = total > 0 ? (labelProps.value / total) * 100 : 0;
+                                      return percentage > 0 ? `${Math.round(percentage)}%` : null;
                                     }}
                                   >
                                     {chartData[question.id].map((entry, idx) => (
@@ -372,9 +375,11 @@ export default function QuizAnalytics() {
                                   <Tooltip 
                                     content={({ active, payload }) => {
                                       if (active && payload && payload.length) {
+                                        const total = chartData[question.id].reduce((sum, entry) => sum + entry.count, 0);
+                                        const percentage = total > 0 ? (payload[0].value / total) * 100 : 0;
                                         return (
                                           <div className="bg-white p-2 border rounded shadow text-sm">
-                                            <p>{`${payload[0].name}: ${payload[0].value} responses`}</p>
+                                            <p>{`${payload[0].name}: ${payload[0].value} responses (${Math.round(percentage)}%)`}</p>
                                           </div>
                                         );
                                       }
