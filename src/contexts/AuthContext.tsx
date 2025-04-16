@@ -248,11 +248,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const tokenParts = token.split('.');
       if (tokenParts.length === 3) {
         try {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          const email = payload.email as string;
+          interface GoogleJWTPayload {
+            email?: string;
+            name?: string;
+            picture?: string;
+            [key: string]: any; // Allow for other properties
+          }
           
-          if (email) {
-            const userExists = await checkIfUserExists(email);
+          const payload = JSON.parse(atob(tokenParts[1])) as GoogleJWTPayload;
+          
+          if (payload.email) {
+            const userExists = await checkIfUserExists(payload.email);
             
             if (isSignup && userExists) {
               return { 
