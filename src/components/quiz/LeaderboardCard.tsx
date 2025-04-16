@@ -1,3 +1,4 @@
+
 import { 
   Table, 
   TableBody, 
@@ -12,6 +13,7 @@ import { Medal, Trophy } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from '@/hooks/use-toast';
 
 interface LeaderboardCardProps {
   responses: ResponseData[];
@@ -26,33 +28,90 @@ interface UserData {
 export function LeaderboardCard({ responses }: LeaderboardCardProps) {
   const [usersData, setUsersData] = useState<Record<string, UserData>>({});
   const [creatorData, setCreatorData] = useState<{ id: string; username: string; avatar_url?: string } | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     const fetchUsers = async () => {
-      const userIds = responses.map(r => r.respondent_id);
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, username, avatar_url')
-        .in('id', userIds);
+      try {
+        // Get all unique user IDs from responses
+        const userIds = responses.map(r => r.respondent_id);
+        
+        if (userIds.length === 0) return;
 
-      if (error) {
-        console.error('Error fetching users:', error);
-        return;
+        // Fetch user data for all respondents
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, username, avatar_url')
+          .in('id', userIds);
+
+        if (error) {
+          console.error('Error fetching users:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load user data for leaderboard.",
+          });
+          return;
+        }
+
+        // Create a map of user IDs to user data
+        const usersMap = data?.reduce((acc: Record<string, UserData>, user) => {
+          acc[user.id] = user;
+          return acc;
+        }, {}) || {};
+
+        setUsersData(usersMap);
+      } catch (err) {
+        console.error('Error in fetchUsers:', err);
       }
+    };
 
-      const usersMap = data.reduce((acc: Record<string, UserData>, user) => {
-        acc[user.id] = user;
-        return acc;
-      }, {});
-
-      setUsersData(usersMap);
+    const fetchCreator = async () => {
+      try {
+        if (responses.length === 0) return;
+        
+        // Get quiz ID from the first response
+        const quizId = responses[0].quiz_id;
+        
+        // Fetch quiz data to get creator ID
+        const { data: quizData, error: quizError } = await supabase
+          .from('quizzes')
+          .select('creator_id')
+          .eq('id', quizId)
+          .single();
+        
+        if (quizError) {
+          console.error('Error fetching quiz creator:', quizError);
+          return;
+        }
+        
+        if (quizData && quizData.creator_id) {
+          // Fetch creator user data
+          const { data: creatorUserData, error: creatorError } = await supabase
+            .from('users')
+            .select('id, username, avatar_url')
+            .eq('id', quizData.creator_id)
+            .single();
+          
+          if (creatorError) {
+            console.error('Error fetching creator user data:', creatorError);
+            return;
+          }
+          
+          setCreatorData(creatorUserData);
+        }
+      } catch (err) {
+        console.error('Error in fetchCreator:', err);
+      }
     };
 
     if (responses.length > 0) {
       fetchUsers();
+      fetchCreator();
     }
-  }, [responses]);
+  }, [responses, toast]);
 
+  // Sort responses by aura points in descending order
   const sortedResponses = [...responses]
     .sort((a, b) => b.aura_points - a.aura_points);
 
@@ -108,7 +167,30 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
               )}
               {sortedResponses.map((response, index) => {
                 const user = usersData[response.respondent_id];
-                if (!user) return null;
+                
+                // Render placeholder if user data isn't loaded yet
+                if (!user) {
+                  return (
+                    <TableRow key={response.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {getMedalIcon(index)}
+                          {index + 1}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback>?</AvatarFallback>
+                          </Avatar>
+                          Loading user...
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{response.aura_points}</TableCell>
+                    </TableRow>
+                  );
+                }
+                
                 return (
                   <TableRow key={response.id}>
                     <TableCell className="font-medium">
