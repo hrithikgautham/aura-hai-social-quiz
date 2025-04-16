@@ -23,35 +23,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuraCalculationInfo } from '@/components/quiz/AuraCalculationInfo';
-import { auraColors } from '@/utils/auraCalculations';
 
-// Define colors for the pie chart
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF007F'];
 
-interface ChartData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface ResponseData {
-  id: string;
-  respondent_id: string;
-  answers: Record<string, any>;
-  aura_points: number;
-  quiz_id: string;
-  created_at: string;
-}
-
-interface QuestionData {
-  id: string;
-  text: string;
-  type: string;
-  is_fixed: boolean;
-  options: string[];
-}
-
-const QuizAnalytics = () => {
+export default function QuizAnalytics() {
   const { quizId } = useParams<{ quizId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -63,9 +38,11 @@ const QuizAnalytics = () => {
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [auraDistribution, setAuraDistribution] = useState<ChartData[]>([]);
   const [chartData, setChartData] = useState<Record<string, { name: string; count: number }[]>>({});
-  
+  const [userResponse, setUserResponse] = useState<ResponseData | null>(null);
+  const [hasAccess, setHasAccess] = useState(false);
+
   useEffect(() => {
-    if (!quizId) return;
+    if (!quizId || !user) return;
     
     const fetchQuizData = async () => {
       setLoading(true);
@@ -199,7 +176,9 @@ const QuizAnalytics = () => {
     
     fetchQuizData();
   }, [quizId, user, navigate, toast]);
-  
+
+  if (!hasAccess) return null;
+
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-6xl mx-auto">
@@ -219,6 +198,21 @@ const QuizAnalytics = () => {
           </div>
         ) : (
           <div className="space-y-8">
+            {userResponse && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Responses</CardTitle>
+                  <CardDescription>Here are your answers to this quiz</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <UserAnswerCard
+                    response={userResponse}
+                    questions={questions}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>Quiz Summary</CardTitle>
@@ -374,6 +368,4 @@ const QuizAnalytics = () => {
       </div>
     </div>
   );
-};
-
-export default QuizAnalytics;
+}

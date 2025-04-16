@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,7 +26,6 @@ const Dashboard = () => {
     const fetchQuizzes = async () => {
       setLoading(true);
       try {
-        // Fetch quizzes created by the user
         const { data: createdData, error: createdError } = await supabase
           .from('quizzes')
           .select('*')
@@ -36,7 +34,6 @@ const Dashboard = () => {
         if (createdError) throw createdError;
         setCreatedQuizzes(createdData || []);
 
-        // Fetch quizzes taken by the user (where the user has submitted a response)
         const { data: takenData, error: takenError } = await supabase
           .from('responses')
           .select('*, quizzes(*)')
@@ -45,11 +42,9 @@ const Dashboard = () => {
 
         if (takenError) throw takenError;
 
-        // Extract the quiz objects from the responses
         const takenQuizList = takenData ? takenData.map(response => response.quizzes) : [];
         setTakenQuizzes(takenQuizList || []);
         
-        // Find in-progress quizzes (quizzes where not all required questions have been added)
         if (createdData && createdData.length > 0) {
           const inProgressQuizIds = [];
           
@@ -59,13 +54,11 @@ const Dashboard = () => {
               .select('*', { count: 'exact', head: true })
               .eq('quiz_id', quiz.id);
               
-            // If the quiz has less than the required number of questions, it's in progress
             if (questionsCount < 7) {
               inProgressQuizIds.push(quiz.id);
             }
           }
           
-          // Filter the created quizzes to find those in progress
           const inProgress = createdData.filter(quiz => inProgressQuizIds.includes(quiz.id));
           setInProgressQuizzes(inProgress);
         }
@@ -106,6 +99,13 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Your Aura Dashboard</h1>
           <div className="flex gap-4">
+            <Button
+              onClick={() => navigate('/profile/edit')}
+              variant="outline"
+              className="hover:bg-[#00DDEB]/10"
+            >
+              Edit Profile
+            </Button>
             {inProgressQuizzes.length > 0 && (
               <Button
                 onClick={() => navigate('/quiz/create')}
