@@ -60,7 +60,6 @@ const QuizTake = () => {
             .single();
 
           if (!responseError && responseData) {
-            setExistingResponse(responseData);
             setAuraPoints(responseData.aura_points);
             
             if (responseData.aura_points >= 75000) {
