@@ -1,15 +1,104 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
   const { loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Google One Tap setup
+  useEffect(() => {
+    // Only initialize Google One Tap on the login/signup page
+    // and not when the user is already in a login process
+    if (isLoggingIn) return;
+    
+    // Load the Google Identity Services script
+    const loadGoogleScript = () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+      
+      script.onload = initializeOneTap;
+    };
+
+    const initializeOneTap = () => {
+      if (window.google && !document.getElementById('google-one-tap-container')) {
+        // Create container for One Tap
+        const containerDiv = document.createElement('div');
+        containerDiv.id = 'google-one-tap-container';
+        document.body.appendChild(containerDiv);
+        
+        window.google.accounts.id.initialize({
+          client_id: '539258633496-l6fi7nsu457imj74156b9g7tu4d4iro1.apps.googleusercontent.com', // This should be your Google OAuth client ID
+          callback: handleGoogleOneTapResponse,
+          auto_select: true,
+          cancel_on_tap_outside: false
+        });
+        
+        window.google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            console.log('One Tap not displayed:', notification.getNotDisplayedReason() || notification.getSkippedReason());
+          }
+        });
+      }
+    };
+    
+    loadGoogleScript();
+    
+    return () => {
+      // Clean up
+      const container = document.getElementById('google-one-tap-container');
+      if (container) {
+        document.body.removeChild(container);
+      }
+    };
+  }, [isLoggingIn]);
+
+  // Handle Google One Tap response
+  const handleGoogleOneTapResponse = async (response: any) => {
+    if (response.credential) {
+      setIsLoggingIn(true);
+      
+      try {
+        // Authenticate with Supabase using the ID token
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: response.credential,
+        });
+
+        if (error) {
+          console.error("Google One Tap error:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not log in with Google. Please try again.",
+          });
+        } else {
+          toast({
+            title: "Login successful!",
+            description: "Welcome to Aura Hai!",
+          });
+        }
+      } catch (error) {
+        console.error("Google One Tap auth error:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not log in with Google. Please try again.",
+        });
+      } finally {
+        setIsLoggingIn(false);
+      }
+    }
+  };
 
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;

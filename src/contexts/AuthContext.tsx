@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +19,7 @@ type AuthContextType = {
   loginWithGoogle: (redirectTo?: string) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
+  signInWithIdToken: (token: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -211,6 +213,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw error;
     }
   };
+  
+  const signInWithIdToken = async (token: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token,
+      });
+      
+      if (error) throw error;
+      
+      console.log("Google ID token authentication successful:", data);
+      
+    } catch (error) {
+      console.error('Error signing in with ID token:', error);
+      throw error;
+    }
+  };
 
   const logout = async () => {
     try {
@@ -267,7 +286,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       login, 
       signup, 
       logout, 
-      loginWithGoogle, 
+      loginWithGoogle,
+      signInWithIdToken,
       updateUsername, 
       checkUsernameExists 
     }}>
