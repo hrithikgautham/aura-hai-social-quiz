@@ -142,7 +142,7 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
       setIsLoggingIn(true);
       
       const appUrl = window.location.origin;
-      const redirectURL = `${appUrl}/auth/v1/callback`;
+      const redirectURL = `${appUrl}/dashboard`;
       
       console.log("Initiating Google login with redirect to:", redirectURL);
       

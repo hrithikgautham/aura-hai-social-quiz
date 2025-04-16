@@ -20,7 +20,6 @@ import PageLayout from "./components/layout/PageLayout";
 import { useAuth } from "./contexts/AuthContext";
 import { useEffect, useRef } from "react";
 import { supabase } from "./integrations/supabase/client";
-import AuthCallback from "./components/auth/AuthCallback";
 
 // Handle auth redirects from OAuth providers
 const AuthRedirectHandler = () => {
@@ -34,7 +33,7 @@ const AuthRedirectHandler = () => {
       console.log("Detected OAuth redirect - handling authentication");
       redirectProcessed.current = true;
       
-      // Just clear the hash, let the AuthCallback component handle the redirect
+      // Just clear the hash, the AuthProvider will handle the session
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [location, navigate]);
@@ -60,7 +59,6 @@ const App = () => (
           <FloatingMenuWrapper />
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth/v1/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <PageLayout>

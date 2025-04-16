@@ -187,7 +187,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const loginWithGoogle = async (redirectTo?: string) => {
     try {
       const appUrl = window.location.origin;
-      const callbackURL = redirectTo || `${appUrl}/auth/v1/callback`;
+      const callbackURL = redirectTo || `${appUrl}/dashboard`;
       
       console.log("Starting Google OAuth with redirect to:", callbackURL);
       
