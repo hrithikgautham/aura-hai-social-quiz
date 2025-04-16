@@ -1,26 +1,20 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from 'react-router-dom';
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LoginFormProps {
   isSignup?: boolean;
 }
 
 export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
-  const [username, setUsername] = useState('');
-  const [isChecking, setIsChecking] = useState(false);
-  const [exists, setExists] = useState<boolean | null>(null);
   const [quizCreator, setQuizCreator] = useState<string | null>(null);
-  const { loginWithGoogle, checkUsernameExists } = useAuth();
+  const { loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
@@ -53,57 +47,18 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
     }
   }, [location]);
 
-  useEffect(() => {
-    const checkUsername = async () => {
-      if (username.length < 1) {
-        setExists(null);
-        setErrorMessage(null);
-        return;
-      }
-
-      const usernameRegex = /^[a-zA-Z0-9_]+$/;
-      if (!usernameRegex.test(username)) {
-        setErrorMessage("Username can only contain letters, numbers, and underscores");
-        return;
-      }
-
-      setIsChecking(true);
-      try {
-        const userExists = await checkUsernameExists(username);
-        setExists(userExists);
-        
-        setErrorMessage(null);
-        
-        if (isSignup && userExists) {
-          setErrorMessage("Username already exists. Please choose another one.");
-        }
-      } catch (error) {
-        console.error('Error checking username:', error);
-      } finally {
-        setIsChecking(false);
-      }
-    };
-
-    const timeoutId = setTimeout(checkUsername, 300);
-    return () => clearTimeout(timeoutId);
-  }, [username, checkUsernameExists, isSignup]);
-
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;
     
     try {
       setIsLoggingIn(true);
       
-      if (isSignup) {
-        localStorage.setItem('pendingUsername', username);
-      }
-      
       const appUrl = window.location.origin;
       const redirectURL = `${appUrl}/auth/v1/callback`;
       
       console.log("Initiating Google login with redirect to:", redirectURL);
       
-      await loginWithGoogle(isSignup ? username : undefined, redirectURL);
+      await loginWithGoogle(redirectURL);
       
       toast({
         title: isSignup ? "Creating your account..." : "Logging you in...",
@@ -119,12 +74,6 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
     }
   };
 
-  const isGoogleButtonDisabled = 
-    username.length === 0 || 
-    isChecking || 
-    (isSignup ? exists === true : exists !== true) || 
-    !!errorMessage;
-
   return (
     <form className="space-y-6 w-full max-w-sm">
       {quizCreator && (
@@ -134,66 +83,9 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
         </div>
       )}
       
-      <div className="space-y-2">
-        <div className="relative">
-          <Input
-            type="text"
-            placeholder="Enter your username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className={`pr-10 border-2 focus:animate-bounce ${
-              username && !isChecking
-                ? exists
-                  ? isSignup ? 'border-red-500' : 'border-green-500'
-                  : isSignup ? 'border-green-500' : 'border-red-500'
-                : 'border-[#FF007F]'
-            } font-bold`}
-            pattern="[a-zA-Z0-9_]+"
-            title="Only letters, numbers, and underscores allowed"
-          />
-          {username && !isChecking && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              {isSignup ? (
-                exists ? (
-                  <X className="w-5 h-5 text-red-500" />
-                ) : (
-                  <Check className="w-5 h-5 text-green-500" />
-                )
-              ) : (
-                exists ? (
-                  <Check className="w-5 h-5 text-green-500" />
-                ) : (
-                  <X className="w-5 h-5 text-red-500" />
-                )
-              )}
-            </div>
-          )}
-        </div>
-        
-        {errorMessage && (
-          <Alert variant="destructive" className="py-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
-        )}
-        
-        {username && !isChecking && !errorMessage && (
-          <p className="text-sm text-gray-500">
-            {isSignup
-              ? exists
-                ? "Username already exists. Please choose another one."
-                : "Username is available for signup."
-              : exists
-                ? "Username found. You can login with Google."
-                : "Username not found. Please check your username or sign up."}
-          </p>
-        )}
-      </div>
-      
       <Button 
         type="button"
         onClick={handleGoogleLogin}
-        disabled={isGoogleButtonDisabled}
         className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 hover:scale-105 transition-transform"
       >
         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

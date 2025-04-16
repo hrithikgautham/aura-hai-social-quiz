@@ -15,7 +15,7 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: (signupUsername?: string, redirectTo?: string) => Promise<void>;
+  loginWithGoogle: (redirectTo?: string) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
 };
@@ -48,7 +48,6 @@ const PLACEHOLDER_IMAGES = [
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pendingSignupUsername, setPendingSignupUsername] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -66,8 +65,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (session?.user) {
           try {
-            const pendingUsername = localStorage.getItem('pendingUsername');
-            
             const randomAvatarUrl = `https://images.unsplash.com/photo-${
               PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
             }?w=150&h=150&fit=crop`;
@@ -82,50 +79,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               console.log("Existing user found:", existingUser);
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
-              setPendingSignupUsername(null);
-              localStorage.removeItem('pendingUsername');
             } else {
               console.log("No existing user found in the database");
               
-              if (pendingUsername) {
-                console.log("Creating new user with pending username:", pendingUsername);
+              // Generate a username from email
+              const emailUsername = session.user.email ? 
+                session.user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') : 
+                `user_${Math.floor(Math.random() * 10000)}`;
                 
-                const { data: newUser, error: insertError } = await supabase
-                  .from('users')
-                  .insert([{ 
-                    id: session.user.id,
-                    username: pendingUsername.toLowerCase(),
-                    avatar_url: session.user.user_metadata.avatar_url || 
-                               session.user.user_metadata.picture ||
-                               randomAvatarUrl
-                  }])
-                  .select()
-                  .single();
-                
-                if (newUser) {
-                  console.log("Successfully created new user:", newUser);
-                  setUser(newUser);
-                  localStorage.setItem('user', JSON.stringify(newUser));
-                  localStorage.removeItem('pendingUsername');
-                } else {
-                  console.error("Error creating new user:", insertError);
-                }
+              console.log("Creating new user with generated username:", emailUsername);
+              
+              const { data: newUser, error: insertError } = await supabase
+                .from('users')
+                .insert([{ 
+                  id: session.user.id,
+                  username: emailUsername.toLowerCase(),
+                  avatar_url: session.user.user_metadata.avatar_url || 
+                             session.user.user_metadata.picture ||
+                             randomAvatarUrl
+                }])
+                .select()
+                .single();
+              
+              if (newUser) {
+                console.log("Successfully created new user:", newUser);
+                setUser(newUser);
+                localStorage.setItem('user', JSON.stringify(newUser));
               } else {
-                setTimeout(async () => {
-                  const { data: newUser, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', session.user!.id)
-                    .single();
-                  
-                  if (newUser) {
-                    console.log("New user retrieved:", newUser);
-                    setUser(newUser);
-                    localStorage.setItem('user', JSON.stringify(newUser));
-                  } else {
-                    console.error("Error retrieving new user:", error);
-                  }
-                }, 1000);
+                console.error("Error creating new user:", insertError);
               }
             }
           } catch (error) {
@@ -137,8 +118,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("User signed out");
           setUser(null);
           localStorage.removeItem('user');
-          localStorage.removeItem('pendingUsername');
-          setPendingSignupUsername(null);
           setLoading(false);
         } else {
           setLoading(false);
@@ -203,13 +182,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = async (signupUsername?: string, redirectTo?: string) => {
+  const loginWithGoogle = async (redirectTo?: string) => {
     try {
-      if (signupUsername) {
-        setPendingSignupUsername(signupUsername.toLowerCase());
-        localStorage.setItem('pendingUsername', signupUsername.toLowerCase());
-      }
-      
       const appUrl = window.location.origin;
       const callbackURL = redirectTo || `${appUrl}/auth/v1/callback`;
       
