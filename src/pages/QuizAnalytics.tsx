@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -346,13 +347,18 @@ export default function QuizAnalytics() {
                                       />
                                     ))}
                                   </Pie>
-                                  <ChartTooltip 
-                                    content={(props) => (
-                                      <ChartTooltipContent 
-                                        {...props} 
-                                        formatter={(value) => [`${value} responses`, 'Responses']}
-                                      />
-                                    )} 
+                                  <Tooltip 
+                                    content={(props) => {
+                                      if (props.payload && props.payload.length > 0) {
+                                        const item = props.payload[0];
+                                        return (
+                                          <div className="bg-white p-2 border rounded shadow text-sm">
+                                            <p>{item.name}: {item.value} responses</p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
                                   />
                                   <Legend />
                                 </PieChart>
