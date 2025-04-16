@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X } from 'lucide-react';
+import { Check, X, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
   const [username, setUsername] = useState('');
@@ -12,16 +13,19 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
   const [exists, setExists] = useState<boolean | null>(null);
   const { loginWithGoogle, checkUsernameExists } = useAuth();
   const { toast } = useToast();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUsername = async () => {
       if (username.length < 1) {
         setExists(null);
+        setErrorMessage(null);
         return;
       }
 
       const usernameRegex = /^[a-zA-Z0-9_]+$/;
       if (!usernameRegex.test(username)) {
+        setErrorMessage("Username can only contain letters, numbers, and underscores");
         return;
       }
 
@@ -29,6 +33,7 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
       try {
         const userExists = await checkUsernameExists(username);
         setExists(userExists);
+        setErrorMessage(null);
       } catch (error) {
         console.error('Error checking username:', error);
       } finally {
@@ -54,8 +59,7 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
 
   // Determine if the button should be disabled
   // Login: Button should be disabled until username is found in the database
-  // Sign up: Button should be disabled until username is NOT found in the database
-  const isGoogleButtonDisabled = username.length === 0 || isChecking || !exists;
+  const isGoogleButtonDisabled = username.length === 0 || isChecking || !exists || !!errorMessage;
 
   return (
     <form className="space-y-6 w-full max-w-sm">
@@ -93,7 +97,15 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
             </div>
           )}
         </div>
-        {username && !isChecking && (
+        
+        {errorMessage && (
+          <Alert variant="destructive" className="py-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+        
+        {username && !isChecking && !errorMessage && (
           <p className="text-sm text-gray-500">
             {exists 
               ? "Username found. You can login with Google." 

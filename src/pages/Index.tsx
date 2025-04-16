@@ -30,7 +30,7 @@ const Index = () => {
         <h2 className="text-2xl font-bold text-center mb-6">
           {showSignup ? "Sign Up for Aura Hai!" : "Welcome to Aura Hai!"}
         </h2>
-        <LoginForm />
+        <LoginForm isSignup={showSignup} />
         <div className="mt-4 text-center">
           <button 
             onClick={() => setShowSignup(!showSignup)} 
