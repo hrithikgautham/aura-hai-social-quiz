@@ -184,7 +184,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_first_three_quizzes_response_count: {
+        Args: { creator_uuid: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

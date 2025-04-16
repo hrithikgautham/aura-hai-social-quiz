@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { QuizLimitModal } from '@/components/quiz/QuizLimitModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -83,6 +84,9 @@ const QuizCreate = () => {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [configuredCustomQuestions, setConfiguredCustomQuestions] = useState<string[]>([]);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [responseCount, setResponseCount] = useState(0);
+  const [quizCount, setQuizCount] = useState(0);
   
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -152,6 +156,47 @@ const QuizCreate = () => {
     
     fetchQuestions();
   }, [toast]);
+
+  useEffect(() => {
+    const fetchUserQuizData = async () => {
+      if (!user) return;
+      
+      try {
+        const { count: userQuizCount } = await supabase
+          .from('quizzes')
+          .select('*', { count: 'exact', head: true })
+          .eq('creator_id', user.id);
+          
+        setQuizCount(userQuizCount || 0);
+        
+        if (userQuizCount && userQuizCount >= 3) {
+          const { data: responseData } = await supabase
+            .rpc('get_first_three_quizzes_response_count', {
+              creator_uuid: user.id
+            });
+            
+          setResponseCount(responseData || 0);
+          
+          const unlockedSlots = Math.floor((responseData || 0) / 10);
+          if (userQuizCount >= 3 + unlockedSlots) {
+            setShowLimitModal(true);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching quiz data:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to check quiz limits. Please try again.",
+        });
+      }
+      setLoading(false);
+    };
+    
+    fetchUserQuizData();
+  }, [user, toast]);
 
   const isQuestionConfigured = (question: Question): boolean => {
     if (!question) return false;
@@ -849,6 +894,14 @@ const QuizCreate = () => {
           </CardFooter>
         </Card>
       </div>
+
+      <QuizLimitModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        responseCount={responseCount}
+        requiredResponses={10}
+        nextUnlockAt={Math.ceil((responseCount + 1) / 10) * 10}
+      />
     </div>
   );
 };

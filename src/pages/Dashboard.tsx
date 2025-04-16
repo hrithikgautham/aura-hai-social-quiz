@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +23,8 @@ const Dashboard = () => {
   const [takenQuizzes, setTakenQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [inProgressQuizzes, setInProgressQuizzes] = useState<any[]>([]);
+  const [responseCount, setResponseCount] = useState(0);
+  const [previousUnlockedSlots, setPreviousUnlockedSlots] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -70,6 +71,24 @@ const Dashboard = () => {
           const inProgress = createdData.filter(quiz => inProgressQuizIds.includes(quiz.id));
           setInProgressQuizzes(inProgress);
         }
+
+        if (createdData && createdData.length >= 3) {
+          const { data: responseData } = await supabase
+            .rpc('get_first_three_quizzes_response_count', {
+              creator_uuid: user.id
+            });
+            
+          setResponseCount(responseData || 0);
+          
+          const currentUnlockedSlots = Math.floor((responseData || 0) / 10);
+          if (currentUnlockedSlots > previousUnlockedSlots) {
+            toast({
+              title: "New Quiz Slot Unlocked! 🎉",
+              description: "You can now create another quiz!",
+            });
+            setPreviousUnlockedSlots(currentUnlockedSlots);
+          }
+        }
       } catch (error) {
         console.error('Error fetching quizzes:', error);
         toast({
@@ -83,7 +102,7 @@ const Dashboard = () => {
     };
 
     fetchQuizzes();
-  }, [user, navigate, toast]);
+  }, [user, navigate, toast, previousUnlockedSlots]);
 
   const handleCopyLink = (shareableLink: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/quiz/${shareableLink}`);
