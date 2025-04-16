@@ -526,48 +526,54 @@ const QuizCreate = () => {
                     </div>
 
                     {fixedQuestions[currentQuestionIndex].type === 'mcq' && (
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-500">
-                          Drag options to set their priority (1st is most like you, 4th is least)
-                        </p>
-                        <DndContext 
-                          sensors={sensors}
-                          collisionDetection={closestCenter}
-                          onDragEnd={(event) => handleDragEnd(event, fixedQuestions[currentQuestionIndex].id)}
-                          modifiers={[restrictToVerticalAxis]}
-                        >
-                          <SortableContext 
-                            items={answers[fixedQuestions[currentQuestionIndex].id] || []}
-                            strategy={verticalListSortingStrategy}
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-500">
+                            Drag options to set their priority (1st is most like you, 4th is least)
+                          </p>
+                          <DndContext 
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(event) => handleDragEnd(event, fixedQuestions[currentQuestionIndex].id)}
+                            modifiers={[restrictToVerticalAxis]}
                           >
-                            {answers[fixedQuestions[currentQuestionIndex].id]?.map((option: string, index: number) => (
-                              <SortableOption 
-                                key={option} 
-                                id={option} 
-                                option={option}
-                                index={index} 
-                              />
-                            ))}
-                          </SortableContext>
-                        </DndContext>
+                            <SortableContext 
+                              items={answers[fixedQuestions[currentQuestionIndex].id] || []}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {answers[fixedQuestions[currentQuestionIndex].id]?.map((option: string, index: number) => (
+                                <SortableOption 
+                                  key={option} 
+                                  id={option} 
+                                  option={option}
+                                  index={index} 
+                                />
+                              ))}
+                            </SortableContext>
+                          </DndContext>
+                        </div>
+                        <QuestionAuraInfo type="mcq" />
                       </div>
                     )}
 
                     {fixedQuestions[currentQuestionIndex].type === 'number' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="numberInput">Enter a positive number:</Label>
-                        <Input
-                          id="numberInput"
-                          type="number"
-                          min="1"
-                          placeholder="Enter a positive number"
-                          value={answers[fixedQuestions[currentQuestionIndex].id] || ''}
-                          onChange={e => handleNumberChange(
-                            fixedQuestions[currentQuestionIndex].id, 
-                            e.target.value
-                          )}
-                          className="border-2 focus:border-[#FF007F]"
-                        />
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="numberInput">Enter a positive number:</Label>
+                          <Input
+                            id="numberInput"
+                            type="number"
+                            min="1"
+                            placeholder="Enter a positive number"
+                            value={answers[fixedQuestions[currentQuestionIndex].id] || ''}
+                            onChange={e => handleNumberChange(
+                              fixedQuestions[currentQuestionIndex].id, 
+                              e.target.value
+                            )}
+                            className="border-2 focus:border-[#FF007F]"
+                          />
+                        </div>
+                        <QuestionAuraInfo type="number" />
                       </div>
                     )}
 
@@ -612,28 +618,49 @@ const QuizCreate = () => {
             {currentStep === 'custom' && (
               <div className="space-y-4">
                 {selectedCustomQuestions.length < 3 && (
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-medium">Select Custom Questions</h3>
-                    {customQuestions.map((question, idx) => (
-                      <div key={question.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-white">
-                        <Checkbox
-                          id={`question-${idx}`}
-                          checked={selectedCustomQuestions.includes(question.id)}
-                          onCheckedChange={(checked) => handleCustomQuestionSelect(!!checked, question.id)}
-                          className="mt-1"
-                          disabled={!selectedCustomQuestions.includes(question.id) && selectedCustomQuestions.length >= 3}
-                        />
-                        <div className="space-y-1">
-                          <Label htmlFor={`question-${idx}`} className="font-medium">
-                            {question.text} <span className="text-xs text-gray-500">({question.type})</span>
-                          </Label>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-medium">Select Custom Questions</h3>
+                      {customQuestions.map((question, idx) => (
+                        <div key={question.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-white">
+                          <Checkbox
+                            id={`question-${idx}`}
+                            checked={selectedCustomQuestions.includes(question.id)}
+                            onCheckedChange={(checked) => handleCustomQuestionSelect(!!checked, question.id)}
+                            className="mt-1"
+                            disabled={!selectedCustomQuestions.includes(question.id) && selectedCustomQuestions.length >= 3}
+                          />
+                          <div className="space-y-1">
+                            <Label htmlFor={`question-${idx}`} className="font-medium">
+                              {question.text} <span className="text-xs text-gray-500">({question.type})</span>
+                            </Label>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                    {selectedCustomQuestions.length === 3 && (
+                      <Button
+                        onClick={() => {
+                          if (selectedCustomQuestions.length === 3) {
+                            setCustomQuestionIndex(0);
+                            setCurrentStep('custom');
+                          } else {
+                            toast({
+                              variant: "destructive",
+                              title: "Error",
+                              description: "Please select exactly 3 custom questions before proceeding.",
+                            });
+                          }
+                        }}
+                        className="w-full bg-[#FF007F] hover:bg-[#D6006C]"
+                      >
+                        Continue to Configure Questions
+                      </Button>
+                    )}
                   </div>
                 )}
 
-                {selectedCustomQuestions.length === 3 && (
+                {selectedCustomQuestions.length === 3 && customQuestionIndex >= 0 && (
                   <div className="space-y-6">
                     {(() => {
                       const selectedQuestions = customQuestions.filter(q => 
@@ -653,45 +680,51 @@ const QuizCreate = () => {
                           </div>
 
                           {currentQuestion.type === 'mcq' && (
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-500">
-                                Drag options to set their priority (1st is most like you, 4th is least)
-                              </p>
-                              <DndContext 
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={(event) => handleDragEnd(event, currentQuestion.id)}
-                                modifiers={[restrictToVerticalAxis]}
-                              >
-                                <SortableContext 
-                                  items={answers[currentQuestion.id] || []}
-                                  strategy={verticalListSortingStrategy}
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <p className="text-sm text-gray-500">
+                                  Drag options to set their priority (1st is most like you, 4th is least)
+                                </p>
+                                <DndContext 
+                                  sensors={sensors}
+                                  collisionDetection={closestCenter}
+                                  onDragEnd={(event) => handleDragEnd(event, currentQuestion.id)}
+                                  modifiers={[restrictToVerticalAxis]}
                                 >
-                                  {answers[currentQuestion.id]?.map((option: string, index: number) => (
-                                    <SortableOption 
-                                      key={option} 
-                                      id={option} 
-                                      option={option}
-                                      index={index} 
-                                    />
-                                  ))}
-                                </SortableContext>
-                              </DndContext>
+                                  <SortableContext 
+                                    items={answers[currentQuestion.id] || []}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    {answers[currentQuestion.id]?.map((option: string, index: number) => (
+                                      <SortableOption 
+                                        key={option} 
+                                        id={option} 
+                                        option={option}
+                                        index={index} 
+                                      />
+                                    ))}
+                                  </SortableContext>
+                                </DndContext>
+                              </div>
+                              <QuestionAuraInfo type="mcq" />
                             </div>
                           )}
 
                           {currentQuestion.type === 'number' && (
-                            <div className="space-y-2">
-                              <Label htmlFor={`number-${currentQuestion.id}`}>Enter a positive number:</Label>
-                              <Input
-                                id={`number-${currentQuestion.id}`}
-                                type="number"
-                                min="1"
-                                placeholder="Enter a positive number"
-                                value={answers[currentQuestion.id] || ''}
-                                onChange={e => handleNumberChange(currentQuestion.id, e.target.value)}
-                                className="border-2 focus:border-[#FF007F]"
-                              />
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`number-${currentQuestion.id}`}>Enter a positive number:</Label>
+                                <Input
+                                  id={`number-${currentQuestion.id}`}
+                                  type="number"
+                                  min="1"
+                                  placeholder="Enter a positive number"
+                                  value={answers[currentQuestion.id] || ''}
+                                  onChange={e => handleNumberChange(currentQuestion.id, e.target.value)}
+                                  className="border-2 focus:border-[#FF007F]"
+                                />
+                              </div>
+                              <QuestionAuraInfo type="number" />
                             </div>
                           )}
 

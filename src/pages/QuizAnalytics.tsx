@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -307,46 +306,29 @@ const QuizAnalytics = () => {
               </CardHeader>
               <CardContent className="p-4 h-[400px]">
                 {chartData[question.id] && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData[question.id]}
-                        cx="50%"
-                        cy="40%"
-                        labelLine={true}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="count"
-                        label={({ option, percentage }) => `${String(percentage)}%`}
-                      >
-                        {chartData[question.id].map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={({ payload }) => {
-                        if (payload && payload[0]) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-2 shadow rounded">
-                              <p className="font-medium">{data.option}</p>
-                              <p>{data.count} responses ({data.percentage}%)</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }} />
-                      <Legend 
-                        layout="vertical"
-                        verticalAlign="bottom"
-                        align="center"
-                        wrapperStyle={{
-                          paddingTop: "20px",
-                          width: "100%",
-                          fontSize: "12px"
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="space-y-4">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={chartData[question.id]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          innerRadius={60}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="count"
+                          label={({ name, value, percent }) => `${(percent * 100).toFixed(0)}%`}
+                        >
+                          {chartData[question.id].map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Legend layout="vertical" align="right" verticalAlign="middle" />
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 )}
                 {(!chartData[question.id] || chartData[question.id].length === 0) && (
                   <div className="flex items-center justify-center h-full text-gray-500">
