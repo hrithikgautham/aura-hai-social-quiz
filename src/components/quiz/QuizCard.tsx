@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Link2, Eye, MessageCircle } from 'lucide-react';
@@ -20,10 +19,11 @@ interface QuizCardProps {
   onViewAnalytics?: () => void;
   onView?: () => void;
   showCreator?: boolean;
+  showCopyLink?: boolean;
   actionButtons?: ReactNode;
 }
 
-export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionButtons }: QuizCardProps) => {
+export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, showCopyLink, actionButtons }: QuizCardProps) => {
   const { toast } = useToast();
   const responseCount = quiz.responses?.length || 0;
 
@@ -77,10 +77,10 @@ export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionBut
           </Button>
         )}
         
-        {!onView && !actionButtons && (
+        {showCopyLink && (
           <Button
-            variant="outline"
-            className="hover:bg-[#00DDEB]/10"
+            variant="secondary"
+            className="hover:bg-purple-100 hover:text-purple-700 transition-colors"
             onClick={handleCopyLink}
           >
             <Link2 className="h-4 w-4" />

@@ -6,14 +6,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { QuizCard } from '@/components/quiz/QuizCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Menu } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -138,22 +130,6 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Your Aura Dashboard</h1>
           <div className="flex gap-4 items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hover:bg-[#00DDEB]/10">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate('/profile/edit')}>
-                  Edit Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             {inProgressQuizzes.length > 0 && (
               <Button
                 onClick={() => navigate('/quiz/create')}
@@ -196,16 +172,7 @@ const Dashboard = () => {
                     key={quiz.id}
                     quiz={quiz}
                     onViewAnalytics={() => navigate(`/quiz/${quiz.id}/analytics`)}
-                    actionButtons={
-                      <Button
-                        onClick={() => handleCopyLink(quiz.shareable_link)}
-                        variant="secondary"
-                        className="w-full flex items-center justify-center gap-2"
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copy Link
-                      </Button>
-                    }
+                    showCopyLink
                   />
                 ))}
               </div>
@@ -225,6 +192,7 @@ const Dashboard = () => {
                     key={quiz.id}
                     quiz={quiz}
                     showCreator
+                    showCopyLink
                     onView={() => navigate(`/quiz/${quiz.id}/analytics`)}
                   />
                 ))}
