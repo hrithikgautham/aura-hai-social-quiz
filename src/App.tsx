@@ -25,32 +25,18 @@ import { supabase } from "./integrations/supabase/client";
 const AuthRedirectHandler = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   useEffect(() => {
     // Check if the URL contains an access_token (OAuth redirect)
     if (location.hash && location.hash.includes('access_token')) {
       console.log("Detected OAuth redirect - handling authentication");
       
-      // Extract any query parameters that might be in the hash
-      const hashParams = new URLSearchParams(location.hash.substring(1));
-      const pendingUsername = hashParams.get('pendingUsername');
-      const pendingAvatarUrl = hashParams.get('pendingAvatarUrl');
-      
-      if (pendingUsername) {
-        console.log("Found pendingUsername in URL:", pendingUsername);
-        localStorage.setItem('pendingUsername', pendingUsername);
-      }
-      
-      if (pendingAvatarUrl) {
-        console.log("Found pendingAvatarUrl in URL:", pendingAvatarUrl);
-        localStorage.setItem('pendingAvatarUrl', pendingAvatarUrl);
-      }
-      
-      // Redirect to dashboard after processing the hash
-      // This helps clean up the URL and ensures the session is handled properly
+      // Wait briefly for the auth state to be processed by Supabase
+      // This ensures the session is properly established before redirecting
       setTimeout(() => {
         navigate('/dashboard', { replace: true });
-      }, 500);
+      }, 1000);
     }
   }, [location, navigate]);
   

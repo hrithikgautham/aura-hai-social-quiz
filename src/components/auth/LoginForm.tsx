@@ -94,7 +94,19 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
 
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle(isSignup ? username : undefined, window.location.origin);
+      if (isSignup) {
+        // For signup, store the username in localStorage before redirecting
+        localStorage.setItem('pendingUsername', username);
+      }
+      
+      // Call the loginWithGoogle function
+      await loginWithGoogle(isSignup ? username : undefined);
+      
+      // Show a toast to indicate the process has started
+      toast({
+        title: isSignup ? "Creating your account..." : "Logging you in...",
+        description: "Please wait while we connect to Google.",
+      });
     } catch (error) {
       toast({
         variant: "destructive",

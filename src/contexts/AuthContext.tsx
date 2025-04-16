@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,7 +48,6 @@ const PLACEHOLDER_IMAGES = [
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [pendingSignupUsername, setPendingSignupUsername] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,11 +63,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
+        
         if (session?.user) {
           try {
             // First check if there's a pending username from localStorage (from Google OAuth flow)
             const pendingUsername = localStorage.getItem('pendingUsername');
-            const pendingAvatarUrl = localStorage.getItem('pendingAvatarUrl');
+            
+            // Generate a random avatar URL as fallback
+            const randomAvatarUrl = `https://images.unsplash.com/photo-${
+              PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+            }?w=150&h=150&fit=crop`;
             
             const { data: existingUser, error: fetchError } = await supabase
               .from('users')
@@ -82,11 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
               setPendingSignupUsername(null);
-              
-              // Clear the pending data since we're now logged in
               localStorage.removeItem('pendingUsername');
-              localStorage.removeItem('pendingAvatarUrl');
-              
             } else {
               console.log("No existing user found in the database");
               
@@ -99,12 +98,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   .insert([{ 
                     id: session.user.id,
                     username: pendingUsername.toLowerCase(),
-                    avatar_url: pendingAvatarUrl || 
-                               session.user.user_metadata.avatar_url || 
+                    avatar_url: session.user.user_metadata.avatar_url || 
                                session.user.user_metadata.picture ||
-                               `https://images.unsplash.com/photo-${
-                                 PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
-                               }?w=150&h=150&fit=crop`
+                               randomAvatarUrl
                   }])
                   .select()
                   .single();
@@ -113,15 +109,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   console.log("Successfully created new user:", newUser);
                   setUser(newUser);
                   localStorage.setItem('user', JSON.stringify(newUser));
-                  
-                  // Clear the pending data
                   localStorage.removeItem('pendingUsername');
-                  localStorage.removeItem('pendingAvatarUrl');
                 } else {
                   console.error("Error creating new user:", insertError);
                 }
               } else {
-                // Wait a bit to see if the database trigger creates the user
+                // Wait for the database trigger to potentially create the user
                 setTimeout(async () => {
                   const { data: newUser, error } = await supabase
                     .from('users')
@@ -149,11 +142,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(null);
           localStorage.removeItem('user');
           localStorage.removeItem('pendingUsername');
-          localStorage.removeItem('pendingAvatarUrl');
           setPendingSignupUsername(null);
           setLoading(false);
         } else {
-          // Just ensure loading is set to false in all cases
           setLoading(false);
         }
       }
@@ -220,42 +211,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (signupUsername) {
         setPendingSignupUsername(signupUsername.toLowerCase());
-        
-        // Store the username in localStorage temporarily
         localStorage.setItem('pendingUsername', signupUsername.toLowerCase());
-        
-        // Get a random placeholder avatar to use as fallback if Google doesn't provide one
-        const randomAvatarUrl = `https://images.unsplash.com/photo-${
-          PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
-        }?w=150&h=150&fit=crop`;
-        
-        // Store the avatar URL in localStorage too
-        localStorage.setItem('pendingAvatarUrl', randomAvatarUrl);
-        
-        await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectTo || `${window.location.origin}`,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
-              pendingUsername: signupUsername.toLowerCase(), // Pass the username as a query parameter
-              pendingAvatarUrl: randomAvatarUrl // Pass a fallback avatar URL as query parameter
-            }
-          }
-        });
-      } else {
-        await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectTo || `${window.location.origin}`,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent'
-            }
-          }
-        });
       }
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo || window.location.origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log("Google OAuth initiated:", data);
+      
     } catch (error) {
       console.error('Error logging in with Google:', error);
       throw error;
