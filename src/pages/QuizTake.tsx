@@ -70,64 +70,64 @@ const QuizTake = () => {
               }, 500);
             }
           }
-        }
 
-        const { data: questionData, error: questionError } = await supabase
-          .from('quiz_questions')
-          .select(`
-            id,
-            priority_order,
-            questions:question_id(id, text, type, options)
-          `)
-          .eq('quiz_id', quizData.id);
+          const { data: questionData, error: questionError } = await supabase
+            .from('quiz_questions')
+            .select(`
+              id,
+              priority_order,
+              questions:question_id(id, text, type, options)
+            `)
+            .eq('quiz_id', quizData.id);
 
-        if (questionError) throw questionError;
+          if (questionError) throw questionError;
 
-        if (questionData) {
-          const formattedQuestions = questionData.map(item => {
-            let parsedOptions;
-            if (item.questions.options) {
-              if (typeof item.questions.options === 'string') {
-                try {
-                  parsedOptions = JSON.parse(item.questions.options);
-                } catch (e) {
-                  parsedOptions = item.questions.options.split(',').map(opt => opt.trim());
-                  console.warn('Options were not in valid JSON format, falling back to comma-separated parsing', item.questions.options);
+          if (questionData) {
+            const formattedQuestions = questionData.map(item => {
+              let parsedOptions;
+              if (item.questions.options) {
+                if (typeof item.questions.options === 'string') {
+                  try {
+                    parsedOptions = JSON.parse(item.questions.options);
+                  } catch (e) {
+                    parsedOptions = item.questions.options.split(',').map(opt => opt.trim());
+                    console.warn('Options were not in valid JSON format, falling back to comma-separated parsing', item.questions.options);
+                  }
+                } else {
+                  parsedOptions = item.questions.options;
                 }
-              } else {
-                parsedOptions = item.questions.options;
               }
-            }
+              
+              let parsedPriorityOrder;
+              if (item.priority_order) {
+                if (typeof item.priority_order === 'string') {
+                  try {
+                    parsedPriorityOrder = JSON.parse(item.priority_order);
+                  } catch (e) {
+                    console.error('Failed to parse priority_order', e);
+                    parsedPriorityOrder = undefined;
+                  }
+                } else {
+                  parsedPriorityOrder = item.priority_order;
+                }
+              }
+
+              return {
+                id: item.id,
+                questionId: item.questions.id,
+                text: item.questions.text,
+                type: item.questions.type as 'mcq',
+                options: parsedOptions,
+                priority_order: parsedPriorityOrder,
+              };
+            });
             
-            let parsedPriorityOrder;
-            if (item.priority_order) {
-              if (typeof item.priority_order === 'string') {
-                try {
-                  parsedPriorityOrder = JSON.parse(item.priority_order);
-                } catch (e) {
-                  console.error('Failed to parse priority_order', e);
-                  parsedPriorityOrder = undefined;
-                }
-              } else {
-                parsedPriorityOrder = item.priority_order;
-              }
+            setQuestions(formattedQuestions);
+            
+            const storedAnswers = sessionStorage.getItem(`quiz_answers_${quizData.id}`);
+            if (storedAnswers) {
+              setAnswers(JSON.parse(storedAnswers));
             }
-
-            return {
-              id: item.id,
-              questionId: item.questions.id,
-              text: item.questions.text,
-              type: item.questions.type as 'mcq',
-              options: parsedOptions,
-              priority_order: parsedPriorityOrder,
-            };
-          });
-          
-          setQuestions(formattedQuestions);
-          
-          const storedAnswers = sessionStorage.getItem(`quiz_answers_${quizData.id}`);
-          if (storedAnswers) {
-            setAnswers(JSON.parse(storedAnswers));
           }
         }
       } catch (error) {
