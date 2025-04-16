@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
-import { LoginForm } from '@/components/auth/LoginForm';
+import { QuizLoginForm } from '@/components/auth/QuizLoginForm';
 import confetti from 'canvas-confetti';
 import { QuizWelcome } from '@/components/quiz/QuizWelcome';
 
@@ -34,6 +34,7 @@ const QuizTake = () => {
   const [auraPoints, setAuraPoints] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [quizCreator, setQuizCreator] = useState<string | null>(null);
 
   useEffect(() => {
     if (!quizId) return;
@@ -50,6 +51,7 @@ const QuizTake = () => {
         if (quizError) throw quizError;
         
         setQuiz(quizData);
+        setQuizCreator(quizData.users?.username || null);
 
         if (user) {
           const { data: responseData, error: responseError } = await supabase
@@ -261,7 +263,7 @@ const QuizTake = () => {
           <p className="text-gray-600 text-center mb-8">
             You need to be logged in to take this quiz and measure your aura.
           </p>
-          <LoginForm />
+          <QuizLoginForm quizCreator={quizCreator || undefined} />
         </div>
       </div>
     );
