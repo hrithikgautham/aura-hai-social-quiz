@@ -37,7 +37,7 @@ const Dashboard = () => {
 
         const { data: takenData, error: takenError } = await supabase
           .from('responses')
-          .select('*, quizzes(*, responses(*))')
+          .select('*, quizzes(*, responses(*), users(*))')
           .eq('respondent_id', user.id)
           .not('quizzes', 'is', null);
 
@@ -102,14 +102,6 @@ const Dashboard = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF007F]"></div>
-      </div>
-    );
-  }
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -123,6 +115,14 @@ const Dashboard = () => {
       });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF007F]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8">

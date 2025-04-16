@@ -1,72 +1,37 @@
 
-import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF007F'];
 
 interface QuestionChartProps {
-  chartData: { name: string; count: number; fill?: string }[];
+  chartData: { name: string; count: number }[];
   totalResponses: number;
 }
 
 export function QuestionChart({ chartData, totalResponses }: QuestionChartProps) {
-  const isMobile = useIsMobile();
-
-  if (!chartData || chartData.length === 0 || !chartData.some(item => item.count > 0)) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-gray-500 text-sm md:text-base">No responses yet</p>
-      </div>
-    );
-  }
-
-  const formattedData = chartData.map((item, index) => ({
+  const data = chartData.map(item => ({
     name: item.name,
-    value: item.count,
-    percentage: totalResponses > 0 ? Math.round((item.count / totalResponses) * 100) : 0,
-    fill: item.fill || COLORS[index % COLORS.length]
+    value: Math.round((item.count / totalResponses) * 100)
   }));
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
-          data={formattedData}
+          data={data}
           cx="50%"
           cy="50%"
-          outerRadius={isMobile ? 60 : 80}
-          dataKey="value"
-          nameKey="name"
-          label={({ name, percentage }) => `${percentage}%`}
           labelLine={false}
+          outerRadius={80}
+          fill="#8884d8"
+          dataKey="value"
+          label={({ name, value }) => `${name}: ${value}%`}
         >
-          {formattedData.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={entry.fill} 
-            />
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip 
-          formatter={(value, name) => {
-            const entry = formattedData.find(item => item.name === name);
-            return [`${entry?.percentage}% (${value} responses)`, name];
-          }}
-          contentStyle={{ 
-            fontSize: isMobile ? '12px' : '14px',
-            backgroundColor: 'white',
-            border: '1px solid #ccc'
-          }}
-        />
-        <Legend 
-          layout={isMobile ? "horizontal" : "vertical"}
-          align={isMobile ? "center" : "right"}
-          verticalAlign={isMobile ? "bottom" : "middle"}
-          wrapperStyle={{ 
-            fontSize: isMobile ? '12px' : '14px',
-            padding: isMobile ? '10px 0' : '0'
-          }}
-        />
+        <Legend />
       </PieChart>
     </ResponsiveContainer>
   );

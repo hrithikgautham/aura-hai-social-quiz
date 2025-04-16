@@ -9,6 +9,7 @@ import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { AnalyticsHeader } from '@/components/quiz/analytics/AnalyticsHeader';
 import { Skeleton } from '@/components/ui/skeleton';
+import { QuestionAnalysis } from '@/components/quiz/analytics/QuestionAnalysis';
 
 export default function QuizAnalytics() {
   const { quizId } = useParams<{ quizId: string }>();
@@ -20,6 +21,8 @@ export default function QuizAnalytics() {
   const [quizName, setQuizName] = useState('');
   const [responses, setResponses] = useState<ResponseData[]>([]);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
+  const [chartData, setChartData] = useState<Record<string, { name: string; count: number }[]>>({});
   
   useEffect(() => {
     if (!quizId || !user) return;
@@ -100,6 +103,28 @@ export default function QuizAnalytics() {
         
         setResponses(processedResponses);
         
+        // Process chart data
+        const newChartData: Record<string, { name: string; count: number }[]> = {};
+        
+        processedQuestions.forEach(question => {
+          const answerCounts: Record<string, number> = {};
+          
+          processedResponses.forEach(response => {
+            const answer = response.answers[question.id];
+            if (answer !== undefined) {
+              const answerText = question.options ? question.options[answer] : answer.toString();
+              answerCounts[answerText] = (answerCounts[answerText] || 0) + 1;
+            }
+          });
+          
+          newChartData[question.id] = Object.entries(answerCounts).map(([name, count]) => ({
+            name,
+            count
+          }));
+        });
+        
+        setChartData(newChartData);
+        
       } catch (error) {
         console.error('Error fetching quiz analytics:', error);
         toast({
@@ -129,6 +154,21 @@ export default function QuizAnalytics() {
         ) : (
           <div className="space-y-8">
             <LeaderboardCard responses={responses} />
+            
+            {questions.length > 0 && (
+              <QuestionAnalysis 
+                questions={questions}
+                selectedQuestionIndex={selectedQuestionIndex}
+                setSelectedQuestionIndex={setSelectedQuestionIndex}
+                chartData={chartData}
+                responses={responses}
+              />
+            )}
+            
+            <UserAnswerCard 
+              responses={responses.filter(r => r.respondent_id === user?.id)} 
+              questions={questions}
+            />
           </div>
         )}
       </div>
