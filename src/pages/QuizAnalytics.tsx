@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer, 
+  Legend, 
+  Tooltip 
+} from 'recharts';
+import { 
+  ChartContainer, 
+  ChartTooltip,
+  ChartTooltipContent
+} from '@/components/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuraCalculationInfo } from '@/components/quiz/AuraCalculationInfo';
@@ -30,7 +41,7 @@ export default function QuizAnalytics() {
   const [auraDistribution, setAuraDistribution] = useState<ChartData[]>([]);
   const [chartData, setChartData] = useState<Record<string, { name: string; count: number }[]>>({});
   const [userResponse, setUserResponse] = useState<ResponseData | null>(null);
-  const [hasAccess, setHasAccess] = useState(true); // Changed default to true to fix blank screen
+  const [hasAccess, setHasAccess] = useState(true);
 
   useEffect(() => {
     if (!quizId || !user) return;
@@ -47,7 +58,6 @@ export default function QuizAnalytics() {
         
         if (quizError) throw quizError;
         
-        // Check if user is the creator or allow viewing of analytics
         if (quizData.creator_id !== user?.id) {
           const { data: userResponse } = await supabase
             .from('responses')
@@ -107,7 +117,6 @@ export default function QuizAnalytics() {
         
         setResponses(processedResponses);
         
-        // Check if current user has responded to this quiz
         if (user) {
           const userResp = processedResponses.find(r => r.respondent_id === user.id);
           if (userResp) {
@@ -242,7 +251,16 @@ export default function QuizAnalytics() {
                   <div className="h-64">
                     <h3 className="font-medium mb-2 text-center">Aura Distribution</h3>
                     {auraDistribution.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ChartContainer
+                        config={{
+                          Red: { color: auraColors.red },
+                          Orange: { color: auraColors.orange },
+                          Yellow: { color: auraColors.yellow },
+                          Green: { color: auraColors.green },
+                          Blue: { color: auraColors.blue },
+                          Purple: { color: auraColors.purple }
+                        }}
+                      >
                         <PieChart>
                           <Pie
                             data={auraDistribution}
@@ -264,7 +282,7 @@ export default function QuizAnalytics() {
                           <Tooltip />
                           <Legend />
                         </PieChart>
-                      </ResponsiveContainer>
+                      </ChartContainer>
                     ) : (
                       <div className="flex items-center justify-center h-full">
                         <p className="text-gray-500">No data available</p>
@@ -275,7 +293,6 @@ export default function QuizAnalytics() {
               </CardContent>
             </Card>
             
-            {/* Add the Leaderboard component */}
             <LeaderboardCard responses={responses} />
             
             <Card>
@@ -299,8 +316,15 @@ export default function QuizAnalytics() {
                         <h3 className="font-medium mb-2">{question.text}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="h-64">
-                            {chartData[question.id] && (
-                              <ResponsiveContainer width="100%" height="100%">
+                            {chartData[question.id] && chartData[question.id].length > 0 ? (
+                              <ChartContainer
+                                config={
+                                  chartData[question.id].reduce((acc, item, idx) => {
+                                    acc[item.name] = { color: COLORS[idx % COLORS.length] };
+                                    return acc;
+                                  }, {})
+                                }
+                              >
                                 <PieChart>
                                   <Pie
                                     data={chartData[question.id]}
@@ -309,19 +333,34 @@ export default function QuizAnalytics() {
                                     outerRadius={80}
                                     fill="#8884d8"
                                     dataKey="count"
+                                    nameKey="name"
                                     label={({ name, percent }) => {
                                       const percentValue = typeof percent === 'number' ? percent : Number(percent);
                                       return `${Math.round(percentValue * 100)}%`;
                                     }}
                                   >
-                                    {chartData[question.id].map((_, index) => (
-                                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    {chartData[question.id].map((entry, idx) => (
+                                      <Cell 
+                                        key={`cell-${idx}`} 
+                                        fill={COLORS[idx % COLORS.length]} 
+                                      />
                                     ))}
                                   </Pie>
-                                  <Tooltip formatter={(value, name) => [`${value} responses`, name]} />
+                                  <ChartTooltip 
+                                    content={(props) => (
+                                      <ChartTooltipContent 
+                                        {...props} 
+                                        formatter={(value) => [`${value} responses`, 'Responses']}
+                                      />
+                                    )} 
+                                  />
                                   <Legend />
                                 </PieChart>
-                              </ResponsiveContainer>
+                              </ChartContainer>
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <p className="text-gray-500">No data available</p>
+                              </div>
                             )}
                           </div>
                           <div>
