@@ -15,9 +15,15 @@ interface QuestionFormProps {
     options: string[];
   }) => void;
   onCancel: () => void;
+  isReplacingDeactivated?: boolean;
 }
 
-export const QuestionForm = ({ initialData, onSubmit, onCancel }: QuestionFormProps) => {
+export const QuestionForm = ({ 
+  initialData, 
+  onSubmit, 
+  onCancel, 
+  isReplacingDeactivated = false 
+}: QuestionFormProps) => {
   const [text, setText] = useState(initialData?.text || '');
   const [options, setOptions] = useState<string[]>(initialData?.options || []);
   const [newOption, setNewOption] = useState('');
@@ -123,7 +129,9 @@ export const QuestionForm = ({ initialData, onSubmit, onCancel }: QuestionFormPr
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit}>Save Question</Button>
+        <Button onClick={handleSubmit}>
+          {isReplacingDeactivated ? "Replace Deactivated Question" : "Save Question"}
+        </Button>
       </div>
     </div>
   );

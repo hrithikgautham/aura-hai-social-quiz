@@ -59,6 +59,7 @@ const AdminPanel = () => {
   const [reactivationType, setReactivationType] = useState<'fixed' | 'custom'>('fixed');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [showAddPrompt, setShowAddPrompt] = useState(false);
+  const [replacingDeactivated, setReplacingDeactivated] = useState(false);
 
   useEffect(() => {
     fetchQuestions();
@@ -113,19 +114,25 @@ const AdminPanel = () => {
     setIsReactivateDialogOpen(true);
   };
 
-  const handleSubmitAdd = async (data: { text: string; options: string[] }) => {
+  const handleAddNewQuestion = () => {
+    // Check if we've reached the maximum allowed questions
     const maxQuestions = activeTab === 'fixed' ? 7 : 10;
     const activeCount = questions.filter(q => q.active).length;
-
+    
     if (activeCount >= maxQuestions) {
       toast({
         variant: "destructive",
         title: "Limit Reached",
-        description: `You can only have ${maxQuestions} active ${activeTab} questions.`,
+        description: `You already have ${maxQuestions} active ${activeTab} questions. Please deactivate one first before adding a new one.`,
       });
       return;
     }
+    
+    setIsAddDialogOpen(true);
+    setReplacingDeactivated(false);
+  };
 
+  const handleSubmitAdd = async (data: { text: string; options: string[] }) => {
     setLoading(true);
     try {
       const { data: insertData, error } = await supabase
@@ -210,15 +217,6 @@ const AdminPanel = () => {
   const handleConfirmDelete = async () => {
     if (!selectedQuestion) return;
 
-    const activeCount = questions.filter(q => q.active).length;
-    const minRequired = selectedQuestion.is_fixed ? 7 : 10;
-
-    if (activeCount <= minRequired) {
-      setIsDeleteDialogOpen(false);
-      setShowAddPrompt(true);
-      return;
-    }
-
     setLoading(true);
     try {
       const { error } = await supabase
@@ -233,19 +231,18 @@ const AdminPanel = () => {
         description: "Question has been deactivated.",
       });
 
+      // After deactivating, prompt to add a new question to maintain required count
       setIsDeleteDialogOpen(false);
+      setReplacingDeactivated(true);
+      setIsAddDialogOpen(true);
+      
       fetchQuestions();
-
-      // Show add prompt if we're at the minimum required questions
-      if (activeCount - 1 <= minRequired) {
-        setShowAddPrompt(true);
-      }
     } catch (error) {
-      console.error('Error deleting question:', error);
+      console.error('Error deactivating question:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete question.",
+        description: "Failed to deactivate question.",
       });
     } finally {
       setLoading(false);
@@ -370,7 +367,7 @@ const AdminPanel = () => {
               </Button>
               
               {!showDeactivated && (
-                <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Button onClick={handleAddNewQuestion}>
                   Add {activeTab === 'fixed' ? 'Fixed' : 'Custom'} Question
                 </Button>
               )}
@@ -450,20 +447,23 @@ const AdminPanel = () => {
       </div>
 
       {/* Add question dialog */}
-      <Dialog open={isAddDialogOpen || showAddPrompt} onOpenChange={(open) => {
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
         setIsAddDialogOpen(open);
-        if (!open) setShowAddPrompt(false);
+        if (!open) {
+          setShowAddPrompt(false);
+          setReplacingDeactivated(false);
+        }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {showAddPrompt 
-                ? `Add New ${activeTab === 'fixed' ? 'Fixed' : 'Custom'} Question`
+              {replacingDeactivated
+                ? `Replace Deactivated ${activeTab === 'fixed' ? 'Fixed' : 'Custom'} Question`
                 : `Add ${activeTab === 'fixed' ? 'Fixed' : 'Custom'} Question`}
             </DialogTitle>
             <DialogDescription>
-              {showAddPrompt 
-                ? `You need to maintain ${activeTab === 'fixed' ? '7' : '10'} active questions. Please add a new question.`
+              {replacingDeactivated
+                ? `You've deactivated a question. Please add a new one to maintain ${activeTab === 'fixed' ? '7' : '10'} active questions.`
                 : 'Create a new question for the quiz system.'}
             </DialogDescription>
           </DialogHeader>
@@ -473,7 +473,9 @@ const AdminPanel = () => {
             onCancel={() => {
               setIsAddDialogOpen(false);
               setShowAddPrompt(false);
+              setReplacingDeactivated(false);
             }}
+            isReplacingDeactivated={replacingDeactivated}
           />
         </DialogContent>
       </Dialog>
