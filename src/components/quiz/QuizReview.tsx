@@ -50,10 +50,6 @@ export function QuizReview({
           <h1 className="text-2xl font-bold">Review Quiz</h1>
           <p className="text-gray-500">Make sure everything is correct before creating your quiz</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">How points are calculated</span>
-          <AuraCalculationInfo />
-        </div>
       </div>
 
       <Card className="border-2 border-[#FF007F]/20">
@@ -146,6 +142,12 @@ export function QuizReview({
           </Accordion>
         </CardContent>
       </Card>
+
+      {/* Add aura calculation info at the bottom */}
+      <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-medium mb-4">How Aura Points Are Calculated</h3>
+        <AuraCalculationInfo />
+      </div>
 
       <div className="flex justify-between pt-4">
         <Button 

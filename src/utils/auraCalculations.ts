@@ -27,3 +27,13 @@ export const calculateMCQAuraPoints = (priorityOrder: string[] | any): number =>
   });
   return totalPoints;
 };
+
+// Add the auraColors export
+export const auraColors: Record<string, string> = {
+  'red': '#FF0000',
+  'orange': '#FFA500',
+  'yellow': '#FFFF00',
+  'green': '#00FF00',
+  'blue': '#0000FF',
+  'purple': '#800080'
+};

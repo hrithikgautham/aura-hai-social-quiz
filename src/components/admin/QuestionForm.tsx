@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,18 +16,36 @@ interface QuestionFormProps {
   }) => void;
   onCancel: () => void;
   isReplacingDeactivated?: boolean;
+  questionCount?: {
+    fixed: number;
+    custom: number;
+  };
+  isFixedQuestion?: boolean;
 }
 
 export const QuestionForm = ({ 
   initialData, 
   onSubmit, 
   onCancel, 
-  isReplacingDeactivated = false 
+  isReplacingDeactivated = false,
+  questionCount = { fixed: 0, custom: 0 },
+  isFixedQuestion = false
 }: QuestionFormProps) => {
   const [text, setText] = useState(initialData?.text || '');
   const [options, setOptions] = useState<string[]>(initialData?.options || []);
   const [newOption, setNewOption] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Check question limits
+  useEffect(() => {
+    if (isFixedQuestion && questionCount.fixed >= 7 && !initialData && !isReplacingDeactivated) {
+      setError('Maximum 7 fixed questions allowed. Please deactivate a question first.');
+    } else if (!isFixedQuestion && questionCount.custom >= 10 && !initialData && !isReplacingDeactivated) {
+      setError('Maximum 10 custom questions allowed. Please deactivate a question first.');
+    } else {
+      setError(null);
+    }
+  }, [isFixedQuestion, questionCount, initialData, isReplacingDeactivated]);
 
   const handleAddOption = () => {
     if (options.length >= 4) {
@@ -52,6 +70,15 @@ export const QuestionForm = ({
   };
 
   const handleSubmit = () => {
+    // Check for limits again before submitting
+    if (isFixedQuestion && questionCount.fixed >= 7 && !initialData && !isReplacingDeactivated) {
+      setError('Maximum 7 fixed questions allowed. Please deactivate a question first.');
+      return;
+    } else if (!isFixedQuestion && questionCount.custom >= 10 && !initialData && !isReplacingDeactivated) {
+      setError('Maximum 10 custom questions allowed. Please deactivate a question first.');
+      return;
+    }
+
     if (!text.trim()) {
       setError('Question text is required');
       return;
@@ -129,7 +156,11 @@ export const QuestionForm = ({
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit}>
+        <Button 
+          onClick={handleSubmit}
+          disabled={(isFixedQuestion && questionCount.fixed >= 7 && !initialData && !isReplacingDeactivated) || 
+                   (!isFixedQuestion && questionCount.custom >= 10 && !initialData && !isReplacingDeactivated)}
+        >
           {isReplacingDeactivated ? "Replace Deactivated Question" : "Save Question"}
         </Button>
       </div>

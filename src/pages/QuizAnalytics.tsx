@@ -124,7 +124,15 @@ const QuizAnalytics = () => {
         
         if (responseError) throw responseError;
         
-        setResponses(responseData || []);
+        // Process response data - ensure answers is a Record<string, any>
+        const processedResponses = (responseData || []).map(response => ({
+          ...response,
+          answers: typeof response.answers === 'string' 
+            ? JSON.parse(response.answers) 
+            : response.answers
+        })) as ResponseData[];
+        
+        setResponses(processedResponses);
         
         // Process aura distribution
         const auraPoints: Record<string, number> = {
@@ -136,7 +144,7 @@ const QuizAnalytics = () => {
           'Purple': 0
         };
         
-        responseData.forEach((response: ResponseData) => {
+        processedResponses.forEach((response: ResponseData) => {
           // If the aura points is between specific ranges, assign it to the corresponding aura color
           if (response.aura_points > 50) {
             auraPoints['Red']++;
@@ -158,7 +166,7 @@ const QuizAnalytics = () => {
           .map(([name, value], index) => ({
             name,
             value,
-            color: auraColors[name.toLowerCase()]
+            color: auraColors[name.toLowerCase()] || COLORS[index % COLORS.length]
           }));
         
         setAuraDistribution(auraChartData);
@@ -169,7 +177,7 @@ const QuizAnalytics = () => {
         processedQuestions.forEach(question => {
           const counts: Record<string, number> = {};
           
-          responseData.forEach((response: ResponseData) => {
+          processedResponses.forEach((response: ResponseData) => {
             const answer = response.answers[question.id];
             if (answer !== undefined) {
               if (!counts[answer]) counts[answer] = 0;
@@ -251,12 +259,12 @@ const QuizAnalytics = () => {
                             dataKey="value"
                             label={({ name, percent }) => {
                               // Ensure percent is a number before calculating
-                              const percentValue = Number(percent);
+                              const percentValue = typeof percent === 'number' ? percent : Number(percent);
                               return `${name} ${Math.round(percentValue * 100)}%`;
                             }}
                           >
-                            {COLORS.map((color, index) => (
-                              <Cell key={`cell-${index}`} fill={color} />
+                            {auraDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
                           <Tooltip />
@@ -306,7 +314,7 @@ const QuizAnalytics = () => {
                                     dataKey="count"
                                     label={({ name, percent }) => {
                                       // Ensure percent is a number before calculating
-                                      const percentValue = Number(percent);
+                                      const percentValue = typeof percent === 'number' ? percent : Number(percent);
                                       return `${Math.round(percentValue * 100)}%`;
                                     }}
                                   >
@@ -314,7 +322,8 @@ const QuizAnalytics = () => {
                                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                   </Pie>
-                                  <Tooltip />
+                                  <Tooltip formatter={(value, name) => [`${value} responses`, name]} />
+                                  <Legend />
                                 </PieChart>
                               </ResponsiveContainer>
                             )}
