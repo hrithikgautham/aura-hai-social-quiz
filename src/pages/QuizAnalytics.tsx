@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -318,7 +319,11 @@ const QuizAnalytics = () => {
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="count"
-                          label={({ name, value, percent }) => `${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) => {
+                            // Fix: Ensure percent is a number before multiplying
+                            const percentage = typeof percent === 'number' ? (percent * 100).toFixed(0) : '0';
+                            return `${percentage}%`;
+                          }}
                         >
                           {chartData[question.id].map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
