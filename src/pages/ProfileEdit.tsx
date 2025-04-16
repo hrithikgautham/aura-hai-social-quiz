@@ -10,7 +10,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
-import { Upload, Camera, Dice3 } from 'lucide-react';
+import { Upload, Camera, Dice3, Check, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const PLACEHOLDER_IMAGES = [
   'photo-1649972904349-6e44c42644a7',
@@ -36,16 +37,24 @@ const PLACEHOLDER_IMAGES = [
 ];
 
 export default function ProfileEdit() {
-  const { user, loading } = useAuth();
+  const { user, loading, updateUsername, checkUsernameExists } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [username, setUsername] = useState('');
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameExists, setUsernameExists] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
   
   useEffect(() => {
     if (user?.avatar_url) {
       setAvatarUrl(user.avatar_url);
+    }
+    if (user?.username) {
+      setUsername(user.username);
     }
   }, [user]);
 
@@ -152,6 +161,82 @@ export default function ProfileEdit() {
     }
   };
 
+  const handleUsernameCheck = async (newUsername: string) => {
+    // Skip if username is the same as current
+    if (newUsername === user?.username) {
+      setUsernameExists(false);
+      setUsernameError('');
+      return;
+    }
+
+    // Validate username format
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(newUsername)) {
+      setUsernameError('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+    
+    setIsCheckingUsername(true);
+    try {
+      const exists = await checkUsernameExists(newUsername);
+      setUsernameExists(exists);
+      setUsernameError(exists ? 'Username already taken' : '');
+    } catch (error) {
+      console.error('Error checking username:', error);
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUsername = e.target.value;
+    setUsername(newUsername);
+    
+    // Debounce username check
+    const timeoutId = setTimeout(() => {
+      if (newUsername) {
+        handleUsernameCheck(newUsername);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  };
+
+  const handleUsernameUpdate = async () => {
+    if (username === user?.username) {
+      setIsEditingUsername(false);
+      return;
+    }
+    
+    if (usernameExists || usernameError || !username) {
+      return;
+    }
+    
+    try {
+      const success = await updateUsername(username);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Username updated successfully!",
+        });
+        setIsEditingUsername(false);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update username.",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating username:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update username.",
+      });
+    }
+  };
+
   if (loading) {
     return <QuirkyLoading />;
   }
@@ -209,6 +294,83 @@ export default function ProfileEdit() {
                   <Dice3 className="w-4 h-4" />
                   Random Picture
                 </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-sm font-medium">
+                  Username
+                </Label>
+                
+                {isEditingUsername ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={handleUsernameChange}
+                        className={`pr-10 ${
+                          username && !isCheckingUsername
+                            ? usernameExists || usernameError 
+                              ? 'border-red-500' 
+                              : 'border-green-500'
+                            : ''
+                        }`}
+                        placeholder="Enter new username"
+                      />
+                      
+                      {username && !isCheckingUsername && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {usernameExists || usernameError ? (
+                            <X className="w-5 h-5 text-red-500" />
+                          ) : (
+                            <Check className="w-5 h-5 text-green-500" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {usernameError && (
+                      <p className="text-sm text-red-500">{usernameError}</p>
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleUsernameUpdate}
+                        disabled={usernameExists || !!usernameError || isCheckingUsername || !username || username === user?.username}
+                      >
+                        Save
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsEditingUsername(false);
+                          setUsername(user?.username || '');
+                          setUsernameError('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="username"
+                      value={user?.username || ''}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                    <Button 
+                      variant="outline"
+                      onClick={() => setIsEditingUsername(true)}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 

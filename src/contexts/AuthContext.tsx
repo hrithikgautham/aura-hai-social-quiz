@@ -1,11 +1,14 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
+import { Provider } from '@supabase/supabase-js';
 
 type User = {
   id: string;
   username: string;
   is_admin?: boolean;
   avatar_url?: string | null;
+  email?: string | null;
 };
 
 type AuthContextType = {
@@ -14,6 +17,9 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  updateUsername: (newUsername: string) => Promise<boolean>;
+  checkUsernameExists: (username: string) => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,7 +60,82 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Error parsing stored user:', error);
       }
     }
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          // User signed in with OAuth
+          try {
+            const { data: existingUser, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (existingUser) {
+              // User exists in our users table
+              setUser(existingUser);
+              localStorage.setItem('user', JSON.stringify(existingUser));
+            } else if (session.user.email) {
+              // Need to create a new user record
+              // Extract username from email
+              let proposedUsername = session.user.email.split('@')[0].toLowerCase();
+              
+              // Check if username exists
+              let usernameExists = true;
+              let counter = 0;
+              let finalUsername = proposedUsername;
+              
+              while (usernameExists && counter < 100) {
+                const { data, error } = await supabase
+                  .from('users')
+                  .select('username')
+                  .eq('username', finalUsername)
+                  .single();
+                
+                if (error || !data) {
+                  usernameExists = false;
+                } else {
+                  counter++;
+                  finalUsername = `${proposedUsername}${counter}`;
+                }
+              }
+              
+              // Generate avatar URL
+              const avatarUrl = `https://images.unsplash.com/${
+                PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+              }?w=150&h=150&fit=crop`;
+              
+              // Create new user record
+              const { data: newUser, error: createError } = await supabase
+                .from('users')
+                .insert([{
+                  id: session.user.id,
+                  username: finalUsername,
+                  avatar_url: avatarUrl
+                }])
+                .select()
+                .single();
+              
+              if (newUser) {
+                setUser(newUser);
+                localStorage.setItem('user', JSON.stringify(newUser));
+              } else {
+                console.error('Error creating user:', createError);
+              }
+            }
+          } catch (error) {
+            console.error('Error handling auth state change:', error);
+          }
+        }
+      }
+    );
+
     setLoading(false);
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (username: string) => {
@@ -100,13 +181,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error logging in with Google:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
-    setUser(null);
-    localStorage.removeItem('user');
+    try {
+      // Sign out from Supabase Auth if user was logged in with OAuth
+      await supabase.auth.signOut();
+      
+      // Clear local user state
+      setUser(null);
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  };
+
+  const updateUsername = async (newUsername: string) => {
+    try {
+      if (!user) throw new Error("User not logged in");
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ username: newUsername.toLowerCase() })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      // Update local user state
+      const updatedUser = { ...user, username: newUsername.toLowerCase() };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating username:', error);
+      return false;
+    }
+  };
+
+  const checkUsernameExists = async (username: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username.toLowerCase())
+        .single();
+      
+      return !!data;
+    } catch (error) {
+      return false; // Username doesn't exist if query fails
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      signup, 
+      logout, 
+      loginWithGoogle, 
+      updateUsername, 
+      checkUsernameExists 
+    }}>
       {children}
     </AuthContext.Provider>
   );
