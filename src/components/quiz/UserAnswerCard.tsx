@@ -32,6 +32,7 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
         <CardContent>
           <div className="space-y-3">
             {questions.map((question) => {
+              // Find the answer for this question in the response
               const answer = response.answers[question.id];
               
               return (

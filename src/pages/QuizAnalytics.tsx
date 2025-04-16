@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ResponseData, QuestionData, ChartData } from '@/types/quiz';
-import { auraColors } from '@/utils/auraCalculations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
@@ -102,6 +101,7 @@ export default function QuizAnalytics() {
         if (responseError) throw responseError;
         
         const processedResponses = (responseData || []).map(response => {
+          // Parse answers if they're a string
           const parsedAnswers = typeof response.answers === 'string' 
             ? JSON.parse(response.answers) 
             : response.answers;
@@ -117,15 +117,23 @@ export default function QuizAnalytics() {
         if (user) {
           const userResp = processedResponses.find(r => r.respondent_id === user.id);
           if (userResp) {
-            setUserResponse(userResp);
+            // Ensure user response has properly parsed answers
+            setUserResponse({
+              ...userResp,
+              answers: typeof userResp.answers === 'string' 
+                ? JSON.parse(userResp.answers) 
+                : userResp.answers
+            });
           }
         }
         
+        // Create chart data for each question
         const updatedChartData: Record<string, { name: string; count: number; fill?: string }[]> = {};
         
         processedQuestions.forEach(question => {
           const questionAnswers: Record<string, number> = {};
           
+          // Count answers for each question
           processedResponses.forEach(response => {
             const answer = response.answers[question.id];
             if (answer) {
