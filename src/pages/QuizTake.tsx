@@ -32,7 +32,6 @@ const QuizTake = () => {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
   const [auraPoints, setAuraPoints] = useState(0);
-  const [existingResponse, setExistingResponse] = useState<any>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
 
@@ -256,38 +255,14 @@ const QuizTake = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-        <div className="max-w-md mx-auto text-center">
-          <h1 className="text-3xl font-bold uppercase mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
-            Login to Take the Quiz
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+            Login Required
           </h1>
-          <p className="mb-6 text-gray-600">
-            {quiz?.users?.username} wants to measure your aura!
+          <p className="text-gray-600 text-center mb-8">
+            You need to be logged in to take this quiz and measure your aura.
           </p>
           <LoginForm />
-        </div>
-      </div>
-    );
-  }
-
-  if (existingResponse) {
-    return (
-      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-        <div className="max-w-lg mx-auto text-center">
-          <h1 className="text-3xl font-bold uppercase mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
-            Your Aura Results
-          </h1>
-          
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-xl font-bold mb-2">{quiz?.name}</h2>
-            <p className="text-gray-500 mb-6">Created by {quiz?.users?.username}</p>
-            
-            <Button
-              onClick={() => navigate(`/quiz/${quiz?.id}/analytics`)}
-              className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
-            >
-              View Results
-            </Button>
-          </div>
         </div>
       </div>
     );
