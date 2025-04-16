@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +22,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cn } from '@/lib/utils';
+import { AuraCalculationInfo } from "@/components/quiz/AuraCalculationInfo";
+import { calculateMCQAuraPoints, calculateNumberAuraPoints } from "@/utils/auraCalculations";
 
 type Question = {
   id: string;
@@ -152,6 +153,34 @@ const QuizCreate = () => {
     fetchQuestions();
   }, [toast]);
 
+  const isQuestionConfigured = (question: Question): boolean => {
+    if (!question) return false;
+
+    if (question.type === 'mcq') {
+      return Array.isArray(answers[question.id]) && 
+             answers[question.id].length === (question.options?.length || 0);
+    }
+    
+    if (question.type === 'number') {
+      const answer = answers[question.id];
+      return answer !== '' && !isNaN(Number(answer)) && Number(answer) > 0;
+    }
+    
+    return false;
+  };
+
+  const canProceedFromFixed = () => {
+    return fixedQuestions.every(q => isQuestionConfigured(q));
+  };
+
+  const canProceedFromCustom = () => {
+    if (selectedCustomQuestions.length !== 3) return false;
+    return selectedCustomQuestions.every(id => {
+      const question = customQuestions.find(q => q.id === id);
+      return question && isQuestionConfigured(question);
+    });
+  };
+
   const handleNextStep = () => {
     if (currentStep === 'name') {
       if (quizName.trim().length < 3) {
@@ -198,37 +227,6 @@ const QuizCreate = () => {
     }
   };
 
-  const canProceedFromFixed = () => {
-    return fixedQuestions.every(q => {
-      if (q.type === 'number') {
-        const answer = answers[q.id];
-        return answer !== '' && !isNaN(Number(answer)) && Number(answer) > 0;
-      }
-      if (q.type === 'mcq') {
-        return Array.isArray(answers[q.id]) && answers[q.id].length === (q.options?.length || 0);
-      }
-      return false;
-    });
-  };
-
-  const canProceedFromCustom = () => {
-    if (selectedCustomQuestions.length !== 3) return false;
-    
-    return selectedCustomQuestions.every(id => {
-      const question = customQuestions.find(q => q.id === id);
-      if (!question) return false;
-
-      if (question.type === 'number') {
-        const answer = answers[id];
-        return answer !== '' && !isNaN(Number(answer)) && Number(answer) > 0;
-      }
-      if (question.type === 'mcq') {
-        return Array.isArray(answers[id]) && answers[id].length === (question.options?.length || 0);
-      }
-      return false;
-    });
-  };
-
   const handlePrevStep = () => {
     if (currentStep === 'fixed') {
       setCurrentStep('name');
@@ -262,7 +260,6 @@ const QuizCreate = () => {
       if (selectedCustomQuestions.length < 3) {
         setSelectedCustomQuestions(prev => [...prev, id]);
         
-        // Initialize answers for the selected question
         const question = customQuestions.find(q => q.id === id);
         if (question) {
           setAnswers(prev => {
@@ -287,7 +284,6 @@ const QuizCreate = () => {
       setSelectedCustomQuestions(prev => prev.filter(qId => qId !== id));
       setConfiguredCustomQuestions(prev => prev.filter(qId => qId !== id));
       
-      // Remove answers for the deselected question
       setAnswers(prev => {
         const updated = { ...prev };
         delete updated[id];
@@ -309,7 +305,6 @@ const QuizCreate = () => {
     const selectedQuestions = customQuestions.filter(q => selectedCustomQuestions.includes(q.id));
     
     if (direction === 'next' && customQuestionIndex < selectedQuestions.length - 1) {
-      // Save current question as configured
       const currentQuestionId = selectedQuestions[customQuestionIndex].id;
       if (!configuredCustomQuestions.includes(currentQuestionId)) {
         setConfiguredCustomQuestions(prev => [...prev, currentQuestionId]);
@@ -425,11 +420,9 @@ const QuizCreate = () => {
       setConfiguredCustomQuestions(prev => [...prev, currentQuestionId]);
     }
     
-    // If all questions are configured, move to the review step
     if (selectedCustomQuestions.length === configuredCustomQuestions.length + 1) {
       setCurrentStep('review');
     } else {
-      // Find the next unconfigured question
       const nextUnconfiguredIndex = selectedQuestions.findIndex((q, idx) => 
         idx > customQuestionIndex && !configuredCustomQuestions.includes(q.id)
       );
@@ -437,7 +430,6 @@ const QuizCreate = () => {
       if (nextUnconfiguredIndex !== -1) {
         setCustomQuestionIndex(nextUnconfiguredIndex);
       } else {
-        // If no next unconfigured, find any unconfigured
         const anyUnconfiguredIndex = selectedQuestions.findIndex((q) => 
           !configuredCustomQuestions.includes(q.id)
         );
@@ -477,8 +469,13 @@ const QuizCreate = () => {
           <CardHeader>
             {currentStep === 'name' && (
               <>
-                <CardTitle>Name Your Quiz</CardTitle>
-                <CardDescription>Choose a catchy name for your aura quiz</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Name Your Quiz</CardTitle>
+                    <CardDescription>Choose a catchy name for your aura quiz</CardDescription>
+                  </div>
+                  <AuraCalculationInfo />
+                </div>
               </>
             )}
 
@@ -595,7 +592,7 @@ const QuizCreate = () => {
                           type="button"
                           onClick={() => navigateFixedQuestion('next')}
                           className="bg-[#00DDEB] hover:bg-[#00BBCC]"
-                          disabled={!isCustomQuestionConfigured(fixedQuestions[currentQuestionIndex].id)}
+                          disabled={!isQuestionConfigured(fixedQuestions[currentQuestionIndex])}
                         >
                           Next <ChevronRight size={16} className="ml-2" />
                         </Button>
@@ -620,7 +617,6 @@ const QuizCreate = () => {
 
             {currentStep === 'custom' && (
               <div className="space-y-4">
-                {/* Selection phase */}
                 {selectedCustomQuestions.length < 3 && (
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">Select Custom Questions</h3>
@@ -643,7 +639,6 @@ const QuizCreate = () => {
                   </div>
                 )}
 
-                {/* Configuration phase - after selecting 3 questions */}
                 {selectedCustomQuestions.length === 3 && (
                   <div className="space-y-6">
                     {(() => {
