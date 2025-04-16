@@ -13,7 +13,7 @@ export function QuestionChart({ chartData, totalResponses }: QuestionChartProps)
   if (!chartData || chartData.length === 0 || !chartData.some(item => item.count > 0)) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-gray-500">No data available</p>
+        <p className="text-gray-500 text-sm md:text-base">No data available</p>
       </div>
     );
   }
@@ -21,7 +21,7 @@ export function QuestionChart({ chartData, totalResponses }: QuestionChartProps)
   // Format data for the chart
   const formattedData = chartData.map((item, index) => ({
     name: item.name,
-    value: item.count, // PieChart expects 'value' property
+    value: item.count,
     fill: item.fill || COLORS[index % COLORS.length]
   }));
 
@@ -32,10 +32,14 @@ export function QuestionChart({ chartData, totalResponses }: QuestionChartProps)
           data={formattedData}
           cx="50%"
           cy="50%"
-          outerRadius={80}
+          outerRadius={window.innerWidth < 768 ? 60 : 80}
           dataKey="value"
           nameKey="name"
-          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+          label={({ name, percent }) => 
+            window.innerWidth < 768 
+              ? `${(percent * 100).toFixed(0)}%`
+              : `${name} ${(percent * 100).toFixed(0)}%`
+          }
         >
           {formattedData.map((entry, index) => (
             <Cell 
@@ -44,8 +48,16 @@ export function QuestionChart({ chartData, totalResponses }: QuestionChartProps)
             />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => [value, 'Responses']} />
-        <Legend />
+        <Tooltip 
+          formatter={(value) => [value, 'Responses']}
+          contentStyle={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}
+        />
+        <Legend 
+          wrapperStyle={{ 
+            fontSize: window.innerWidth < 768 ? '12px' : '14px',
+            marginTop: '10px'
+          }}
+        />
       </PieChart>
     </ResponsiveContainer>
   );

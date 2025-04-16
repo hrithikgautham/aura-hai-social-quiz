@@ -21,10 +21,10 @@ export function QuestionAnalysis({
   responses
 }: QuestionAnalysisProps) {
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Question Analysis</CardTitle>
-        <CardDescription>Distribution of responses per question</CardDescription>
+        <CardTitle className="text-xl md:text-2xl">Question Analysis</CardTitle>
+        <CardDescription className="text-sm md:text-base">Distribution of responses per question</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -45,16 +45,16 @@ export function QuestionAnalysis({
           </Select>
 
           {questions[selectedQuestionIndex] && (
-            <div className="p-4 bg-gray-50 rounded-md">
-              <h3 className="font-medium mb-2">{questions[selectedQuestionIndex].text}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="h-64">
+            <div className="p-2 md:p-4 bg-gray-50 rounded-md">
+              <h3 className="text-sm md:text-base font-medium mb-2 break-words">{questions[selectedQuestionIndex].text}</h3>
+              <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
+                <div className="h-48 md:h-64">
                   <QuestionChart 
                     chartData={chartData[questions[selectedQuestionIndex].id] || []}
                     totalResponses={responses.length}
                   />
                 </div>
-                <div>
+                <div className="mt-4 md:mt-0">
                   <QuestionBreakdown 
                     chartData={chartData[questions[selectedQuestionIndex].id] || []}
                     totalResponses={responses.length}
