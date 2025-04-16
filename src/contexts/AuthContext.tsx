@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,7 +15,7 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: (signupUsername?: string) => Promise<void>;
+  loginWithGoogle: (signupUsername?: string, redirectTo?: string) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
 };
@@ -50,7 +49,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Store a local reference to the signup username for Google OAuth flow
   const [pendingSignupUsername, setPendingSignupUsername] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +65,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         if (session?.user) {
-          // User signed in with OAuth
           try {
             const { data: existingUser, error: fetchError } = await supabase
               .from('users')
@@ -76,22 +73,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               .single();
 
             if (existingUser) {
-              // User exists in our users table
               console.log("Existing user found:", existingUser);
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
-              setPendingSignupUsername(null); // Clear any pending signup
+              setPendingSignupUsername(null);
             } else if (session.user.email) {
-              // Need to create a new user record
               console.log("Creating new user from session:", session.user);
               
-              // Use pending signup username if available, otherwise extract from email
               let finalUsername = pendingSignupUsername;
               
               if (!finalUsername) {
                 let proposedUsername = session.user.email.split('@')[0].toLowerCase();
                 
-                // Check if username exists
                 let usernameExists = true;
                 let counter = 0;
                 finalUsername = proposedUsername;
@@ -112,12 +105,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 }
               }
               
-              // Generate avatar URL
               const avatarUrl = `https://images.unsplash.com/${
                 PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
               }?w=150&h=150&fit=crop`;
               
-              // Create new user record
               const { data: newUser, error: createError } = await supabase
                 .from('users')
                 .insert([{
@@ -132,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.log("New user created:", newUser);
                 setUser(newUser);
                 localStorage.setItem('user', JSON.stringify(newUser));
-                setPendingSignupUsername(null); // Clear the pending username
+                setPendingSignupUsername(null);
               } else {
                 console.error('Error creating user:', createError);
               }
@@ -149,7 +140,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // Initial session check
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -207,18 +197,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = async (signupUsername?: string) => {
+  const loginWithGoogle = async (signupUsername?: string, redirectTo?: string) => {
     try {
       if (signupUsername) {
-        // If signupUsername is provided, we're in signup mode
-        // Store the username to use when the OAuth flow completes
         setPendingSignupUsername(signupUsername.toLowerCase());
       }
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: redirectTo || `${window.location.origin}/dashboard`
         }
       });
       
@@ -231,10 +219,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      // Sign out from Supabase Auth if user was logged in with OAuth
       await supabase.auth.signOut();
       
-      // Clear local user state
       setUser(null);
       localStorage.removeItem('user');
     } catch (error) {
@@ -254,7 +240,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
       
-      // Update local user state
       const updatedUser = { ...user, username: newUsername.toLowerCase() };
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -276,7 +261,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return !!data;
     } catch (error) {
-      return false; // Username doesn't exist if query fails
+      return false;
     }
   };
 

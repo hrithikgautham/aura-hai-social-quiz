@@ -48,7 +48,7 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
   const handleGoogleLogin = async () => {
     try {
       // For quiz takers, we're always in login mode, not signup
-      await loginWithGoogle();
+      await loginWithGoogle(undefined, window.location.origin);
     } catch (error) {
       toast({
         variant: "destructive",

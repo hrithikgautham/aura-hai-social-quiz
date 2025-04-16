@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -18,6 +18,23 @@ import ProfileEdit from "./pages/ProfileEdit";
 import { FloatingMenu } from "./components/layout/FloatingMenu";
 import PageLayout from "./components/layout/PageLayout";
 import { useAuth } from "./contexts/AuthContext";
+import { useEffect } from "react";
+import { supabase } from "./integrations/supabase/client";
+
+// Handle auth redirects from OAuth providers
+const AuthRedirectHandler = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Check if the URL contains an access_token (OAuth redirect)
+    if (location.hash && location.hash.includes('access_token')) {
+      // The supabase client will automatically handle setting the session
+      console.log("Detected OAuth redirect - handling authentication");
+    }
+  }, [location]);
+  
+  return null;
+};
 
 const FloatingMenuWrapper = () => {
   const { user } = useAuth();
@@ -33,6 +50,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AuthRedirectHandler />
           <FloatingMenuWrapper />
           <Routes>
             <Route path="/" element={<Index />} />
