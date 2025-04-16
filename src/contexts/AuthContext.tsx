@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for user in localStorage on initial load
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
@@ -55,9 +54,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signup = async (username: string) => {
     try {
+      const avatarUrl = `https://images.unsplash.com/photo-${[
+        '1488590528505-98d2b5aba04b',
+        '1518770660439-4636190af475',
+        '1461749280684-dccba630e2f6',
+        '1486312338219-ce68d2c6f44d',
+        '1581091226825-a6a2a5aee158'
+      ][Math.floor(Math.random() * 5)]}?w=150&h=150&fit=crop`;
+
       const { data: user, error } = await supabase
         .from('users')
-        .insert([{ username: username.toLowerCase() }])
+        .insert([{ 
+          username: username.toLowerCase(),
+          avatar_url: avatarUrl
+        }])
         .select()
         .single();
 
