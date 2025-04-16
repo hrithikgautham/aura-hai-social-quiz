@@ -8,6 +8,7 @@ import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { AnalyticsHeader } from '@/components/quiz/analytics/AnalyticsHeader';
 import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
+import PageLayout from '@/components/layout/PageLayout';
 
 export default function QuizAnalytics() {
   const { quizId } = useParams<{ quizId: string }>();
@@ -21,7 +22,10 @@ export default function QuizAnalytics() {
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   
   useEffect(() => {
-    if (!quizId || !user) return;
+    if (!quizId || !user || quizId === ':quizId') {
+      navigate('/dashboard');
+      return;
+    }
     
     const fetchQuizData = async () => {
       setLoading(true);
@@ -119,7 +123,7 @@ export default function QuizAnalytics() {
   }, [quizId, user, navigate, toast]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <PageLayout>
       <div className="max-w-6xl mx-auto">
         <AnalyticsHeader quizName={quizName} loading={loading} />
         
@@ -143,6 +147,6 @@ export default function QuizAnalytics() {
           </div>
         )}
       </div>
-    </div>
+    </PageLayout>
   );
 }

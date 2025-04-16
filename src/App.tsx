@@ -36,18 +36,24 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Dashboard />
+                <PageLayout>
+                  <Dashboard />
+                </PageLayout>
               </ProtectedRoute>
             } />
             <Route path="/quiz/create" element={
               <ProtectedRoute>
-                <QuizCreate />
+                <PageLayout isQuizCreate>
+                  <QuizCreate />
+                </PageLayout>
               </ProtectedRoute>
             } />
             <Route path="/quiz/:quizId" element={<QuizTake />} />
             <Route path="/quiz/:quizId/analytics" element={
               <ProtectedRoute>
-                <QuizAnalytics />
+                <PageLayout>
+                  <QuizAnalytics />
+                </PageLayout>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
