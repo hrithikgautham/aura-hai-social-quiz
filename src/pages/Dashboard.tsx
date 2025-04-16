@@ -208,7 +208,7 @@ const Dashboard = () => {
                     key={quiz.id}
                     quiz={quiz}
                     showCreator
-                    onView={() => navigate(`/quiz/${quiz.id}/results`)}
+                    onView={() => navigate(`/quiz/${quiz.id}/analytics`)}
                   />
                 ))}
               </div>
