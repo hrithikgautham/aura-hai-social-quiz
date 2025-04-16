@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -90,14 +89,49 @@ const QuizTake = () => {
 
         if (questionData) {
           // Format questions into a more usable structure
-          const formattedQuestions = questionData.map(item => ({
-            id: item.id,
-            questionId: item.questions.id,
-            text: item.questions.text,
-            type: item.questions.type as 'mcq',
-            options: item.questions.options ? JSON.parse(item.questions.options as string) : undefined,
-            priority_order: item.priority_order ? JSON.parse(item.priority_order as string) : undefined,
-          }));
+          const formattedQuestions = questionData.map(item => {
+            // Safely parse options
+            let parsedOptions;
+            if (item.questions.options) {
+              if (typeof item.questions.options === 'string') {
+                try {
+                  parsedOptions = JSON.parse(item.questions.options);
+                } catch (e) {
+                  // If options is a string but not valid JSON, it might be a comma-separated list
+                  // This is a fallback for potentially malformed data
+                  parsedOptions = item.questions.options.split(',').map(opt => opt.trim());
+                  console.warn('Options were not in valid JSON format, falling back to comma-separated parsing', item.questions.options);
+                }
+              } else {
+                // If options is already an object (array), use as is
+                parsedOptions = item.questions.options;
+              }
+            }
+            
+            // Safely parse priority_order
+            let parsedPriorityOrder;
+            if (item.priority_order) {
+              if (typeof item.priority_order === 'string') {
+                try {
+                  parsedPriorityOrder = JSON.parse(item.priority_order);
+                } catch (e) {
+                  console.error('Failed to parse priority_order', e);
+                  parsedPriorityOrder = undefined;
+                }
+              } else {
+                parsedPriorityOrder = item.priority_order;
+              }
+            }
+
+            return {
+              id: item.id,
+              questionId: item.questions.id,
+              text: item.questions.text,
+              type: item.questions.type as 'mcq',
+              options: parsedOptions,
+              priority_order: parsedPriorityOrder,
+            };
+          });
           
           setQuestions(formattedQuestions);
           

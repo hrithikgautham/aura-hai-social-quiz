@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,9 +29,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AlertCircle, Edit, Trash2 } from 'lucide-react';
+import { AlertCircle, Edit, Trash2, RefreshCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { QuestionForm } from '@/components/admin/QuestionForm';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 type Question = {
   id: string;
@@ -47,16 +50,19 @@ const AdminPanel = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'fixed' | 'custom'>('fixed');
+  const [showDeactivated, setShowDeactivated] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isReactivateDialogOpen, setIsReactivateDialogOpen] = useState(false);
+  const [reactivationType, setReactivationType] = useState<'fixed' | 'custom'>('fixed');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [showAddPrompt, setShowAddPrompt] = useState(false);
 
   useEffect(() => {
     fetchQuestions();
-  }, [activeTab]);
+  }, [activeTab, showDeactivated]);
   
   const fetchQuestions = async () => {
     setLoading(true);
@@ -66,7 +72,7 @@ const AdminPanel = () => {
         .from('questions')
         .select('*')
         .eq('is_fixed', activeTab === 'fixed')
-        .eq('active', true)
+        .eq('active', !showDeactivated) // Toggle between active and inactive questions
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -100,6 +106,11 @@ const AdminPanel = () => {
   const handleDelete = (question: Question) => {
     setSelectedQuestion(question);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleReactivate = (question: Question) => {
+    setSelectedQuestion(question);
+    setIsReactivateDialogOpen(true);
   };
 
   const handleSubmitAdd = async (data: { text: string; options: string[] }) => {
@@ -241,6 +252,69 @@ const AdminPanel = () => {
     }
   };
 
+  const handleConfirmReactivate = async () => {
+    if (!selectedQuestion) return;
+
+    // Check if we've reached the maximum allowed questions
+    const isFixed = reactivationType === 'fixed';
+    const maxQuestions = isFixed ? 7 : 10;
+    
+    // Get current active questions count of the target type
+    const { data: activeQuestions, error: countError } = await supabase
+      .from('questions')
+      .select('id')
+      .eq('is_fixed', isFixed)
+      .eq('active', true);
+      
+    if (countError) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to check active questions count.",
+      });
+      return;
+    }
+    
+    if (activeQuestions && activeQuestions.length >= maxQuestions) {
+      toast({
+        variant: "destructive",
+        title: "Limit Reached",
+        description: `You already have ${maxQuestions} active ${reactivationType} questions. You need to deactivate one first.`,
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('questions')
+        .update({ 
+          active: true,
+          is_fixed: isFixed
+        })
+        .eq('id', selectedQuestion.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Question has been reactivated.",
+      });
+
+      setIsReactivateDialogOpen(false);
+      fetchQuestions();
+    } catch (error) {
+      console.error('Error reactivating question:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to reactivate question.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Make sure only admin users can access this page
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -281,24 +355,37 @@ const AdminPanel = () => {
         <h1 className="text-3xl font-bold mb-6">Question Management</h1>
         
         <Tabs defaultValue="fixed" onValueChange={(value) => setActiveTab(value as 'fixed' | 'custom')}>
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center flex-wrap gap-2 mb-4">
             <TabsList>
               <TabsTrigger value="fixed">Fixed Questions ({questions.filter(q => q.is_fixed && q.active).length}/7)</TabsTrigger>
               <TabsTrigger value="custom">Custom Questions ({questions.filter(q => !q.is_fixed && q.active).length}/10)</TabsTrigger>
             </TabsList>
             
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              Add {activeTab === 'fixed' ? 'Fixed' : 'Custom'} Question
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeactivated(!showDeactivated)}
+              >
+                {showDeactivated ? "Show Active" : "Show Deactivated"}
+              </Button>
+              
+              {!showDeactivated && (
+                <Button onClick={() => setIsAddDialogOpen(true)}>
+                  Add {activeTab === 'fixed' ? 'Fixed' : 'Custom'} Question
+                </Button>
+              )}
+            </div>
           </div>
           
           <Card>
             <CardContent className="pt-6">
               <Table>
                 <TableCaption>
-                  {activeTab === 'fixed' 
-                    ? 'Fixed questions are asked to all quiz creators (7 required)' 
-                    : 'Custom questions are selected by quiz creators (10 required)'}
+                  {showDeactivated 
+                    ? 'Deactivated questions can be reactivated' 
+                    : activeTab === 'fixed' 
+                      ? 'Fixed questions are asked to all quiz creators (7 required)' 
+                      : 'Custom questions are selected by quiz creators (10 required)'}
                 </TableCaption>
                 <TableHeader>
                   <TableRow>
@@ -308,32 +395,53 @@ const AdminPanel = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {questions
-                    .filter(q => q.is_fixed === (activeTab === 'fixed') && q.active)
-                    .map((question) => (
-                      <TableRow key={question.id}>
-                        <TableCell className="font-medium">{question.text}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {question.options && question.options.map((option, idx) => (
-                              <span key={idx} className="bg-gray-100 px-2 py-1 rounded text-xs">
-                                {option}
-                              </span>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="icon" onClick={() => handleEdit(question)}>
-                              <Edit className="h-4 w-4" />
+                  {questions.map((question) => (
+                    <TableRow 
+                      key={question.id}
+                      className={showDeactivated ? "opacity-60" : ""}
+                    >
+                      <TableCell className="font-medium">
+                        {question.text}
+                        {showDeactivated && <span className="ml-2 text-xs text-red-500">(Deactivated)</span>}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {question.options && question.options.map((option, idx) => (
+                            <span key={idx} className="bg-gray-100 px-2 py-1 rounded text-xs">
+                              {option}
+                            </span>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          {showDeactivated ? (
+                            <Button variant="outline" size="icon" onClick={() => handleReactivate(question)}>
+                              <RefreshCcw className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => handleDelete(question)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          ) : (
+                            <>
+                              <Button variant="outline" size="icon" onClick={() => handleEdit(question)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="icon" onClick={() => handleDelete(question)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {questions.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                        {showDeactivated 
+                          ? "No deactivated questions found"
+                          : `No ${activeTab} questions found`}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -412,6 +520,57 @@ const AdminPanel = () => {
               disabled={loading}
             >
               {loading ? 'Deactivating...' : 'Deactivate Question'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reactivate confirmation dialog */}
+      <Dialog open={isReactivateDialogOpen} onOpenChange={setIsReactivateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCcw className="h-5 w-5 text-blue-500" />
+              Reactivate Question
+            </DialogTitle>
+            <DialogDescription>
+              Select where you want to reactivate this question.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="border rounded-md p-3 my-2 bg-gray-50">
+            {selectedQuestion?.text}
+          </div>
+
+          <div className="my-4">
+            <RadioGroup 
+              value={reactivationType}
+              onValueChange={(value) => setReactivationType(value as 'fixed' | 'custom')}
+              className="space-y-3"
+            >
+              <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                <RadioGroupItem id="fixed" value="fixed" />
+                <Label htmlFor="fixed" className="w-full cursor-pointer">
+                  Fixed Question Section (Asked to all users)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                <RadioGroupItem id="custom" value="custom" />
+                <Label htmlFor="custom" className="w-full cursor-pointer">
+                  Custom Question Section (Users select from these)
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReactivateDialogOpen(false)}>Cancel</Button>
+            <Button 
+              variant="default" 
+              onClick={handleConfirmReactivate}
+              disabled={loading}
+            >
+              {loading ? 'Reactivating...' : 'Reactivate Question'}
             </Button>
           </DialogFooter>
         </DialogContent>

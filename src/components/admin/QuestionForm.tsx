@@ -50,12 +50,10 @@ export const QuestionForm = ({ initialData, onSubmit, onCancel }: QuestionFormPr
       setError('Question text is required');
       return;
     }
-    if (options.length < 2) {
-      setError('Add at least 2 options');
-      return;
-    }
-    if (options.length > 4) {
-      setError('Maximum 4 options allowed');
+    
+    // Require exactly 4 options
+    if (options.length !== 4) {
+      setError('Exactly 4 options are required');
       return;
     }
 
@@ -77,7 +75,7 @@ export const QuestionForm = ({ initialData, onSubmit, onCancel }: QuestionFormPr
       </div>
 
       <div className="space-y-2">
-        <Label>Options (2-4 options required)</Label>
+        <Label>Options (Exactly 4 options required)</Label>
         <div className="flex gap-2">
           <Input
             value={newOption}
