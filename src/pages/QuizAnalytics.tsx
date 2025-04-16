@@ -15,15 +15,11 @@ import {
 } from '@/components/ui/table';
 import {
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
   PieChart,
   Pie,
   Cell,
+  Tooltip,
+  Legend,
 } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
@@ -160,14 +156,11 @@ const QuizAnalytics = () => {
         if (responseError2) throw responseError2;
         setResponses(responseData2 || []);
 
-        if (questionData && responseData2) {
-          const charts: Record<string, any[]> = {};
+        if (questionData) {
+          if (responseData2) {
+            const charts: Record<string, any[]> = {};
 
-          questionData.forEach(question => {
-            const questionId = question.id;
-            const questionType = question.questions.type;
-            
-            if (questionType === 'mcq') {
+            questionData.forEach(question => {
               let options;
               try {
                 options = typeof question.questions.options === 'string' 
@@ -177,76 +170,31 @@ const QuizAnalytics = () => {
                 console.error('Error parsing options:', error);
                 options = [];
               }
-              
-              if (!Array.isArray(options)) {
-                options = [];
-              }
-              
-              const optionCounts = options.reduce((acc: Record<string, number>, opt: string) => {
-                acc[opt] = 0;
-                return acc;
-              }, {});
-              
-              responseData2.forEach(response => {
-                const answer = response.answers[questionId];
-                if (answer && optionCounts.hasOwnProperty(answer)) {
-                  optionCounts[answer]++;
-                }
-              });
-              
-              charts[questionId] = Object.entries(optionCounts).map(([option, count]) => ({
-                option,
-                count,
-              }));
-            } 
-            else if (questionType === 'number') {
-              const values = responseData2
-                .map(response => {
-                  const answer = response.answers[questionId];
-                  return answer ? parseInt(answer.toString()) : null;
-                })
-                .filter(val => val !== null);
-              
-              if (values.length > 0) {
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const range = max - min;
-                const binCount = Math.min(5, range + 1);
-                const binSize = range / binCount || 1;
-                
-                const bins: Record<string, number> = {};
-                
-                for (let i = 0; i < binCount; i++) {
-                  const binMin = min + i * binSize;
-                  const binMax = min + (i + 1) * binSize;
-                  const binLabel = `${Math.floor(binMin)}-${Math.ceil(binMax)}`;
-                  bins[binLabel] = 0;
-                }
-                
-                values.forEach(value => {
-                  for (let i = 0; i < binCount; i++) {
-                    const binMin = min + i * binSize;
-                    const binMax = min + (i + 1) * binSize;
-                    
-                    if (value >= binMin && (value < binMax || (i === binCount - 1 && value <= binMax))) {
-                      const binLabel = `${Math.floor(binMin)}-${Math.ceil(binMax)}`;
-                      bins[binLabel]++;
-                      break;
-                    }
+
+              if (Array.isArray(options)) {
+                const total = responseData2.length;
+                const optionCounts = options.reduce((acc: Record<string, number>, opt: string) => {
+                  acc[opt] = 0;
+                  return acc;
+                }, {});
+
+                responseData2.forEach(response => {
+                  const answer = response.answers && response.answers[question.id];
+                  if (answer && optionCounts.hasOwnProperty(answer)) {
+                    optionCounts[answer]++;
                   }
                 });
-                
-                charts[questionId] = Object.entries(bins).map(([range, count]) => ({
-                  range,
+
+                charts[question.id] = Object.entries(optionCounts).map(([option, count]) => ({
+                  option,
                   count,
+                  percentage: total > 0 ? Math.round((count / total) * 100) : 0
                 }));
-              } else {
-                charts[questionId] = [];
               }
-            }
-          });
-          
-          setChartData(charts);
+            });
+
+            setChartData(charts);
+          }
         }
       } catch (error) {
         console.error('Error fetching quiz analytics:', error);
@@ -269,7 +217,9 @@ const QuizAnalytics = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">{quiz?.name}</h1>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+              {quiz?.name}
+            </h1>
             <p className="text-gray-600">View how others responded to this quiz</p>
           </div>
           <Button
@@ -282,9 +232,11 @@ const QuizAnalytics = () => {
         </div>
 
         {/* Leaderboard Table */}
-        <Card className="mb-8">
+        <Card className="mb-8 hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Top Aura Connections</CardTitle>
+            <CardTitle className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+              Top Aura Connections
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -297,7 +249,7 @@ const QuizAnalytics = () => {
               </TableHeader>
               <TableBody>
                 {leaderboard.map((entry, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} className="hover:bg-gray-50">
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>{entry.username}</TableCell>
                     <TableCell>{entry.aura_points.toLocaleString()}</TableCell>
@@ -308,10 +260,12 @@ const QuizAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* Distribution Charts */}
-        <Card>
+        {/* Distribution Chart */}
+        <Card className="mb-8 hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Aura Points Distribution</CardTitle>
+            <CardTitle className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+              Aura Points Distribution
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -343,51 +297,54 @@ const QuizAnalytics = () => {
         </Card>
 
         {/* Question Response Charts */}
-        <h2 className="text-2xl font-bold mt-8 mb-4">Question Responses</h2>
+        <h2 className="text-2xl font-bold mt-8 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+          Question Responses
+        </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {questions.map((question, index) => (
-            <Card key={question.id} className="overflow-hidden">
+            <Card key={question.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="text-lg">
                   Q{index + 1}: {question.text}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 h-72">
-                {question.type === 'mcq' && chartData[question.id] && (
-                  <ChartContainer
-                    config={{
-                      count: { color: "#FF007F" },
-                    }}
-                    className="w-full aspect-[4/3]"
-                  >
-                    <BarChart data={chartData[question.id]}>
-                      <XAxis dataKey="option" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="var(--color-count)" />
-                    </BarChart>
-                  </ChartContainer>
+                {chartData[question.id] && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData[question.id]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                        label={({ option, percentage }) => `${option}: ${percentage}%`}
+                      >
+                        {chartData[question.id].map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={({ payload }) => {
+                        if (payload && payload[0]) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white p-2 shadow rounded">
+                              <p className="font-medium">{data.option}</p>
+                              <p>{data.count} responses ({data.percentage}%)</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
                 )}
-                
-                {question.type === 'number' && chartData[question.id] && (
-                  <ChartContainer
-                    config={{
-                      count: { color: "#00DDEB" },
-                    }}
-                    className="w-full aspect-[4/3]"
-                  >
-                    <BarChart data={chartData[question.id]}>
-                      <XAxis dataKey="range" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="var(--color-count)" />
-                    </BarChart>
-                  </ChartContainer>
-                )}
-                
                 {(!chartData[question.id] || chartData[question.id].length === 0) && (
                   <div className="flex items-center justify-center h-full text-gray-500">
-                    No data available
+                    No responses yet
                   </div>
                 )}
               </CardContent>

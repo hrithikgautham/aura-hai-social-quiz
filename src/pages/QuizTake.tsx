@@ -33,6 +33,7 @@ const QuizTake = () => {
   const [auraPoints, setAuraPoints] = useState(0);
   const [existingResponse, setExistingResponse] = useState<any>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
     if (!quizId) return;
@@ -276,53 +277,16 @@ const QuizTake = () => {
           </h1>
           
           <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-xl font-bold mb-2">{quiz.name}</h2>
-            <p className="text-gray-500 mb-6">Created by {quiz.users.username}</p>
+            <h2 className="text-xl font-bold mb-2">{quiz?.name}</h2>
+            <p className="text-gray-500 mb-6">Created by {quiz?.users?.username}</p>
             
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-2">Your Aura Points</h3>
-              <div className="text-5xl font-bold text-[#FF007F]">
-                {auraPoints.toLocaleString()}
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {auraPoints >= 90000 && (
-                <div className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] text-white p-4 rounded-lg">
-                  <p className="font-bold">LEGENDARY AURA!</p>
-                  <p>You share an incredible connection with {quiz.users.username}!</p>
-                </div>
-              )}
-              
-              {auraPoints >= 75000 && auraPoints < 90000 && (
-                <div className="bg-[#00DDEB] text-white p-4 rounded-lg">
-                  <p className="font-bold">AMAZING AURA!</p>
-                  <p>You have a great connection with {quiz.users.username}!</p>
-                </div>
-              )}
-              
-              {auraPoints >= 50000 && auraPoints < 75000 && (
-                <div className="bg-[#00FF5E] text-white p-4 rounded-lg">
-                  <p className="font-bold">GOOD AURA!</p>
-                  <p>You have a solid connection with {quiz.users.username}.</p>
-                </div>
-              )}
-              
-              {auraPoints < 50000 && (
-                <div className="bg-[#FFD700] text-white p-4 rounded-lg">
-                  <p className="font-bold">DEVELOPING AURA</p>
-                  <p>You're still getting to know {quiz.users.username} better.</p>
-                </div>
-              )}
-            </div>
+            <Button
+              onClick={() => navigate(`/quiz/${quiz?.id}/analytics`)}
+              className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
+            >
+              View Results
+            </Button>
           </div>
-          
-          <Button
-            onClick={() => navigate('/dashboard')}
-            className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
-          >
-            Back to Dashboard
-          </Button>
         </div>
       </div>
     );
@@ -350,6 +314,10 @@ const QuizTake = () => {
         </div>
       </div>
     );
+  }
+
+  if (showWelcome && quiz) {
+    return <QuizWelcome quiz={quiz} onStart={() => setShowWelcome(false)} />;
   }
 
   return (
