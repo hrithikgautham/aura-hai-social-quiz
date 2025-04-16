@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +35,7 @@ export default function QuizAnalytics() {
       setLoading(true);
       
       try {
+        // Fetch quiz basic info
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('name, creator_id')
@@ -42,6 +44,7 @@ export default function QuizAnalytics() {
         
         if (quizError) throw quizError;
         
+        // Check if user has permission or has taken the quiz
         if (quizData.creator_id !== user?.id) {
           const { data: userResponse } = await supabase
             .from('responses')
@@ -58,6 +61,7 @@ export default function QuizAnalytics() {
         
         setQuizName(quizData.name);
         
+        // Fetch quiz questions
         const { data: quizQuestions, error: questionsError } = await supabase
           .from('quiz_questions')
           .select('question_id')
@@ -67,6 +71,7 @@ export default function QuizAnalytics() {
         
         const questionIds = quizQuestions.map(q => q.question_id);
         
+        // Fetch question details
         const { data: questionDetails, error: detailsError } = await supabase
           .from('questions')
           .select('*')
@@ -81,6 +86,7 @@ export default function QuizAnalytics() {
         
         setQuestions(processedQuestions);
         
+        // Fetch responses
         const { data: responseData, error: responseError } = await supabase
           .from('responses')
           .select('*')
@@ -101,6 +107,7 @@ export default function QuizAnalytics() {
         
         setResponses(processedResponses);
         
+        // Find the current user's response
         if (user) {
           const userResp = processedResponses.find(r => r.respondent_id === user.id);
           if (userResp) {
@@ -113,11 +120,13 @@ export default function QuizAnalytics() {
           }
         }
         
+        // Prepare chart data
         const updatedChartData: Record<string, { name: string; count: number; fill?: string }[]> = {};
         
         processedQuestions.forEach(question => {
           const questionAnswers: Record<string, number> = {};
           
+          // Count answers for each option
           processedResponses.forEach(response => {
             const answer = response.answers[question.id];
             if (answer) {
