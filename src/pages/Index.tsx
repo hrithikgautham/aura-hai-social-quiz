@@ -1,11 +1,11 @@
+
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 const Index = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +25,10 @@ const Index = () => {
           Create quizzes, share them with friends, and see how your aura measures up!
         </p>
       </div>
-      <LoginForm />
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-6">Welcome to Aura Hai!</h2>
+        <LoginForm />
+      </div>
     </div>
   );
 };

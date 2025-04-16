@@ -13,7 +13,7 @@ export const LoginForm = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [exists, setExists] = useState<boolean | null>(null);
   const [quizCreator, setQuizCreator] = useState<string | null>(null);
-  const { login, signup, loginWithGoogle, checkUsernameExists } = useAuth();
+  const { loginWithGoogle, checkUsernameExists } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
 
@@ -76,40 +76,6 @@ export const LoginForm = () => {
     return () => clearTimeout(timeoutId);
   }, [username, checkUsernameExists]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username) return;
-
-    // Validate username format
-    const usernameRegex = /^[a-zA-Z0-9_]+$/;
-    if (!usernameRegex.test(username)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid username",
-        description: "Only letters, numbers, and underscores allowed",
-      });
-      return;
-    }
-
-    try {
-      if (exists) {
-        await login(username);
-      } else {
-        await signup(username);
-      }
-      toast({
-        title: exists ? "Welcome back!" : "Account created!",
-        description: `You're now logged in as ${username}`,
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-      });
-    }
-  };
-
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
@@ -122,8 +88,20 @@ export const LoginForm = () => {
     }
   };
 
+  // Determine if the button should be disabled
+  const isGoogleButtonDisabled = username.length === 0 || isChecking || 
+    // For login, disable until username exists
+    (location.pathname === '/' && !exists) || 
+    // For signup, disable until username is unique
+    (location.pathname.includes('/signup') && !!exists);
+
+  // Determine button text based on username existence
+  const googleButtonText = exists 
+    ? "Login with Google" 
+    : "Sign Up with Google";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-sm">
+    <form className="space-y-6 w-full max-w-sm">
       {quizCreator && (
         <div className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] p-4 rounded-lg text-white mb-4">
           <h3 className="font-bold text-lg mb-1">You're taking a quiz created by:</h3>
@@ -158,29 +136,19 @@ export const LoginForm = () => {
             </div>
           )}
         </div>
-        {username && !isChecking && !exists && (
-          <p className="text-sm text-red-500">
-            Username not found. Sign up with this username?
+        {username && !isChecking && (
+          <p className="text-sm text-gray-500">
+            {exists 
+              ? "Username found. You can login with Google." 
+              : "Username not found. You can sign up with Google."}
           </p>
         )}
-      </div>
-      <Button
-        type="submit"
-        disabled={!username || isChecking}
-        className="w-full bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
-      >
-        {exists ? 'Login' : 'Sign Up'}
-      </Button>
-      
-      <div className="relative flex items-center py-2">
-        <div className="flex-grow border-t border-gray-300"></div>
-        <span className="flex-shrink mx-4 text-gray-400 text-sm">or</span>
-        <div className="flex-grow border-t border-gray-300"></div>
       </div>
       
       <Button 
         type="button"
         onClick={handleGoogleLogin}
+        disabled={isGoogleButtonDisabled}
         className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 hover:scale-105 transition-transform"
       >
         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -189,7 +157,7 @@ export const LoginForm = () => {
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
-        Continue with Google
+        {googleButtonText}
       </Button>
     </form>
   );
