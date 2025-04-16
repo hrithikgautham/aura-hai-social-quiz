@@ -5,9 +5,24 @@ export const getPointsForPosition = (position: number): number => {
 };
 
 // Calculate aura points based on MCQ priority order
-export const calculateMCQAuraPoints = (priorityOrder: string[]): number => {
+export const calculateMCQAuraPoints = (priorityOrder: string[] | any): number => {
+  // If priorityOrder is a string, try to parse it
+  let parsedOrder = priorityOrder;
+  if (typeof priorityOrder === 'string') {
+    try {
+      parsedOrder = JSON.parse(priorityOrder);
+    } catch (error) {
+      console.error('Error parsing priority order:', error);
+      return 0; // Return 0 points if we can't parse
+    }
+  }
+  
+  if (!Array.isArray(parsedOrder)) {
+    return 0;
+  }
+  
   let totalPoints = 0;
-  priorityOrder.forEach((_, index) => {
+  parsedOrder.forEach((_, index) => {
     totalPoints += getPointsForPosition(index + 1);
   });
   return totalPoints;

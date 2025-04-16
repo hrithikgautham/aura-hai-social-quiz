@@ -6,13 +6,47 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
+import { useLocation } from 'react-router-dom';
 
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [exists, setExists] = useState<boolean | null>(null);
+  const [quizCreator, setQuizCreator] = useState<string | null>(null);
   const { login, signup } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if we're on a quiz page and fetch the creator's username
+    if (location.pathname.includes('/quiz/')) {
+      const fetchQuizCreator = async () => {
+        const quizId = location.pathname.split('/quiz/')[1];
+        if (!quizId) return;
+        
+        try {
+          const { data, error } = await supabase
+            .from('quizzes')
+            .select('creator_id, users:creator_id(username)')
+            .eq('shareable_link', quizId)
+            .single();
+
+          if (error || !data) {
+            console.error('Error fetching quiz creator:', error);
+            return;
+          }
+
+          if (data.users?.username) {
+            setQuizCreator(data.users.username);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      };
+
+      fetchQuizCreator();
+    }
+  }, [location]);
 
   useEffect(() => {
     const checkUsername = async () => {
@@ -83,6 +117,13 @@ export const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-sm">
+      {quizCreator && (
+        <div className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] p-4 rounded-lg text-white mb-4">
+          <h3 className="font-bold text-lg mb-1">You're taking a quiz created by:</h3>
+          <p className="text-xl font-bold">{quizCreator}</p>
+        </div>
+      )}
+      
       <div className="space-y-2">
         <div className="relative">
           <Input

@@ -18,6 +18,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 const COLORS = ['#FF007F', '#00DDEB', '#00FF5E', '#FFD700'];
 
@@ -71,15 +72,39 @@ const QuizAnalytics = () => {
         if (questionError) throw questionError;
 
         if (questionData) {
-          const formattedQuestions = questionData.map(item => ({
-            id: item.id,
-            questionId: item.questions.id,
-            text: item.questions.text,
-            type: item.questions.type as 'mcq' | 'number',
-            options: item.questions.options ? JSON.parse(item.questions.options as string) : undefined,
-            priority_order: item.priority_order ? JSON.parse(item.priority_order as string) : undefined,
-            correct_answer: item.correct_answer,
-          }));
+          const formattedQuestions = questionData.map(item => {
+            let priorityOrder = null;
+            if (item.priority_order) {
+              try {
+                priorityOrder = typeof item.priority_order === 'string' 
+                  ? JSON.parse(item.priority_order) 
+                  : item.priority_order;
+              } catch (error) {
+                console.error('Error parsing priority order:', error);
+              }
+            }
+
+            let options = undefined;
+            if (item.questions.options) {
+              try {
+                options = typeof item.questions.options === 'string'
+                  ? JSON.parse(item.questions.options)
+                  : item.questions.options;
+              } catch (error) {
+                console.error('Error parsing options:', error);
+              }
+            }
+
+            return {
+              id: item.id,
+              questionId: item.questions.id,
+              text: item.questions.text,
+              type: item.questions.type as 'mcq' | 'number',
+              options,
+              priority_order: priorityOrder,
+              correct_answer: item.correct_answer,
+            };
+          });
           
           setQuestions(formattedQuestions);
         }
@@ -106,10 +131,19 @@ const QuizAnalytics = () => {
             const questionType = question.questions.type;
             
             if (questionType === 'mcq') {
-              // Fixed: Parse options as string if needed
-              const options = typeof question.questions.options === 'string' 
-                ? JSON.parse(question.questions.options) 
-                : question.questions.options;
+              let options;
+              try {
+                options = typeof question.questions.options === 'string' 
+                  ? JSON.parse(question.questions.options) 
+                  : question.questions.options;
+              } catch (error) {
+                console.error('Error parsing options:', error);
+                options = [];
+              }
+              
+              if (!Array.isArray(options)) {
+                options = [];
+              }
               
               const optionCounts = options.reduce((acc: Record<string, number>, opt: string) => {
                 acc[opt] = 0;
@@ -322,25 +356,35 @@ const QuizAnalytics = () => {
                   </CardHeader>
                   <CardContent className="p-4 h-72">
                     {question.type === 'mcq' && chartData[question.id] && (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ChartContainer
+                        config={{
+                          count: { color: "#FF007F" },
+                        }}
+                        className="w-full aspect-[4/3]"
+                      >
                         <BarChart data={chartData[question.id]}>
                           <XAxis dataKey="option" />
                           <YAxis allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="count" fill="#FF007F" />
+                          <Tooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="count" fill="var(--color-count)" />
                         </BarChart>
-                      </ResponsiveContainer>
+                      </ChartContainer>
                     )}
                     
                     {question.type === 'number' && chartData[question.id] && (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ChartContainer
+                        config={{
+                          count: { color: "#00DDEB" },
+                        }}
+                        className="w-full aspect-[4/3]"
+                      >
                         <BarChart data={chartData[question.id]}>
                           <XAxis dataKey="range" />
                           <YAxis allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="count" fill="#00DDEB" />
+                          <Tooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="count" fill="var(--color-count)" />
                         </BarChart>
-                      </ResponsiveContainer>
+                      </ChartContainer>
                     )}
                     
                     {(!chartData[question.id] || chartData[question.id].length === 0) && (
@@ -373,7 +417,7 @@ const QuizAnalytics = () => {
                         .slice(0, 10)
                         .map((response) => (
                           <tr key={response.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2">{response.users.username}</td>
+                            <td className="p-2">{response.users?.username || 'Anonymous'}</td>
                             <td className="p-2">{response.aura_points.toLocaleString()}</td>
                             <td className="p-2">
                               {new Date(response.created_at).toLocaleDateString()}
