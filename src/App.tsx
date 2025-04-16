@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +19,7 @@ import PageLayout from "./components/layout/PageLayout";
 import { useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { supabase } from "./integrations/supabase/client";
+import AuthCallback from "./components/auth/AuthCallback";
 
 // Handle auth redirects from OAuth providers
 const AuthRedirectHandler = () => {
@@ -31,15 +31,11 @@ const AuthRedirectHandler = () => {
     if (location.hash && location.hash.includes('access_token')) {
       console.log("Detected OAuth redirect - handling authentication");
       
-      // Extract the intended redirect path (should be /dashboard or the original path)
-      // Default to /dashboard if nothing else is specified
-      const intendedPath = '/dashboard';
-      
       // Wait briefly for the auth state to be processed by Supabase
       setTimeout(() => {
         // Replace the current URL to remove the hash
         window.history.replaceState({}, document.title, window.location.pathname);
-        navigate(intendedPath, { replace: true });
+        navigate('/dashboard', { replace: true });
       }, 800); // Increased timeout for more reliability
     }
   }, [location, navigate]);
@@ -65,6 +61,7 @@ const App = () => (
           <FloatingMenuWrapper />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth/v1/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <PageLayout>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -49,10 +48,8 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
 
   const handleGoogleLogin = async () => {
     try {
-      // Get current origin (not localhost)
       const appUrl = window.location.origin;
-      const currentPath = location.pathname;
-      const redirectURL = `${appUrl}${currentPath}`;
+      const redirectURL = `${appUrl}/auth/v1/callback`;
       
       console.log("Initiating Google login with redirect to:", redirectURL);
       
