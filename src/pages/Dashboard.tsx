@@ -8,7 +8,7 @@ import { QuizCard } from '@/components/quiz/QuizCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, Baby, Rocket } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import QuirkyLoading from '@/components/ui/QuirkyLoading';
+import QuirkyLoading from '@/components/layout/QuirkyLoading';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
