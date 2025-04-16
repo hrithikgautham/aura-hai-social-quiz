@@ -77,56 +77,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
               setPendingSignupUsername(null);
-            } else if (session.user.email) {
-              console.log("Creating new user from session:", session.user);
-              
-              let finalUsername = pendingSignupUsername;
-              
-              if (!finalUsername) {
-                let proposedUsername = session.user.email.split('@')[0].toLowerCase();
+            } else {
+              console.log("No existing user found in the database");
+              setTimeout(async () => {
+                const { data: newUser, error } = await supabase
+                  .from('users')
+                  .select('*')
+                  .eq('id', session.user!.id)
+                  .single();
                 
-                let usernameExists = true;
-                let counter = 0;
-                finalUsername = proposedUsername;
-                
-                while (usernameExists && counter < 100) {
-                  const { data, error } = await supabase
-                    .from('users')
-                    .select('username')
-                    .eq('username', finalUsername)
-                    .single();
-                  
-                  if (error || !data) {
-                    usernameExists = false;
-                  } else {
-                    counter++;
-                    finalUsername = `${proposedUsername}${counter}`;
-                  }
+                if (newUser) {
+                  console.log("New user retrieved:", newUser);
+                  setUser(newUser);
+                  localStorage.setItem('user', JSON.stringify(newUser));
+                } else {
+                  console.error("Error retrieving new user:", error);
                 }
-              }
-              
-              const avatarUrl = `https://images.unsplash.com/${
-                PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
-              }?w=150&h=150&fit=crop`;
-              
-              const { data: newUser, error: createError } = await supabase
-                .from('users')
-                .insert([{
-                  id: session.user.id,
-                  username: finalUsername,
-                  avatar_url: avatarUrl
-                }])
-                .select()
-                .single();
-              
-              if (newUser) {
-                console.log("New user created:", newUser);
-                setUser(newUser);
-                localStorage.setItem('user', JSON.stringify(newUser));
-                setPendingSignupUsername(null);
-              } else {
-                console.error('Error creating user:', createError);
-              }
+              }, 1000);
             }
           } catch (error) {
             console.error('Error handling auth state change:', error);
@@ -152,7 +119,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [pendingSignupUsername]);
+  }, []);
 
   const login = async (username: string) => {
     try {
@@ -201,16 +168,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (signupUsername) {
         setPendingSignupUsername(signupUsername.toLowerCase());
+        
+        await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectTo || `${window.location.origin}/dashboard`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+            data: {
+              pendingUsername: signupUsername.toLowerCase()
+            }
+          }
+        });
+      } else {
+        await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectTo || `${window.location.origin}/dashboard`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent'
+            }
+          }
+        });
       }
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectTo || `${window.location.origin}/dashboard`
-        }
-      });
-      
-      if (error) throw error;
     } catch (error) {
       console.error('Error logging in with Google:', error);
       throw error;
