@@ -1,4 +1,3 @@
-
 import { 
   Table, 
   TableBody, 
@@ -54,8 +53,7 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
   }, [responses]);
 
   const sortedResponses = [...responses]
-    .sort((a, b) => b.aura_points - a.aura_points)
-    .slice(0, 5);
+    .sort((a, b) => b.aura_points - a.aura_points);
 
   const getMedalIcon = (position: number) => {
     switch (position) {
@@ -74,7 +72,7 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
     <Card>
       <CardHeader>
         <CardTitle>Leaderboard</CardTitle>
-        <CardDescription>Top respondents by aura points</CardDescription>
+        <CardDescription>All respondents by aura points</CardDescription>
       </CardHeader>
       <CardContent>
         {sortedResponses.length > 0 ? (

@@ -271,7 +271,7 @@ export default function QuizAnalytics() {
                         <h3 className="font-medium mb-2">{question.text}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="h-64">
-                            {chartData[question.id] && chartData[question.id].length > 0 ? (
+                            {chartData[question.id] && chartData[question.id].some(item => item.count > 0) ? (
                               <ChartContainer
                                 config={
                                   chartData[question.id].reduce((acc, item, idx) => {
@@ -288,33 +288,16 @@ export default function QuizAnalytics() {
                                     outerRadius={80}
                                     dataKey="count"
                                     nameKey="name"
-                                    label={({ value, name }) => {
-                                      const total = chartData[question.id].reduce((sum, entry) => sum + entry.count, 0);
-                                      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                      return percentage > 0 ? `${percentage}%` : null;
-                                    }}
+                                    label
                                   >
-                                    {chartData[question.id].map((entry, idx) => (
+                                    {chartData[question.id].map((entry, index) => (
                                       <Cell 
-                                        key={`cell-${idx}`} 
-                                        fill={COLORS[idx % COLORS.length]} 
+                                        key={`cell-${index}`} 
+                                        fill={entry.fill || COLORS[index % COLORS.length]} 
                                       />
                                     ))}
                                   </Pie>
-                                  <Tooltip 
-                                    content={({ active, payload }) => {
-                                      if (active && payload && payload.length) {
-                                        const total = chartData[question.id].reduce((sum, entry) => sum + entry.count, 0);
-                                        const percentage = ((payload[0].value as number) / total) * 100;
-                                        return (
-                                          <div className="bg-white p-2 border rounded shadow text-sm">
-                                            <p>{`${payload[0].name}: ${payload[0].value} responses (${Math.round(percentage)}%)`}</p>
-                                          </div>
-                                        );
-                                      }
-                                      return null;
-                                    }}
-                                  />
+                                  <Tooltip />
                                   <Legend />
                                 </PieChart>
                               </ChartContainer>
