@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, Baby, Rocket } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
+import PageLayout from '@/components/layout/PageLayout';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -150,9 +152,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div 
-      className="min-h-screen bg-gradient-to-br from-[#FFE29F] via-[#FFA99F] to-[#FF719A] p-4 md:p-8"
-    >
+    <PageLayout>
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB] animate-pulse">
@@ -253,7 +253,7 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

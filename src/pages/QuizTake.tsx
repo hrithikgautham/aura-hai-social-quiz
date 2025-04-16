@@ -11,6 +11,7 @@ import { QuizLoginForm } from '@/components/auth/QuizLoginForm';
 import confetti from 'canvas-confetti';
 import { QuizWelcome } from '@/components/quiz/QuizWelcome';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
+import PageLayout from '@/components/layout/PageLayout';
 
 type QuizQuestion = {
   id: string;
@@ -262,7 +263,7 @@ const QuizTake = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-r from-[#FFE29F] to-[#FF719A] p-4 md:p-8">
+      <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
         <div className="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6">
           <h1 className="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
             Login Required
@@ -272,13 +273,13 @@ const QuizTake = () => {
           </p>
           <QuizLoginForm quizCreator={quizCreator || undefined} />
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+      <PageLayout>
         <div className="max-w-lg mx-auto text-center">
           <h1 className="text-3xl font-bold uppercase mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
             Quiz Completed!
@@ -296,7 +297,7 @@ const QuizTake = () => {
             </Button>
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -305,7 +306,7 @@ const QuizTake = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <PageLayout className="bg-gradient-to-br from-[#FFE29F] via-[#FFA99F] to-[#FF719A]">
       <div className="max-w-2xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
@@ -383,7 +384,7 @@ const QuizTake = () => {
           )}
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 
