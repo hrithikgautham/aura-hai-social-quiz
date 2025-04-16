@@ -14,14 +14,11 @@ import {
   PieChart, 
   Pie, 
   Cell, 
-  ResponsiveContainer, 
   Legend, 
   Tooltip 
 } from 'recharts';
 import { 
-  ChartContainer, 
-  ChartTooltip,
-  ChartTooltipContent
+  ChartContainer
 } from '@/components/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -40,7 +37,7 @@ export default function QuizAnalytics() {
   const [responses, setResponses] = useState<ResponseData[]>([]);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [auraDistribution, setAuraDistribution] = useState<ChartData[]>([]);
-  const [chartData, setChartData] = useState<Record<string, { name: string; count: number }[]>>({});
+  const [chartData, setChartData] = useState<Record<string, { name: string; count: number; fill?: string }[]>>({});
   const [userResponse, setUserResponse] = useState<ResponseData | null>(null);
   const [hasAccess, setHasAccess] = useState(true);
 
@@ -160,28 +157,44 @@ export default function QuizAnalytics() {
         
         setAuraDistribution(auraChartData);
         
-        const answerData: Record<string, { name: string; count: number }[]> = {};
+        // Fix for Question Analysis Charts
+        const updatedChartData: Record<string, { name: string; count: number; fill?: string }[]> = {};
         
         processedQuestions.forEach(question => {
-          const counts: Record<string, number> = {};
+          const questionAnswers: Record<string, number> = {};
           
-          processedResponses.forEach((response: ResponseData) => {
+          // Count each answer for this question
+          processedResponses.forEach(response => {
             const answer = response.answers[question.id];
-            if (answer !== undefined) {
-              if (!counts[answer]) counts[answer] = 0;
-              counts[answer]++;
+            if (answer) {
+              if (!questionAnswers[answer]) {
+                questionAnswers[answer] = 0;
+              }
+              questionAnswers[answer]++;
             }
           });
           
-          if (question.options) {
-            answerData[question.id] = question.options.map((option: string, index: number) => ({
+          // Convert to chart format with colors
+          if (question.options && Array.isArray(question.options)) {
+            const chartItems = question.options.map((option: string, index: number) => ({
               name: option,
-              count: counts[option] || 0
+              count: questionAnswers[option] || 0,
+              fill: COLORS[index % COLORS.length]
             }));
+            
+            // Only add questions that have at least one answer
+            if (chartItems.some(item => item.count > 0)) {
+              updatedChartData[question.id] = chartItems;
+            } else {
+              // Add empty data for questions with no responses
+              updatedChartData[question.id] = chartItems;
+            }
           }
         });
         
-        setChartData(answerData);
+        setChartData(updatedChartData);
+        console.log('Chart data prepared:', updatedChartData);
+        
       } catch (error) {
         console.error('Error fetching quiz analytics:', error);
         toast({
@@ -268,7 +281,7 @@ export default function QuizAnalytics() {
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
-                            outerRadius={120}
+                            outerRadius={100}
                             fill="#8884d8"
                             dataKey="value"
                             label={({ name, percent }) => {
@@ -280,7 +293,16 @@ export default function QuizAnalytics() {
                               <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip />
+                          <Tooltip content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white p-2 border rounded shadow-md">
+                                  <p>{`${payload[0].name}: ${payload[0].value} (${Math.round(payload[0].percent * 100)}%)`}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }} />
                           <Legend />
                         </PieChart>
                       </ChartContainer>
@@ -323,7 +345,7 @@ export default function QuizAnalytics() {
                                   chartData[question.id].reduce((acc, item, idx) => {
                                     acc[item.name] = { color: COLORS[idx % COLORS.length] };
                                     return acc;
-                                  }, {})
+                                  }, {} as Record<string, { color: string }>)
                                 }
                               >
                                 <PieChart>
@@ -332,12 +354,12 @@ export default function QuizAnalytics() {
                                     cx="50%"
                                     cy="50%"
                                     outerRadius={80}
-                                    fill="#8884d8"
                                     dataKey="count"
                                     nameKey="name"
                                     label={({ name, percent }) => {
+                                      if (!percent) return null;
                                       const percentValue = typeof percent === 'number' ? percent : Number(percent);
-                                      return `${Math.round(percentValue * 100)}%`;
+                                      return percentValue > 0 ? `${Math.round(percentValue * 100)}%` : null;
                                     }}
                                   >
                                     {chartData[question.id].map((entry, idx) => (
@@ -348,12 +370,11 @@ export default function QuizAnalytics() {
                                     ))}
                                   </Pie>
                                   <Tooltip 
-                                    content={(props) => {
-                                      if (props.payload && props.payload.length > 0) {
-                                        const item = props.payload[0];
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
                                         return (
                                           <div className="bg-white p-2 border rounded shadow text-sm">
-                                            <p>{item.name}: {item.value} responses</p>
+                                            <p>{`${payload[0].name}: ${payload[0].value} responses`}</p>
                                           </div>
                                         );
                                       }
