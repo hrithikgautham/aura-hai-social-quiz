@@ -527,9 +527,9 @@ const AdminPanel = () => {
           </DialogHeader>
           
           <QuestionForm
-              onSubmit={handleSubmitAdd}
-              onCancel={() => setIsAddDialogOpen(false)}
-            />
+            onSubmit={handleSubmitAdd}
+            onCancel={() => setIsAddDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
       
@@ -543,10 +543,10 @@ const AdminPanel = () => {
             </DialogDescription>
           </DialogHeader>
           <QuestionForm
-              initialData={selectedQuestion}
-              onSubmit={handleSubmitEdit}
-              onCancel={() => setIsEditDialogOpen(false)}
-            />
+            initialData={selectedQuestion}
+            onSubmit={handleSubmitEdit}
+            onCancel={() => setIsEditDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
       
@@ -578,7 +578,7 @@ const AdminPanel = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </div>
+      </Dialog>
     </div>
   );
 };

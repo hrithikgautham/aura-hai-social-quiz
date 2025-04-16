@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -397,26 +398,27 @@ const QuizAnalytics = () => {
               ))}
             </div>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>User Responses</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {responses
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .map((response) => (
-                  <UserAnswerCard
-                    key={response.id}
-                    username={response.users?.username}
-                    answers={response.answers}
-                    auraPoints={response.aura_points}
-                    questions={questions}
-                  />
-                ))}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            <Card>
+              <CardHeader>
+                <CardTitle>User Responses</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {responses
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map((response) => (
+                    <UserAnswerCard
+                      key={response.id}
+                      username={response.users?.username}
+                      answers={response.answers}
+                      auraPoints={response.aura_points}
+                      questions={questions}
+                    />
+                  ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
