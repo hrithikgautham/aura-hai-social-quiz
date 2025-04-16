@@ -35,5 +35,12 @@ export const auraColors: Record<string, string> = {
   'yellow': '#FFFF00',
   'green': '#00FF00',
   'blue': '#0000FF',
-  'purple': '#800080'
+  'purple': '#800080',
+  // Ensure lowercase keys match what's used in QuizAnalytics.tsx
+  'Red': '#FF0000',
+  'Orange': '#FFA500',
+  'Yellow': '#FFFF00',
+  'Green': '#00FF00',
+  'Blue': '#0000FF',
+  'Purple': '#800080'
 };

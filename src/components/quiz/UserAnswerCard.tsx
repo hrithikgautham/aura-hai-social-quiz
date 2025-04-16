@@ -1,42 +1,69 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
-interface UserAnswerCardProps {
-  username: string;
-  answers: Record<string, string>;
-  auraPoints: number;
-  questions: Array<{
-    id: string;
-    questions: {
-      text: string;
-      type: string;
-    };
-  }>;
+interface QuestionData {
+  id: string;
+  text: string;
+  type: string;
+  options?: string[];
 }
 
-export const UserAnswerCard = ({ username, answers, auraPoints, questions }: UserAnswerCardProps) => {
+interface ResponseData {
+  id: string;
+  respondent_id: string;
+  answers: Record<string, any>;
+  aura_points: number;
+  quiz_id: string;
+  created_at: string;
+}
+
+interface UserAnswerCardProps {
+  response: ResponseData;
+  questions: QuestionData[];
+}
+
+export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const formattedDate = new Date(response.created_at).toLocaleDateString();
+
   return (
-    <Card className="mb-4">
-      <CardHeader className="bg-gradient-to-r from-[#FF007F]/10 to-[#00DDEB]/10">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">{username || 'Anonymous'}</CardTitle>
-          <span className="text-sm font-medium bg-[#FF007F] text-white px-3 py-1 rounded-full">
-            {auraPoints.toLocaleString()} points
-          </span>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardTitle className="text-sm">
+          Response from {response.respondent_id.slice(0, 8)}... | {formattedDate}
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Aura Points: {response.aura_points}</span>
+          <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {questions.map((question) => (
-            <div key={question.id} className="border-b pb-2 last:border-b-0">
-              <p className="text-sm text-gray-600 mb-1">
-                {question.questions?.text || 'Question text unavailable'}
-              </p>
-              <p className="font-medium">{answers[question.id] || 'No answer'}</p>
-            </div>
-          ))}
-        </div>
-      </CardContent>
+      
+      {isExpanded && (
+        <CardContent>
+          <div className="space-y-3">
+            {questions.map((question) => {
+              const answer = response.answers[question.id];
+              
+              return (
+                <div key={question.id} className="border-b pb-2 last:border-b-0">
+                  <p className="font-medium text-sm">{question.text}</p>
+                  <p className="text-sm mt-1">
+                    <span className="text-gray-500">Answer:</span>{" "}
+                    {question.type === 'mcq' && question.options 
+                      ? question.options[answer] 
+                      : answer}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      )}
     </Card>
   );
-};
+}

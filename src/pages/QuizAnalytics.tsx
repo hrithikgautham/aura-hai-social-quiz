@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -72,7 +71,6 @@ const QuizAnalytics = () => {
       setLoading(true);
       
       try {
-        // Fetch the quiz name
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('name, creator_id')
@@ -81,7 +79,6 @@ const QuizAnalytics = () => {
         
         if (quizError) throw quizError;
         
-        // Only allow the creator to view analytics
         if (quizData.creator_id !== user?.id) {
           navigate('/dashboard');
           return;
@@ -89,7 +86,6 @@ const QuizAnalytics = () => {
         
         setQuizName(quizData.name);
         
-        // Fetch the quiz questions
         const { data: quizQuestions, error: questionsError } = await supabase
           .from('quiz_questions')
           .select('question_id')
@@ -97,10 +93,8 @@ const QuizAnalytics = () => {
         
         if (questionsError) throw questionsError;
         
-        // Get the question IDs
         const questionIds = quizQuestions.map(q => q.question_id);
         
-        // Fetch the actual question details
         const { data: questionDetails, error: detailsError } = await supabase
           .from('questions')
           .select('*')
@@ -108,7 +102,6 @@ const QuizAnalytics = () => {
         
         if (detailsError) throw detailsError;
         
-        // Parse the options for each question
         const processedQuestions = questionDetails.map(q => ({
           ...q,
           options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
@@ -116,7 +109,6 @@ const QuizAnalytics = () => {
         
         setQuestions(processedQuestions);
         
-        // Fetch all responses
         const { data: responseData, error: responseError } = await supabase
           .from('responses')
           .select('*')
@@ -124,17 +116,19 @@ const QuizAnalytics = () => {
         
         if (responseError) throw responseError;
         
-        // Process response data - ensure answers is a Record<string, any>
-        const processedResponses = (responseData || []).map(response => ({
-          ...response,
-          answers: typeof response.answers === 'string' 
+        const processedResponses = (responseData || []).map(response => {
+          const parsedAnswers = typeof response.answers === 'string' 
             ? JSON.parse(response.answers) 
-            : response.answers
-        })) as ResponseData[];
+            : response.answers;
+            
+          return {
+            ...response,
+            answers: parsedAnswers
+          };
+        }) as ResponseData[];
         
         setResponses(processedResponses);
         
-        // Process aura distribution
         const auraPoints: Record<string, number> = {
           'Red': 0,
           'Orange': 0,
@@ -145,7 +139,6 @@ const QuizAnalytics = () => {
         };
         
         processedResponses.forEach((response: ResponseData) => {
-          // If the aura points is between specific ranges, assign it to the corresponding aura color
           if (response.aura_points > 50) {
             auraPoints['Red']++;
           } else if (response.aura_points > 40) {
@@ -171,7 +164,6 @@ const QuizAnalytics = () => {
         
         setAuraDistribution(auraChartData);
         
-        // Process answer distribution for each question
         const answerData: Record<string, { name: string; count: number }[]> = {};
         
         processedQuestions.forEach(question => {
@@ -258,7 +250,6 @@ const QuizAnalytics = () => {
                             fill="#8884d8"
                             dataKey="value"
                             label={({ name, percent }) => {
-                              // Ensure percent is a number before calculating
                               const percentValue = typeof percent === 'number' ? percent : Number(percent);
                               return `${name} ${Math.round(percentValue * 100)}%`;
                             }}
@@ -313,7 +304,6 @@ const QuizAnalytics = () => {
                                     fill="#8884d8"
                                     dataKey="count"
                                     label={({ name, percent }) => {
-                                      // Ensure percent is a number before calculating
                                       const percentValue = typeof percent === 'number' ? percent : Number(percent);
                                       return `${Math.round(percentValue * 100)}%`;
                                     }}
