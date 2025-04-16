@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { QuirkyLoading } from '../layout/QuirkyLoading';
+import QuirkyLoading from '../layout/QuirkyLoading'; // Changed to default import
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ const AuthCallback = () => {
     handleAuthCallback();
   }, [navigate, toast]);
   
-  return <QuirkyLoading message="Completing your sign-in..." />;
+  return <QuirkyLoading />;
 };
 
 export default AuthCallback;
