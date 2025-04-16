@@ -1,7 +1,6 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { Provider } from '@supabase/supabase-js';
 
 type User = {
   id: string;
@@ -63,6 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         if (session?.user) {
           // User signed in with OAuth
           try {
@@ -74,11 +74,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (existingUser) {
               // User exists in our users table
+              console.log("Existing user found:", existingUser);
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
             } else if (session.user.email) {
               // Need to create a new user record
               // Extract username from email
+              console.log("Creating new user from session:", session.user);
               let proposedUsername = session.user.email.split('@')[0].toLowerCase();
               
               // Check if username exists
@@ -118,6 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .single();
               
               if (newUser) {
+                console.log("New user created:", newUser);
                 setUser(newUser);
                 localStorage.setItem('user', JSON.stringify(newUser));
               } else {
@@ -127,11 +130,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } catch (error) {
             console.error('Error handling auth state change:', error);
           }
+        } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out");
+          setUser(null);
+          localStorage.removeItem('user');
         }
       }
     );
 
-    setLoading(false);
+    // Initial session check
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setLoading(false);
+      }
+    };
+    
+    checkSession();
     
     return () => {
       subscription.unsubscribe();

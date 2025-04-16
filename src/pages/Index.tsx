@@ -2,11 +2,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [showSignup, setShowSignup] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -26,8 +27,20 @@ const Index = () => {
         </p>
       </div>
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6">Welcome to Aura Hai!</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">
+          {showSignup ? "Sign Up for Aura Hai!" : "Welcome to Aura Hai!"}
+        </h2>
         <LoginForm />
+        <div className="mt-4 text-center">
+          <button 
+            onClick={() => setShowSignup(!showSignup)} 
+            className="text-[#FF007F] hover:underline"
+          >
+            {showSignup 
+              ? "Already have an account? Login" 
+              : "Don't have an account? Sign up"}
+          </button>
+        </div>
       </div>
     </div>
   );
