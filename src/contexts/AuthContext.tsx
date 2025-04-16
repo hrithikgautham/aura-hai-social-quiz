@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,10 +15,11 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: (redirectTo?: string) => Promise<void>;
+  loginWithGoogle: (redirectTo?: string, isSignup?: boolean) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
-  signInWithIdToken: (token: string) => Promise<void>;
+  signInWithIdToken: (token: string, isSignup?: boolean) => Promise<{success: boolean; error?: string}>;
+  checkIfUserExists: (email: string) => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,13 +29,13 @@ const PLACEHOLDER_IMAGES = [
   'photo-1518770660439-4636190af475',
   'photo-1461749280684-dccba630e2f6',
   'photo-1486312338219-ce68d2c6f44d',
-  'photo-1581091226825-a6a2a5aee158',
-  'photo-1485827404703-89b55fcc595e',
+  'photo-1581091226825-a6a2a5aee1b5',
+  'photo-1485827404703-0ad4aaf24ca7',
   'photo-1526374965328-7f61d4dc18c5',
   'photo-1531297484001-80022131f5a1',
-  'photo-1487058792275-0ad4aaf24ca7',
+  'photo-1487058792275-04dcbce3278c',
   'photo-1605810230434-7631ac76ec81',
-  'photo-1473091534298-04dcbce3278c',
+  'photo-1473091534202-14dd9538aa97',
   'photo-1519389950473-47ba0277781c',
   'photo-1460925895917-afdab827c52f',
   'photo-1581090464777-f3220bbe1b8b',
@@ -184,12 +184,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = async (redirectTo?: string) => {
+  const checkIfUserExists = async (email: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.admin.listUsers();
+      
+      if (error) {
+        console.log("Using fallback method to check if user exists");
+        const { error: signInError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false,
+          },
+        });
+        
+        return !signInError || !signInError.message.includes("User not found");
+      }
+      
+      return data.users.some(user => user.email === email);
+    } catch (error) {
+      console.error("Error checking if user exists:", error);
+      return false;
+    }
+  };
+
+  const loginWithGoogle = async (redirectTo?: string, isSignup?: boolean) => {
     try {
       const appUrl = window.location.origin;
       const callbackURL = redirectTo || `${appUrl}/dashboard`;
       
-      console.log("Starting Google OAuth with redirect to:", callbackURL);
+      console.log(`Starting Google OAuth ${isSignup ? 'signup' : 'login'} with redirect to:`, callbackURL);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -197,7 +220,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           redirectTo: callbackURL,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'consent',
+            ...(isSignup && { signup: 'true' })
           }
         }
       });
@@ -209,13 +233,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Google OAuth initiated:", data);
       
     } catch (error) {
-      console.error('Error logging in with Google:', error);
+      console.error('Error with Google authentication:', error);
       throw error;
     }
   };
   
-  const signInWithIdToken = async (token: string) => {
+  const signInWithIdToken = async (token: string, isSignup?: boolean): Promise<{success: boolean; error?: string}> => {
     try {
+      const tokenParts = token.split('.');
+      if (tokenParts.length === 3) {
+        try {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const email = payload.email;
+          
+          if (email) {
+            const userExists = await checkIfUserExists(email);
+            
+            if (isSignup && userExists) {
+              return { 
+                success: false, 
+                error: "Account already exists. Please use the login option instead." 
+              };
+            }
+            
+            if (!isSignup && !userExists) {
+              return { 
+                success: false, 
+                error: "Account doesn't exist. Please sign up first." 
+              };
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing token:", e);
+        }
+      }
+      
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token,
@@ -224,10 +276,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       
       console.log("Google ID token authentication successful:", data);
-      
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('Error signing in with ID token:', error);
-      throw error;
+      return { 
+        success: false, 
+        error: error.message || "Authentication failed" 
+      };
     }
   };
 
@@ -289,7 +344,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loginWithGoogle,
       signInWithIdToken,
       updateUsername, 
-      checkUsernameExists 
+      checkUsernameExists,
+      checkIfUserExists 
     }}>
       {children}
     </AuthContext.Provider>

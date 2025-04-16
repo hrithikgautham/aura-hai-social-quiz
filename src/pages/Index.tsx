@@ -2,11 +2,13 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isSignup, setIsSignup] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -27,9 +29,24 @@ const Index = () => {
       </div>
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6">
-          Welcome to Aura Hai!
+          {isSignup ? "Create Account" : "Welcome to Aura Hai!"}
         </h2>
-        <LoginForm />
+        <LoginForm isSignup={isSignup} />
+        
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 mb-2">
+            {isSignup 
+              ? "Already have an account?" 
+              : "Don't have an account yet?"}
+          </p>
+          <Button 
+            variant="link" 
+            onClick={() => setIsSignup(!isSignup)}
+            className="text-[#FF007F] hover:text-[#00DDEB]"
+          >
+            {isSignup ? "Log in instead" : "Sign up instead"}
+          </Button>
+        </div>
       </div>
     </div>
   );

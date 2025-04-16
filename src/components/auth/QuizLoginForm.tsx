@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,11 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, signInWithIdToken } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Google One Tap setup
   useEffect(() => {
@@ -66,20 +66,19 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
   const handleGoogleOneTapResponse = async (response: any) => {
     if (response.credential) {
       setIsLoggingIn(true);
+      setAuthError(null);
       
       try {
-        // Authenticate with Supabase using the ID token
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: response.credential,
-        });
+        // For quiz takers, we want to be more flexible - try to login if account exists, 
+        // otherwise create a new account
+        const result = await signInWithIdToken(response.credential);
 
-        if (error) {
-          console.error("Google One Tap error:", error);
+        if (!result.success) {
+          setAuthError(result.error);
           toast({
             variant: "destructive",
-            title: "Error",
-            description: "Could not log in with Google. Please try again.",
+            title: "Authentication Error",
+            description: result.error,
           });
         } else {
           toast({
@@ -105,6 +104,7 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
     
     try {
       setIsLoggingIn(true);
+      setAuthError(null);
       
       const appUrl = window.location.origin;
       const redirectURL = `${appUrl}/dashboard`;
@@ -137,6 +137,12 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
         <div className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] p-4 rounded-lg text-white mb-4">
           <h3 className="font-bold text-lg mb-1">You're taking a quiz created by:</h3>
           <p className="text-xl font-bold">{quizCreator}</p>
+        </div>
+      )}
+      
+      {authError && (
+        <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{authError}</span>
         </div>
       )}
       
