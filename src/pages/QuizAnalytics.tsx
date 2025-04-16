@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +9,6 @@ import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { AnalyticsHeader } from '@/components/quiz/analytics/AnalyticsHeader';
 import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
-import PageLayout from '@/components/layout/PageLayout';
 
 export default function QuizAnalytics() {
   const { quizId } = useParams<{ quizId: string }>();
@@ -123,30 +123,28 @@ export default function QuizAnalytics() {
   }, [quizId, user, navigate, toast]);
 
   return (
-    <PageLayout>
-      <div className="max-w-6xl mx-auto">
-        <AnalyticsHeader quizName={quizName} loading={loading} />
-        
-        {loading ? (
-          <QuirkyLoading />
-        ) : (
-          <div className="space-y-8">
-            {responses.length > 0 ? (
-              <>
-                <LeaderboardCard responses={responses} />
-                <ChartsSection 
-                  questions={questions}
-                  responses={responses}
-                />
-              </>
-            ) : (
-              <div className="bg-white p-6 rounded-lg shadow text-center">
-                <p className="text-gray-600">No responses yet for this quiz.</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </PageLayout>
+    <div className="max-w-6xl mx-auto">
+      <AnalyticsHeader quizName={quizName} loading={loading} />
+      
+      {loading ? (
+        <QuirkyLoading />
+      ) : (
+        <div className="space-y-8">
+          {responses.length > 0 ? (
+            <>
+              <LeaderboardCard responses={responses} />
+              <ChartsSection 
+                questions={questions}
+                responses={responses}
+              />
+            </>
+          ) : (
+            <div className="bg-white p-6 rounded-lg shadow text-center">
+              <p className="text-gray-600">No responses yet for this quiz.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
