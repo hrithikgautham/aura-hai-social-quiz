@@ -87,6 +87,7 @@ const QuizCreate = () => {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [responseCount, setResponseCount] = useState(0);
   const [quizCount, setQuizCount] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
   
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -180,6 +181,7 @@ const QuizCreate = () => {
           const unlockedSlots = Math.floor((responseData || 0) / 10);
           if (userQuizCount >= 3 + unlockedSlots) {
             setShowLimitModal(true);
+            setLimitReached(true);
             setLoading(false);
             return;
           }
@@ -486,6 +488,42 @@ const QuizCreate = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF007F]"></div>
+      </div>
+    );
+  }
+
+  if (limitReached) {
+    return (
+      <div 
+        className="min-h-screen p-4 md:p-8 bg-cover bg-center bg-no-repeat"
+        style={{ 
+          backgroundImage: "url('/lovable-uploads/3ca7d763-28ee-4b0e-8250-e0945c70c185.png')",
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          backgroundBlendMode: 'overlay'
+        }}
+      >
+        <div className="max-w-3xl mx-auto flex flex-col items-center justify-center min-h-[80vh]">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 shadow-xl text-center">
+            <h1 className="text-2xl md:text-3xl font-bold uppercase text-[#FF007F] mb-4">Quiz Limit Reached</h1>
+            <p className="text-lg mb-6">
+              You have reached your quiz creation limit. Share your existing quizzes to unlock more slots.
+            </p>
+            <Button
+              onClick={() => navigate('/dashboard')}
+              className="bg-[#FF007F] hover:bg-[#D6006C]"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+        
+        <QuizLimitModal
+          isOpen={showLimitModal}
+          onClose={() => setShowLimitModal(false)}
+          responseCount={responseCount}
+          requiredResponses={10}
+          nextUnlockAt={Math.ceil((responseCount + 1) / 10) * 10}
+        />
       </div>
     );
   }

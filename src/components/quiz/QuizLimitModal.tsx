@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Share2 } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 interface QuizLimitModalProps {
   isOpen: boolean;
@@ -26,12 +27,17 @@ export const QuizLimitModal = ({
   requiredResponses,
   nextUnlockAt,
 }: QuizLimitModalProps) => {
+  const navigate = useNavigate();
   const percentComplete = Math.min(
     (responseCount % requiredResponses) / requiredResponses * 100,
     100
   );
 
   const remaining = nextUnlockAt - responseCount;
+
+  const goToDashboard = () => {
+    navigate('/dashboard');
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -56,11 +62,11 @@ export const QuizLimitModal = ({
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
           <Button 
-            onClick={onClose}
+            onClick={goToDashboard}
             variant="outline" 
             className="sm:w-full"
           >
-            Cancel
+            Back to Dashboard
           </Button>
           <Button 
             onClick={onClose}
