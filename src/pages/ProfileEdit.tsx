@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,7 +38,8 @@ export default function ProfileEdit() {
 
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const filePath = `${user?.id}-${Math.random()}.${fileExt}`;
+      // Create a path that includes the user's ID as a folder
+      const filePath = `${user?.id}/${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
