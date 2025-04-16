@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -6,6 +5,7 @@ type User = {
   id: string;
   username: string;
   is_admin?: boolean;
+  avatar_url?: string | null;
 };
 
 type AuthContextType = {

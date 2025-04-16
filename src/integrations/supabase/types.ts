@@ -157,18 +157,21 @@ export type Database = {
       }
       users: {
         Row: {
+          avatar_url: string | null
           created_at: string
           id: string
           is_admin: boolean
           username: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           id?: string
           is_admin?: boolean
           username: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           id?: string
           is_admin?: boolean

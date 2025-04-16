@@ -1,24 +1,8 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-
-interface QuestionData {
-  id: string;
-  text: string;
-  type: string;
-  options?: string[];
-}
-
-interface ResponseData {
-  id: string;
-  respondent_id: string;
-  answers: Record<string, any>;
-  aura_points: number;
-  quiz_id: string;
-  created_at: string;
-}
+import { ResponseData, QuestionData } from '@/types/quiz';
 
 interface UserAnswerCardProps {
   response: ResponseData;

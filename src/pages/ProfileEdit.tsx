@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,11 +52,13 @@ export default function ProfileEdit() {
         .getPublicUrl(filePath);
 
       if (data) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('users')
           .update({ avatar_url: data.publicUrl })
           .eq('id', user?.id);
 
+        if (updateError) throw updateError;
+        
         setAvatarUrl(data.publicUrl);
         toast({
           title: "Success",
@@ -79,10 +80,12 @@ export default function ProfileEdit() {
   const handleRandomAvatar = async () => {
     try {
       const randomUrl = getRandomPlaceholder();
-      await supabase
+      const { error: updateError } = await supabase
         .from('users')
         .update({ avatar_url: randomUrl })
         .eq('id', user?.id);
+
+      if (updateError) throw updateError;
 
       setAvatarUrl(randomUrl);
       toast({
