@@ -67,6 +67,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("Auth state changed:", event, session?.user?.email);
         if (session?.user) {
           try {
+            // First check if there's a pending username from localStorage (from Google OAuth flow)
+            const pendingUsername = localStorage.getItem('pendingUsername');
+            const pendingAvatarUrl = localStorage.getItem('pendingAvatarUrl');
+            
             const { data: existingUser, error: fetchError } = await supabase
               .from('users')
               .select('*')
@@ -78,33 +82,79 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
               setPendingSignupUsername(null);
+              
+              // Clear the pending data since we're now logged in
+              localStorage.removeItem('pendingUsername');
+              localStorage.removeItem('pendingAvatarUrl');
+              
             } else {
               console.log("No existing user found in the database");
-              setTimeout(async () => {
-                const { data: newUser, error } = await supabase
+              
+              if (pendingUsername) {
+                console.log("Creating new user with pending username:", pendingUsername);
+                
+                // Create a new user with the pending username from localStorage
+                const { data: newUser, error: insertError } = await supabase
                   .from('users')
-                  .select('*')
-                  .eq('id', session.user!.id)
+                  .insert([{ 
+                    id: session.user.id,
+                    username: pendingUsername.toLowerCase(),
+                    avatar_url: pendingAvatarUrl || 
+                               session.user.user_metadata.avatar_url || 
+                               session.user.user_metadata.picture ||
+                               `https://images.unsplash.com/photo-${
+                                 PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+                               }?w=150&h=150&fit=crop`
+                  }])
+                  .select()
                   .single();
                 
                 if (newUser) {
-                  console.log("New user retrieved:", newUser);
+                  console.log("Successfully created new user:", newUser);
                   setUser(newUser);
                   localStorage.setItem('user', JSON.stringify(newUser));
+                  
+                  // Clear the pending data
+                  localStorage.removeItem('pendingUsername');
+                  localStorage.removeItem('pendingAvatarUrl');
                 } else {
-                  console.error("Error retrieving new user:", error);
+                  console.error("Error creating new user:", insertError);
                 }
-              }, 1000);
+              } else {
+                // Wait a bit to see if the database trigger creates the user
+                setTimeout(async () => {
+                  const { data: newUser, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', session.user!.id)
+                    .single();
+                  
+                  if (newUser) {
+                    console.log("New user retrieved:", newUser);
+                    setUser(newUser);
+                    localStorage.setItem('user', JSON.stringify(newUser));
+                  } else {
+                    console.error("Error retrieving new user:", error);
+                  }
+                }, 1000);
+              }
             }
           } catch (error) {
             console.error('Error handling auth state change:', error);
+          } finally {
+            setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out");
           setUser(null);
           localStorage.removeItem('user');
           localStorage.removeItem('pendingUsername');
+          localStorage.removeItem('pendingAvatarUrl');
           setPendingSignupUsername(null);
+          setLoading(false);
+        } else {
+          // Just ensure loading is set to false in all cases
+          setLoading(false);
         }
       }
     );
@@ -185,7 +235,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: redirectTo || `${window.location.origin}/dashboard`,
+            redirectTo: redirectTo || `${window.location.origin}`,
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',
@@ -198,7 +248,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: redirectTo || `${window.location.origin}/dashboard`,
+            redirectTo: redirectTo || `${window.location.origin}`,
             queryParams: {
               access_type: 'offline',
               prompt: 'consent'
