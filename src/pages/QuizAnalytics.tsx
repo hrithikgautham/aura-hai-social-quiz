@@ -9,6 +9,7 @@ import { auraColors } from '@/utils/auraCalculations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
+import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -273,6 +274,9 @@ export default function QuizAnalytics() {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Add the Leaderboard component */}
+            <LeaderboardCard responses={responses} />
             
             <Card>
               <CardHeader>
