@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +14,8 @@ import {
   Pie, 
   Cell, 
   Legend, 
-  Tooltip 
+  Tooltip,
+  Payload
 } from 'recharts';
 import { 
   ChartContainer
@@ -230,11 +230,12 @@ export default function QuizAnalytics() {
           </div>
         ) : (
           <div className="space-y-8">
+            {/* User's Response Section - Only show if user has taken the quiz */}
             {userResponse && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Your Responses</CardTitle>
-                  <CardDescription>Here are your answers to this quiz</CardDescription>
+                  <CardTitle>Your Response</CardTitle>
+                  <CardDescription>Your answers to this quiz</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <UserAnswerCard
@@ -245,83 +246,14 @@ export default function QuizAnalytics() {
               </Card>
             )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Summary</CardTitle>
-                <CardDescription>Overview of responses and aura distribution</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-medium mb-2">Total Responses</h3>
-                    <div className="text-3xl font-bold">{responses.length}</div>
-                    
-                    <div className="mt-4">
-                      <h3 className="font-medium mb-2">How Aura Scores are Calculated</h3>
-                      <AuraCalculationInfo />
-                    </div>
-                  </div>
-                  
-                  <div className="h-64">
-                    <h3 className="font-medium mb-2 text-center">Aura Distribution</h3>
-                    {auraDistribution.length > 0 ? (
-                      <ChartContainer
-                        config={{
-                          Red: { color: auraColors.red },
-                          Orange: { color: auraColors.orange },
-                          Yellow: { color: auraColors.yellow },
-                          Green: { color: auraColors.green },
-                          Blue: { color: auraColors.blue },
-                          Purple: { color: auraColors.purple }
-                        }}
-                      >
-                        <PieChart>
-                          <Pie
-                            data={auraDistribution}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }) => {
-                              const percentValue = typeof percent === 'number' ? percent : Number(percent);
-                              return `${name} ${Math.round(percentValue * 100)}%`;
-                            }}
-                          >
-                            {auraDistribution.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-2 border rounded shadow-md">
-                                  <p>{`${payload[0].name}: ${payload[0].value} (${Math.round(payload[0].percent * 100)}%)`}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }} />
-                          <Legend />
-                        </PieChart>
-                      </ChartContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">No data available</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
+            {/* Leaderboard Section */}
             <LeaderboardCard responses={responses} />
-            
+
+            {/* Question Analysis Section */}
             <Card>
               <CardHeader>
                 <CardTitle>Question Analysis</CardTitle>
-                <CardDescription>Breakdown of responses per question</CardDescription>
+                <CardDescription>Distribution of responses per question</CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="question-0">
@@ -356,13 +288,10 @@ export default function QuizAnalytics() {
                                     outerRadius={80}
                                     dataKey="count"
                                     nameKey="name"
-                                    label={(labelProps) => {
-                                      // Fix: Check if percentValue exists and is > 0 before rendering label
-                                      if (!labelProps || !labelProps.value) return null;
-                                      // Calculate percentage manually if needed
+                                    label={({ value, name }) => {
                                       const total = chartData[question.id].reduce((sum, entry) => sum + entry.count, 0);
-                                      const percentage = total > 0 ? (labelProps.value / total) * 100 : 0;
-                                      return percentage > 0 ? `${Math.round(percentage)}%` : null;
+                                      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                      return percentage > 0 ? `${percentage}%` : null;
                                     }}
                                   >
                                     {chartData[question.id].map((entry, idx) => (
@@ -376,7 +305,7 @@ export default function QuizAnalytics() {
                                     content={({ active, payload }) => {
                                       if (active && payload && payload.length) {
                                         const total = chartData[question.id].reduce((sum, entry) => sum + entry.count, 0);
-                                        const percentage = total > 0 ? (payload[0].value / total) * 100 : 0;
+                                        const percentage = ((payload[0].value as number) / total) * 100;
                                         return (
                                           <div className="bg-white p-2 border rounded shadow text-sm">
                                             <p>{`${payload[0].name}: ${payload[0].value} responses (${Math.round(percentage)}%)`}</p>
@@ -422,28 +351,79 @@ export default function QuizAnalytics() {
                 </Tabs>
               </CardContent>
             </Card>
-            
+
+            {/* Quiz Summary with Aura Distribution */}
             <Card>
               <CardHeader>
-                <CardTitle>Individual Responses</CardTitle>
-                <CardDescription>Detailed view of each respondent's answers</CardDescription>
+                <CardTitle>Quiz Summary</CardTitle>
+                <CardDescription>Overview of responses and aura distribution</CardDescription>
               </CardHeader>
               <CardContent>
-                {responses.length > 0 ? (
-                  <div className="space-y-4">
-                    {responses.map((response) => (
-                      <UserAnswerCard
-                        key={response.id}
-                        response={response}
-                        questions={questions}
-                      />
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-medium mb-2">Total Responses</h3>
+                    <div className="text-3xl font-bold">{responses.length}</div>
+                    
+                    <div className="mt-4">
+                      <h3 className="font-medium mb-2">How Aura Scores are Calculated</h3>
+                      <AuraCalculationInfo />
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No responses yet</p>
+                  
+                  <div className="h-64">
+                    <h3 className="font-medium mb-2 text-center">Aura Distribution</h3>
+                    {auraDistribution.length > 0 ? (
+                      <ChartContainer
+                        config={{
+                          Red: { color: auraColors.red },
+                          Orange: { color: auraColors.orange },
+                          Yellow: { color: auraColors.yellow },
+                          Green: { color: auraColors.green },
+                          Blue: { color: auraColors.blue },
+                          Purple: { color: auraColors.purple }
+                        }}
+                      >
+                        <PieChart>
+                          <Pie
+                            data={auraDistribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, value }) => {
+                              const total = auraDistribution.reduce((sum, item) => sum + item.value, 0);
+                              const percentage = Math.round((value / total) * 100);
+                              return `${name} ${percentage}%`;
+                            }}
+                          >
+                            {auraDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const total = auraDistribution.reduce((sum, item) => sum + item.value, 0);
+                              const percentage = ((payload[0].value as number) / total) * 100;
+                              return (
+                                <div className="bg-white p-2 border rounded shadow-md">
+                                  <p>{`${payload[0].name}: ${payload[0].value} (${Math.round(percentage)}%)`}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }} />
+                          <Legend />
+                        </PieChart>
+                      </ChartContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">No data available</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </div>
