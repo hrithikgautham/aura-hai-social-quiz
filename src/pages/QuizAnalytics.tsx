@@ -165,10 +165,13 @@ export default function QuizAnalytics() {
               />
             )}
             
-            <UserAnswerCard 
-              responses={responses.filter(r => r.respondent_id === user?.id)} 
-              questions={questions}
-            />
+            {/* Get the user's response if it exists */}
+            {responses.filter(r => r.respondent_id === user?.id).length > 0 && (
+              <UserAnswerCard 
+                response={responses.filter(r => r.respondent_id === user?.id)[0]} 
+                questions={questions}
+              />
+            )}
           </div>
         )}
       </div>
