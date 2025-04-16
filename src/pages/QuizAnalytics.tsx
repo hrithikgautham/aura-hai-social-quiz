@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +22,6 @@ import {
   ChartContainer
 } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AuraCalculationInfo } from '@/components/quiz/AuraCalculationInfo';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF007F'];
 
@@ -35,7 +35,6 @@ export default function QuizAnalytics() {
   const [quizName, setQuizName] = useState('');
   const [responses, setResponses] = useState<ResponseData[]>([]);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
-  const [auraDistribution, setAuraDistribution] = useState<ChartData[]>([]);
   const [chartData, setChartData] = useState<Record<string, { name: string; count: number; fill?: string }[]>>({});
   const [userResponse, setUserResponse] = useState<ResponseData | null>(null);
   const [hasAccess, setHasAccess] = useState(true);
@@ -122,41 +121,6 @@ export default function QuizAnalytics() {
           }
         }
         
-        const auraPoints: Record<string, number> = {
-          'Red': 0,
-          'Orange': 0,
-          'Yellow': 0,
-          'Green': 0,
-          'Blue': 0,
-          'Purple': 0
-        };
-        
-        processedResponses.forEach((response: ResponseData) => {
-          if (response.aura_points > 50) {
-            auraPoints['Red']++;
-          } else if (response.aura_points > 40) {
-            auraPoints['Orange']++;
-          } else if (response.aura_points > 30) {
-            auraPoints['Yellow']++;
-          } else if (response.aura_points > 20) {
-            auraPoints['Green']++;
-          } else if (response.aura_points > 10) {
-            auraPoints['Blue']++;
-          } else {
-            auraPoints['Purple']++;
-          }
-        });
-        
-        const auraChartData = Object.entries(auraPoints)
-          .filter(([_, count]) => count > 0)
-          .map(([name, value], index) => ({
-            name,
-            value,
-            color: auraColors[name.toLowerCase()] || COLORS[index % COLORS.length]
-          }));
-        
-        setAuraDistribution(auraChartData);
-        
         const updatedChartData: Record<string, { name: string; count: number; fill?: string }[]> = {};
         
         processedQuestions.forEach(question => {
@@ -172,6 +136,7 @@ export default function QuizAnalytics() {
             }
           });
           
+          // Ensure all options have a count, even if zero
           if (question.options && Array.isArray(question.options)) {
             const chartItems = question.options.map((option: string, index: number) => ({
               name: option,
@@ -179,11 +144,7 @@ export default function QuizAnalytics() {
               fill: COLORS[index % COLORS.length]
             }));
             
-            if (chartItems.some(item => item.count > 0)) {
-              updatedChartData[question.id] = chartItems;
-            } else {
-              updatedChartData[question.id] = chartItems;
-            }
+            updatedChartData[question.id] = chartItems;
           }
         });
         
@@ -225,6 +186,8 @@ export default function QuizAnalytics() {
           </div>
         ) : (
           <div className="space-y-8">
+            <LeaderboardCard responses={responses} />
+
             {userResponse && (
               <Card>
                 <CardHeader>
@@ -239,8 +202,6 @@ export default function QuizAnalytics() {
                 </CardContent>
               </Card>
             )}
-
-            <LeaderboardCard responses={responses} />
 
             <Card>
               <CardHeader>
@@ -270,7 +231,7 @@ export default function QuizAnalytics() {
                       <h3 className="font-medium mb-2">{questions[selectedQuestionIndex].text}</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="h-64">
-                          {chartData[questions[selectedQuestionIndex].id] && 
+                          {questions[selectedQuestionIndex] && chartData[questions[selectedQuestionIndex].id] && 
                            chartData[questions[selectedQuestionIndex].id].some(item => item.count > 0) ? (
                             <ChartContainer
                               config={
@@ -309,7 +270,7 @@ export default function QuizAnalytics() {
                         </div>
                         <div>
                           <h4 className="font-medium mb-2">Response Breakdown</h4>
-                          {chartData[questions[selectedQuestionIndex].id] && 
+                          {questions[selectedQuestionIndex] && chartData[questions[selectedQuestionIndex].id] && 
                            chartData[questions[selectedQuestionIndex].id].map((item, idx) => (
                             <div key={idx} className="flex justify-between mb-1">
                               <div className="flex items-center">
@@ -331,80 +292,6 @@ export default function QuizAnalytics() {
                       </div>
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Summary</CardTitle>
-                <CardDescription>Overview of responses and aura distribution</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-medium mb-2">Total Responses</h3>
-                    <div className="text-3xl font-bold">{responses.length}</div>
-                    
-                    <div className="mt-4">
-                      <h3 className="font-medium mb-2">How Aura Scores are Calculated</h3>
-                      <AuraCalculationInfo />
-                    </div>
-                  </div>
-                  
-                  <div className="h-64">
-                    <h3 className="font-medium mb-2 text-center">Aura Distribution</h3>
-                    {auraDistribution.length > 0 ? (
-                      <ChartContainer
-                        config={{
-                          Red: { color: auraColors.red },
-                          Orange: { color: auraColors.orange },
-                          Yellow: { color: auraColors.yellow },
-                          Green: { color: auraColors.green },
-                          Blue: { color: auraColors.blue },
-                          Purple: { color: auraColors.purple }
-                        }}
-                      >
-                        <PieChart>
-                          <Pie
-                            data={auraDistribution}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, value }) => {
-                              const total = auraDistribution.reduce((sum, item) => sum + item.value, 0);
-                              const percentage = Math.round((value / total) * 100);
-                              return `${name} ${percentage}%`;
-                            }}
-                          >
-                            {auraDistribution.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const total = auraDistribution.reduce((sum, item) => sum + item.value, 0);
-                              const percentage = ((payload[0].value as number) / total) * 100;
-                              return (
-                                <div className="bg-white p-2 border rounded shadow-md">
-                                  <p>{`${payload[0].name}: ${payload[0].value} (${Math.round(percentage)}%)`}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }} />
-                          <Legend />
-                        </PieChart>
-                      </ChartContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">No data available</p>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </CardContent>
             </Card>
