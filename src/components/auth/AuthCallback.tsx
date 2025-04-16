@@ -1,29 +1,35 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import QuirkyLoading from '../layout/QuirkyLoading'; // Changed to default import
+import QuirkyLoading from '../layout/QuirkyLoading'; 
 
 const AuthCallback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [processed, setProcessed] = useState(false);
+  const processingRef = useRef(false);
   
   useEffect(() => {
     const handleAuthCallback = async () => {
-      if (processed) return;
+      // Prevent duplicate processing
+      if (processed || processingRef.current) return;
+      processingRef.current = true;
       
       try {
+        console.log("Processing auth callback");
         // Get the session information
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error("Auth session error:", error.message);
           throw error;
         }
         
         if (session) {
           // Authentication successful
+          console.log("Auth successful, session found");
           toast({
             title: "Login successful!",
             description: "Welcome to Aura Hai!",
@@ -31,6 +37,7 @@ const AuthCallback = () => {
           navigate('/dashboard', { replace: true });
         } else {
           // No session found
+          console.log("No session found during callback");
           toast({
             variant: "destructive",
             title: "Authentication error",
@@ -48,6 +55,7 @@ const AuthCallback = () => {
         navigate('/', { replace: true });
       } finally {
         setProcessed(true);
+        processingRef.current = false;
       }
     };
     

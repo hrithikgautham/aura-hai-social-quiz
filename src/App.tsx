@@ -34,9 +34,8 @@ const AuthRedirectHandler = () => {
       console.log("Detected OAuth redirect - handling authentication");
       redirectProcessed.current = true;
       
-      // Replace the current URL to remove the hash
+      // Just clear the hash, let the AuthCallback component handle the redirect
       window.history.replaceState({}, document.title, window.location.pathname);
-      navigate('/dashboard', { replace: true });
     }
   }, [location, navigate]);
   
