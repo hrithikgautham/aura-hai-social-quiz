@@ -37,7 +37,7 @@ const Dashboard = () => {
       try {
         const { data: createdData, error: createdError } = await supabase
           .from('quizzes')
-          .select('*')
+          .select('*, responses(*)')
           .eq('creator_id', user.id);
 
         if (createdError) throw createdError;
@@ -45,7 +45,7 @@ const Dashboard = () => {
 
         const { data: takenData, error: takenError } = await supabase
           .from('responses')
-          .select('*, quizzes(*)')
+          .select('*, quizzes(*, responses(*))')
           .eq('respondent_id', user.id)
           .not('quizzes', 'is', null);
 
@@ -53,24 +53,22 @@ const Dashboard = () => {
 
         const takenQuizList = takenData ? takenData.map(response => response.quizzes) : [];
         setTakenQuizzes(takenQuizList || []);
+
+        const inProgressQuizIds = [];
         
-        if (createdData && createdData.length > 0) {
-          const inProgressQuizIds = [];
-          
-          for (const quiz of createdData) {
-            const { count: questionsCount } = await supabase
-              .from('quiz_questions')
-              .select('*', { count: 'exact', head: true })
-              .eq('quiz_id', quiz.id);
-              
-            if (questionsCount < 7) {
-              inProgressQuizIds.push(quiz.id);
-            }
+        for (const quiz of createdData) {
+          const { count: questionsCount } = await supabase
+            .from('quiz_questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('quiz_id', quiz.id);
+            
+          if (questionsCount < 7) {
+            inProgressQuizIds.push(quiz.id);
           }
-          
-          const inProgress = createdData.filter(quiz => inProgressQuizIds.includes(quiz.id));
-          setInProgressQuizzes(inProgress);
         }
+        
+        const inProgress = createdData.filter(quiz => inProgressQuizIds.includes(quiz.id));
+        setInProgressQuizzes(inProgress);
 
         if (createdData && createdData.length >= 3) {
           const { data: responseData } = await supabase

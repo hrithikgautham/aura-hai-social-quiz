@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Link2, Eye } from 'lucide-react';
+import { BarChart3, Link2, Eye, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ReactNode } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,7 +39,13 @@ export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionBut
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105">
       <CardHeader className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] text-white">
-        <CardTitle className="truncate">{quiz.name}</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="truncate">{quiz.name}</CardTitle>
+          <div className="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full">
+            <MessageCircle className="w-4 h-4" />
+            <span className="font-semibold">{responseCount}</span>
+          </div>
+        </div>
         {showCreator && quiz.users && (
           <div className="flex items-center gap-2 mt-2">
             <Avatar className="h-6 w-6">
@@ -50,19 +56,6 @@ export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionBut
           </div>
         )}
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">Responses</p>
-            <p className="text-2xl font-bold">{responseCount}</p>
-          </div>
-          <div className={`rounded-full w-12 h-12 flex items-center justify-center ${
-            responseCount > 9 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-          }`}>
-            {responseCount > 9 ? '10+' : responseCount}
-          </div>
-        </div>
-      </CardContent>
       <CardFooter className="p-4 bg-gray-50 flex gap-2">
         {onViewAnalytics && (
           <Button 
@@ -70,7 +63,7 @@ export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionBut
             className="flex-1 hover:bg-[#FF007F]/10"
             onClick={onViewAnalytics}
           >
-            <BarChart3 className="mr-2 h-4 w-4" /> View Analytics
+            <BarChart3 className="mr-2 h-4 w-4" /> Analytics
           </Button>
         )}
         
@@ -99,4 +92,3 @@ export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionBut
     </Card>
   );
 };
-
