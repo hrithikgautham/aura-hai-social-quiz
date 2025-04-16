@@ -1,9 +1,10 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { ResponseData, QuestionData } from '@/types/quiz';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserAnswerCardProps {
   response: ResponseData;
@@ -12,9 +13,25 @@ interface UserAnswerCardProps {
 
 export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [username, setUsername] = useState<string>("");
   const formattedDate = new Date(response.created_at).toLocaleDateString();
 
-  // Ensure answers are properly parsed
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', response.respondent_id)
+        .single();
+      
+      if (data && !error) {
+        setUsername(data.username);
+      }
+    };
+
+    fetchUsername();
+  }, [response.respondent_id]);
+
   const parsedAnswers = typeof response.answers === 'string' 
     ? JSON.parse(response.answers) 
     : response.answers;
@@ -22,11 +39,11 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-sm">
-          Response from {response.respondent_id.slice(0, 8)}... | {formattedDate}
+        <CardTitle className="text-sm md:text-base">
+          Response from {username || 'Anonymous'} | {formattedDate}
         </CardTitle>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Aura Points: {response.aura_points}</span>
+          <span className="text-sm md:text-base font-medium">Aura Points: {response.aura_points}</span>
           <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </Button>
@@ -37,13 +54,12 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
         <CardContent>
           <div className="space-y-3">
             {questions.map((question) => {
-              // We need to find the answer using the question ID
               const answer = parsedAnswers[question.id];
               
               return (
                 <div key={question.id} className="border-b pb-2 last:border-b-0">
-                  <p className="font-medium text-sm">{question.text}</p>
-                  <p className="text-sm mt-1">
+                  <p className="font-medium text-sm md:text-base">{question.text}</p>
+                  <p className="text-sm md:text-base mt-1">
                     <span className="text-gray-500">Answer:</span>{" "}
                     {answer || "No answer provided"}
                   </p>
