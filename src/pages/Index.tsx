@@ -6,12 +6,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
 
   useEffect(() => {
     if (user) {
+      console.log("User detected, redirecting to dashboard");
       navigate('/dashboard');
     }
   }, [user, navigate]);
