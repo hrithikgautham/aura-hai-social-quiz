@@ -360,17 +360,13 @@ const QuizCreate = () => {
       ];
 
       const quizQuestionsData = allSelectedQuestions.map(question => {
-        let priorityOrder = null;
-        if (question.type === 'mcq') {
-          const answerValue = answers[question.id];
-          priorityOrder = Array.isArray(answerValue) ? JSON.stringify(answerValue) : answerValue;
-        }
+        const priorityOrder = answers[question.id];
 
         return {
           quiz_id: quizData.id,
           question_id: question.id,
-          priority_order: priorityOrder,
-          correct_answer: question.type === 'number' ? Number(answers[question.id]) : null,
+          priority_order: JSON.stringify(priorityOrder),
+          correct_answer: null,
         };
       });
 
