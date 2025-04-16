@@ -14,6 +14,13 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProfileEdit from "./pages/ProfileEdit";
+import { FloatingMenu } from "./components/layout/FloatingMenu";
+import { useAuth } from "./contexts/AuthContext";
+
+const FloatingMenuWrapper = () => {
+  const { user } = useAuth();
+  return user ? <FloatingMenu /> : null;
+};
 
 const queryClient = new QueryClient();
 
@@ -24,6 +31,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <FloatingMenuWrapper />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={
