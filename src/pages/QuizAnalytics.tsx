@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -156,6 +155,7 @@ export default function QuizAnalytics() {
     fetchQuizData();
   }, [quizId, user, navigate, toast]);
 
+  // Find user's response
   const userResponse = responses.find(r => r.respondent_id === user?.id);
 
   return (
@@ -188,7 +188,6 @@ export default function QuizAnalytics() {
               />
             )}
             
-            {/* Get the user's response if it exists */}
             {userResponse && (
               <UserAnswerCard 
                 response={userResponse} 

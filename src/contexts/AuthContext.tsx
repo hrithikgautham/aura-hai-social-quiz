@@ -18,6 +18,29 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const PLACEHOLDER_IMAGES = [
+  'photo-1488590528505-98d2b5aba04b',
+  'photo-1518770660439-4636190af475',
+  'photo-1461749280684-dccba630e2f6',
+  'photo-1486312338219-ce68d2c6f44d',
+  'photo-1581091226825-a6a2a5aee158',
+  'photo-1485827404703-89b55fcc595e',
+  'photo-1526374965328-7f61d4dc18c5',
+  'photo-1531297484001-80022131f5a1',
+  'photo-1487058792275-0ad4aaf24ca7',
+  'photo-1605810230434-7631ac76ec81',
+  'photo-1473091534298-04dcbce3278c',
+  'photo-1519389950473-47ba0277781c',
+  'photo-1460925895917-afdab827c52f',
+  'photo-1581090464777-f3220bbe1b8b',
+  'photo-1498050108023-c5249f4df085',
+  'photo-1434494878577-86c23bcb06b9',
+  'photo-1534972195531-d756b9bfa9f2',
+  'photo-1536148935331-408321065b18',
+  'photo-1555099962-4199820d5349',
+  'photo-1517694712202-14dd9538aa97'
+];
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,13 +77,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signup = async (username: string) => {
     try {
-      const avatarUrl = `https://images.unsplash.com/photo-${[
-        '1488590528505-98d2b5aba04b',
-        '1518770660439-4636190af475',
-        '1461749280684-dccba630e2f6',
-        '1486312338219-ce68d2c6f44d',
-        '1581091226825-a6a2a5aee158'
-      ][Math.floor(Math.random() * 5)]}?w=150&h=150&fit=crop`;
+      const avatarUrl = `https://images.unsplash.com/photo-${
+        PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+      }?w=150&h=150&fit=crop`;
 
       const { data: user, error } = await supabase
         .from('users')
