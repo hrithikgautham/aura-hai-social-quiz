@@ -249,7 +249,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (tokenParts.length === 3) {
         try {
           const payload = JSON.parse(atob(tokenParts[1]));
-          const email = payload.email;
+          const email = payload.email as string;
           
           if (email) {
             const userExists = await checkIfUserExists(email);

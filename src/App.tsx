@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,7 +20,6 @@ import PageLayout from "./components/layout/PageLayout";
 import { useAuth } from "./contexts/AuthContext";
 import { useEffect, useRef } from "react";
 import { supabase } from "./integrations/supabase/client";
-import AuthCallback from "./pages/AuthCallback";
 
 // Handle auth redirects from OAuth providers
 const AuthRedirectHandler = () => {
@@ -59,7 +59,6 @@ const App = () => (
           <FloatingMenuWrapper />
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <PageLayout>
