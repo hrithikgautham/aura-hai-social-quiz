@@ -29,7 +29,9 @@ export const UserAnswerCard = ({ username, answers, auraPoints, questions }: Use
         <div className="space-y-3">
           {questions.map((question) => (
             <div key={question.id} className="border-b pb-2 last:border-b-0">
-              <p className="text-sm text-gray-600 mb-1">{question.questions.text}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {question.questions?.text || 'Question text unavailable'}
+              </p>
               <p className="font-medium">{answers[question.id] || 'No answer'}</p>
             </div>
           ))}
