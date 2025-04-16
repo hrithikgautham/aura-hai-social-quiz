@@ -31,13 +31,16 @@ const AuthRedirectHandler = () => {
     if (location.hash && location.hash.includes('access_token')) {
       console.log("Detected OAuth redirect - handling authentication");
       
-      // Extract the intended redirect path from local storage or default to dashboard
+      // Extract the intended redirect path (should be /dashboard or the original path)
+      // Default to /dashboard if nothing else is specified
       const intendedPath = '/dashboard';
       
       // Wait briefly for the auth state to be processed by Supabase
       setTimeout(() => {
+        // Replace the current URL to remove the hash
+        window.history.replaceState({}, document.title, window.location.pathname);
         navigate(intendedPath, { replace: true });
-      }, 500);
+      }, 800); // Increased timeout for more reliability
     }
   }, [location, navigate]);
   

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -48,10 +49,19 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
 
   const handleGoogleLogin = async () => {
     try {
+      // Get current origin (not localhost)
+      const appUrl = window.location.origin;
       const currentPath = location.pathname;
-      const redirectURL = `${window.location.origin}${currentPath}`;
+      const redirectURL = `${appUrl}${currentPath}`;
+      
+      console.log("Initiating Google login with redirect to:", redirectURL);
       
       await loginWithGoogle(undefined, redirectURL);
+      
+      toast({
+        title: "Logging you in...",
+        description: "Please wait while we connect to Google.",
+      });
     } catch (error) {
       toast({
         variant: "destructive",

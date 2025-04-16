@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -24,7 +23,6 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if we're on a quiz page and fetch the creator's username
     if (location.pathname.includes('/quiz/')) {
       const fetchQuizCreator = async () => {
         const quizId = location.pathname.split('/quiz/')[1];
@@ -62,7 +60,6 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
         return;
       }
 
-      // Validate username format
       const usernameRegex = /^[a-zA-Z0-9_]+$/;
       if (!usernameRegex.test(username)) {
         setErrorMessage("Username can only contain letters, numbers, and underscores");
@@ -74,10 +71,8 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
         const userExists = await checkUsernameExists(username);
         setExists(userExists);
         
-        // Clear error if username is valid
         setErrorMessage(null);
         
-        // Set error message if username exists and we're in signup mode
         if (isSignup && userExists) {
           setErrorMessage("Username already exists. Please choose another one.");
         }
@@ -95,17 +90,16 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
   const handleGoogleLogin = async () => {
     try {
       if (isSignup) {
-        // For signup, store the username in localStorage before redirecting
         localStorage.setItem('pendingUsername', username);
       }
       
-      // Set the redirect URL to the dashboard page
-      const redirectURL = `${window.location.origin}/dashboard`;
+      const appUrl = window.location.origin;
+      const redirectURL = `${appUrl}/dashboard`;
       
-      // Call the loginWithGoogle function with username and redirect URL
+      console.log("Initiating Google login with redirect to:", redirectURL);
+      
       await loginWithGoogle(isSignup ? username : undefined, redirectURL);
       
-      // Show a toast to indicate the process has started
       toast({
         title: isSignup ? "Creating your account..." : "Logging you in...",
         description: "Please wait while we connect to Google.",
@@ -119,9 +113,6 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
     }
   };
 
-  // Determine if the button should be disabled
-  // Login: Button is disabled until username exists
-  // Signup: Button is disabled if username exists or is checking
   const isGoogleButtonDisabled = 
     username.length === 0 || 
     isChecking || 

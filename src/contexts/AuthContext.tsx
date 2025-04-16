@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -210,7 +211,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('pendingUsername', signupUsername.toLowerCase());
       }
       
-      const redirectURL = redirectTo || `${window.location.origin}/dashboard`;
+      // Use the current window URL as base for the redirect
+      const appUrl = window.location.origin;
+      const redirectURL = redirectTo || `${appUrl}/dashboard`;
+      
+      console.log("Redirecting to:", redirectURL);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
