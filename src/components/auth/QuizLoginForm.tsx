@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useLocation } from 'react-router-dom';
 
 export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
   const [username, setUsername] = useState('');
@@ -14,6 +14,7 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
   const { loginWithGoogle, checkUsernameExists } = useAuth();
   const { toast } = useToast();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
     const checkUsername = async () => {
@@ -47,8 +48,10 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
 
   const handleGoogleLogin = async () => {
     try {
-      // For quiz takers, we're always in login mode, not signup
-      await loginWithGoogle(undefined, window.location.origin);
+      const currentPath = location.pathname;
+      const redirectURL = `${window.location.origin}${currentPath}`;
+      
+      await loginWithGoogle(undefined, redirectURL);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -58,8 +61,6 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
     }
   };
 
-  // Determine if the button should be disabled
-  // Login: Button should be disabled until username is found in the database
   const isGoogleButtonDisabled = username.length === 0 || isChecking || !exists || !!errorMessage;
 
   return (

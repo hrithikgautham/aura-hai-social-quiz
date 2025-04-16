@@ -99,8 +99,11 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
         localStorage.setItem('pendingUsername', username);
       }
       
-      // Call the loginWithGoogle function
-      await loginWithGoogle(isSignup ? username : undefined);
+      // Set the redirect URL to the dashboard page
+      const redirectURL = `${window.location.origin}/dashboard`;
+      
+      // Call the loginWithGoogle function with username and redirect URL
+      await loginWithGoogle(isSignup ? username : undefined, redirectURL);
       
       // Show a toast to indicate the process has started
       toast({

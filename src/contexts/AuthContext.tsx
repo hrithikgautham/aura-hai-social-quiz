@@ -66,10 +66,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (session?.user) {
           try {
-            // First check if there's a pending username from localStorage (from Google OAuth flow)
             const pendingUsername = localStorage.getItem('pendingUsername');
             
-            // Generate a random avatar URL as fallback
             const randomAvatarUrl = `https://images.unsplash.com/photo-${
               PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
             }?w=150&h=150&fit=crop`;
@@ -92,7 +90,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               if (pendingUsername) {
                 console.log("Creating new user with pending username:", pendingUsername);
                 
-                // Create a new user with the pending username from localStorage
                 const { data: newUser, error: insertError } = await supabase
                   .from('users')
                   .insert([{ 
@@ -114,7 +111,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   console.error("Error creating new user:", insertError);
                 }
               } else {
-                // Wait for the database trigger to potentially create the user
                 setTimeout(async () => {
                   const { data: newUser, error } = await supabase
                     .from('users')
@@ -214,10 +210,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('pendingUsername', signupUsername.toLowerCase());
       }
       
+      const redirectURL = redirectTo || `${window.location.origin}/dashboard`;
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectTo || window.location.origin,
+          redirectTo: redirectURL,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'

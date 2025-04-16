@@ -25,18 +25,19 @@ import { supabase } from "./integrations/supabase/client";
 const AuthRedirectHandler = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
   
   useEffect(() => {
     // Check if the URL contains an access_token (OAuth redirect)
     if (location.hash && location.hash.includes('access_token')) {
       console.log("Detected OAuth redirect - handling authentication");
       
+      // Extract the intended redirect path from local storage or default to dashboard
+      const intendedPath = '/dashboard';
+      
       // Wait briefly for the auth state to be processed by Supabase
-      // This ensures the session is properly established before redirecting
       setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 1000);
+        navigate(intendedPath, { replace: true });
+      }, 500);
     }
   }, [location, navigate]);
   
