@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   PieChart, 
   Pie, 
@@ -20,7 +20,6 @@ import {
 import { 
   ChartContainer
 } from '@/components/ui/chart';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuraCalculationInfo } from '@/components/quiz/AuraCalculationInfo';
 
@@ -40,6 +39,7 @@ export default function QuizAnalytics() {
   const [chartData, setChartData] = useState<Record<string, { name: string; count: number; fill?: string }[]>>({});
   const [userResponse, setUserResponse] = useState<ResponseData | null>(null);
   const [hasAccess, setHasAccess] = useState(true);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number>(0);
 
   useEffect(() => {
     if (!quizId || !user) return;
@@ -157,13 +157,11 @@ export default function QuizAnalytics() {
         
         setAuraDistribution(auraChartData);
         
-        // Fix for Question Analysis Charts
         const updatedChartData: Record<string, { name: string; count: number; fill?: string }[]> = {};
         
         processedQuestions.forEach(question => {
           const questionAnswers: Record<string, number> = {};
           
-          // Count each answer for this question
           processedResponses.forEach(response => {
             const answer = response.answers[question.id];
             if (answer) {
@@ -174,7 +172,6 @@ export default function QuizAnalytics() {
             }
           });
           
-          // Convert to chart format with colors
           if (question.options && Array.isArray(question.options)) {
             const chartItems = question.options.map((option: string, index: number) => ({
               name: option,
@@ -182,11 +179,9 @@ export default function QuizAnalytics() {
               fill: COLORS[index % COLORS.length]
             }));
             
-            // Only add questions that have at least one answer
             if (chartItems.some(item => item.count > 0)) {
               updatedChartData[question.id] = chartItems;
             } else {
-              // Add empty data for questions with no responses
               updatedChartData[question.id] = chartItems;
             }
           }
@@ -230,7 +225,6 @@ export default function QuizAnalytics() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* User's Response Section - Only show if user has taken the quiz */}
             {userResponse && (
               <Card>
                 <CardHeader>
@@ -246,96 +240,101 @@ export default function QuizAnalytics() {
               </Card>
             )}
 
-            {/* Leaderboard Section */}
             <LeaderboardCard responses={responses} />
 
-            {/* Question Analysis Section */}
             <Card>
               <CardHeader>
                 <CardTitle>Question Analysis</CardTitle>
                 <CardDescription>Distribution of responses per question</CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="question-0">
-                  <TabsList className="mb-4 flex-wrap">
-                    {questions.map((question, index) => (
-                      <TabsTrigger key={question.id} value={`question-${index}`}>
-                        Question {index + 1}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  
-                  {questions.map((question, index) => (
-                    <TabsContent key={question.id} value={`question-${index}`} className="space-y-4">
-                      <div className="p-4 bg-gray-50 rounded-md">
-                        <h3 className="font-medium mb-2">{question.text}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="h-64">
-                            {chartData[question.id] && chartData[question.id].some(item => item.count > 0) ? (
-                              <ChartContainer
-                                config={
-                                  chartData[question.id].reduce((acc, item, idx) => {
-                                    acc[item.name] = { color: COLORS[idx % COLORS.length] };
-                                    return acc;
-                                  }, {} as Record<string, { color: string }>)
-                                }
-                              >
-                                <PieChart>
-                                  <Pie
-                                    data={chartData[question.id]}
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={80}
-                                    dataKey="count"
-                                    nameKey="name"
-                                    label
-                                  >
-                                    {chartData[question.id].map((entry, index) => (
-                                      <Cell 
-                                        key={`cell-${index}`} 
-                                        fill={entry.fill || COLORS[index % COLORS.length]} 
-                                      />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip />
-                                  <Legend />
-                                </PieChart>
-                              </ChartContainer>
-                            ) : (
-                              <div className="flex items-center justify-center h-full">
-                                <p className="text-gray-500">No data available</p>
+                <div className="space-y-6">
+                  <Select
+                    value={selectedQuestionIndex.toString()}
+                    onValueChange={(value) => setSelectedQuestionIndex(parseInt(value))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a question to analyze" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {questions.map((question, index) => (
+                        <SelectItem key={question.id} value={index.toString()}>
+                          Question {index + 1}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {questions[selectedQuestionIndex] && (
+                    <div className="p-4 bg-gray-50 rounded-md">
+                      <h3 className="font-medium mb-2">{questions[selectedQuestionIndex].text}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="h-64">
+                          {chartData[questions[selectedQuestionIndex].id] && 
+                           chartData[questions[selectedQuestionIndex].id].some(item => item.count > 0) ? (
+                            <ChartContainer
+                              config={
+                                chartData[questions[selectedQuestionIndex].id].reduce((acc, item, idx) => {
+                                  acc[item.name] = { color: COLORS[idx % COLORS.length] };
+                                  return acc;
+                                }, {} as Record<string, { color: string }>)
+                              }
+                            >
+                              <PieChart>
+                                <Pie
+                                  data={chartData[questions[selectedQuestionIndex].id]}
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={80}
+                                  dataKey="count"
+                                  nameKey="name"
+                                  label
+                                >
+                                  {chartData[questions[selectedQuestionIndex].id].map((entry, index) => (
+                                    <Cell 
+                                      key={`cell-${index}`} 
+                                      fill={entry.fill || COLORS[index % COLORS.length]} 
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                              </PieChart>
+                            </ChartContainer>
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <p className="text-gray-500">No data available</p>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-2">Response Breakdown</h4>
+                          {chartData[questions[selectedQuestionIndex].id] && 
+                           chartData[questions[selectedQuestionIndex].id].map((item, idx) => (
+                            <div key={idx} className="flex justify-between mb-1">
+                              <div className="flex items-center">
+                                <div 
+                                  className="w-3 h-3 rounded-full mr-2" 
+                                  style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                                />
+                                <span>{item.name}</span>
                               </div>
-                            )}
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-2">Response Breakdown</h4>
-                            {chartData[question.id] && chartData[question.id].map((item, idx) => (
-                              <div key={idx} className="flex justify-between mb-1">
-                                <div className="flex items-center">
-                                  <div 
-                                    className="w-3 h-3 rounded-full mr-2" 
-                                    style={{ backgroundColor: COLORS[idx % COLORS.length] }}
-                                  />
-                                  <span>{item.name}</span>
-                                </div>
-                                <span>
-                                  {item.count} ({responses.length > 0 
-                                    ? `${Math.round((item.count / responses.length) * 100)}%` 
-                                    : '0%'}
-                                  )
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                              <span>
+                                {item.count} ({responses.length > 0 
+                                  ? `${Math.round((item.count / responses.length) * 100)}%` 
+                                  : '0%'}
+                                )
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Quiz Summary with Aura Distribution */}
             <Card>
               <CardHeader>
                 <CardTitle>Quiz Summary</CardTitle>
