@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +45,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { QuestionForm } from '@/components/admin/QuestionForm';
 
 type Question = {
   id: string;
@@ -74,7 +74,7 @@ const AdminPanel = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<any | null>(null);
   const [newOptions, setNewOptions] = useState<string[]>([]);
   const [newOptionInput, setNewOptionInput] = useState('');
   
@@ -333,6 +333,103 @@ const AdminPanel = () => {
     checkAdminStatus();
   }, [user, navigate]);
 
+  const handleEditQuestion = async (questionId: string) => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    setSelectedQuestion({
+      id: questionId,
+      text: question.text,
+      type: question.type,
+      options: question.options,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSubmitEdit = async (data: { text: string; type: 'mcq' | 'number'; options?: string[] | undefined; }) => {
+    if (!selectedQuestion) return;
+    
+    setLoading(true);
+    
+    try {
+      // First, deactivate the old question
+      const { error: deactivateError } = await supabase
+        .from('questions')
+        .update({ active: false })
+        .eq('id', selectedQuestion.id);
+      
+      if (deactivateError) throw deactivateError;
+      
+      // Then create a new question with the updates
+      const { data: insertData, error: insertError } = await supabase
+        .from('questions')
+        .insert({
+          text: data.text,
+          type: data.type,
+          is_fixed: selectedQuestion.is_fixed,
+          active: true,
+          options: data.type === 'mcq' ? JSON.stringify(data.options) : null,
+        })
+        .select()
+        .single();
+      
+      if (insertError) throw insertError;
+      
+      toast({
+        title: "Success",
+        description: "Question updated successfully.",
+      });
+      
+      setIsEditDialogOpen(false);
+      fetchQuestions();
+    } catch (error) {
+      console.error('Error updating question:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update question.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitAdd = async (data: { text: string; type: 'mcq' | 'number'; options?: string[] | undefined; }) => {
+    setLoading(true);
+    try {
+      const { data: insertData, error: insertError } = await supabase
+        .from('questions')
+        .insert({
+          text: data.text,
+          type: data.type,
+          is_fixed: activeTab === 'fixed',
+          active: true,
+          options: data.type === 'mcq' ? JSON.stringify(data.options) : null,
+        })
+        .select()
+        .single();
+      
+      if (insertError) throw insertError;
+      
+      toast({
+        title: "Success",
+        description: "Question added successfully.",
+      });
+      
+      setIsAddDialogOpen(false);
+      fetchQuestions();
+    } catch (error) {
+      console.error('Error adding question:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add question.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading && questions.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -429,93 +526,10 @@ const AdminPanel = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitAdd)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="text"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Question Text</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Enter question text" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Question Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select question type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="mcq">Multiple Choice</SelectItem>
-                        <SelectItem value="number">Number</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {form.watch('type') === 'mcq' && (
-                <div className="space-y-3">
-                  <FormLabel>Options</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Add option"
-                      value={newOptionInput}
-                      onChange={(e) => setNewOptionInput(e.target.value)}
-                    />
-                    <Button type="button" onClick={handleAddOption}>
-                      Add
-                    </Button>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {newOptions.map((option, idx) => (
-                      <div key={idx} className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full">
-                        <span>{option}</span>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-4 w-4 p-0"
-                          onClick={() => handleRemoveOption(idx)}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {form.formState.errors.options && (
-                    <p className="text-sm font-medium text-destructive">
-                      {form.formState.errors.options.message}
-                    </p>
-                  )}
-                </div>
-              )}
-              
-              <DialogFooter>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Question'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <QuestionForm
+              onSubmit={handleSubmitAdd}
+              onCancel={() => setIsAddDialogOpen(false)}
+            />
         </DialogContent>
       </Dialog>
       
@@ -525,86 +539,14 @@ const AdminPanel = () => {
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
             <DialogDescription>
-              Make changes to the question. This will save as a new version.
+              Make changes to the question. This will create a new version.
             </DialogDescription>
           </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="text"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Question Text</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Enter question text" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Hiding type selector on edit */}
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Question Type</FormLabel>
-                    <FormControl>
-                      <Input value={field.value === 'mcq' ? 'Multiple Choice' : 'Number'} disabled />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              {form.watch('type') === 'mcq' && (
-                <div className="space-y-3">
-                  <FormLabel>Options</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Add option"
-                      value={newOptionInput}
-                      onChange={(e) => setNewOptionInput(e.target.value)}
-                    />
-                    <Button type="button" onClick={handleAddOption}>
-                      Add
-                    </Button>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {newOptions.map((option, idx) => (
-                      <div key={idx} className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full">
-                        <span>{option}</span>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-4 w-4 p-0"
-                          onClick={() => handleRemoveOption(idx)}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {form.formState.errors.options && (
-                    <p className="text-sm font-medium text-destructive">
-                      {form.formState.errors.options.message}
-                    </p>
-                  )}
-                </div>
-              )}
-              
-              <DialogFooter>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <QuestionForm
+              initialData={selectedQuestion}
+              onSubmit={handleSubmitEdit}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
         </DialogContent>
       </Dialog>
       
@@ -636,7 +578,7 @@ const AdminPanel = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </div>
     </div>
   );
 };

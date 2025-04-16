@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +18,7 @@ import {
   Cell,
 } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
 
 const COLORS = ['#FF007F', '#00DDEB', '#00FF5E', '#FFD700'];
 
@@ -396,42 +396,27 @@ const QuizAnalytics = () => {
                 </Card>
               ))}
             </div>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Responses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">User</th>
-                        <th className="text-left p-2">Aura Points</th>
-                        <th className="text-left p-2">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {responses
-                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                        .slice(0, 10)
-                        .map((response) => (
-                          <tr key={response.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2">{response.users?.username || 'Anonymous'}</td>
-                            <td className="p-2">{response.aura_points.toLocaleString()}</td>
-                            <td className="p-2">
-                              {new Date(response.created_at).toLocaleDateString()}
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>User Responses</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {responses
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map((response) => (
+                  <UserAnswerCard
+                    key={response.id}
+                    username={response.users?.username}
+                    answers={response.answers}
+                    auraPoints={response.aura_points}
+                    questions={questions}
+                  />
+                ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
