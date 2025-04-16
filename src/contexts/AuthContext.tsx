@@ -103,6 +103,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("User signed out");
           setUser(null);
           localStorage.removeItem('user');
+          localStorage.removeItem('pendingUsername');
           setPendingSignupUsername(null);
         }
       }
@@ -173,6 +174,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Store the username in localStorage temporarily
         localStorage.setItem('pendingUsername', signupUsername.toLowerCase());
         
+        // Get a random placeholder avatar to use as fallback if Google doesn't provide one
+        const randomAvatarUrl = `https://images.unsplash.com/photo-${
+          PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+        }?w=150&h=150&fit=crop`;
+        
+        // Store the avatar URL in localStorage too
+        localStorage.setItem('pendingAvatarUrl', randomAvatarUrl);
+        
         await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -180,7 +189,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',
-              pendingUsername: signupUsername.toLowerCase() // Pass the username as a query parameter
+              pendingUsername: signupUsername.toLowerCase(), // Pass the username as a query parameter
+              pendingAvatarUrl: randomAvatarUrl // Pass a fallback avatar URL as query parameter
             }
           }
         });

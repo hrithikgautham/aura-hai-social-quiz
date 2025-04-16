@@ -30,6 +30,21 @@ const AuthRedirectHandler = () => {
     if (location.hash && location.hash.includes('access_token')) {
       // The supabase client will automatically handle setting the session
       console.log("Detected OAuth redirect - handling authentication");
+      
+      // Extract any query parameters that might be in the hash
+      const hashParams = new URLSearchParams(location.hash.substring(1));
+      const pendingUsername = hashParams.get('pendingUsername');
+      const pendingAvatarUrl = hashParams.get('pendingAvatarUrl');
+      
+      if (pendingUsername) {
+        console.log("Found pendingUsername in URL:", pendingUsername);
+        localStorage.setItem('pendingUsername', pendingUsername);
+      }
+      
+      if (pendingAvatarUrl) {
+        console.log("Found pendingAvatarUrl in URL:", pendingAvatarUrl);
+        localStorage.setItem('pendingAvatarUrl', pendingAvatarUrl);
+      }
     }
   }, [location]);
   
