@@ -23,7 +23,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cn } from '@/lib/utils';
 import { AuraCalculationInfo } from "@/components/quiz/AuraCalculationInfo";
-import { calculateMCQAuraPoints, calculateNumberAuraPoints } from "@/utils/auraCalculations";
+import { calculateMCQAuraPoints } from "@/utils/auraCalculations";
 
 type Question = {
   id: string;
