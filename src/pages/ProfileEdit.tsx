@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import QuirkyLoading from '@/components/layout/QuirkyLoading';
 
 const PLACEHOLDER_IMAGES = [
   'photo-1649972904349-6e44c42644a7',
@@ -34,7 +34,7 @@ const PLACEHOLDER_IMAGES = [
 ];
 
 export default function ProfileEdit() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
@@ -144,8 +144,12 @@ export default function ProfileEdit() {
     }
   };
 
+  if (loading) {
+    return <QuirkyLoading />;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="min-h-screen bg-gradient-to-r from-[#FFA99F] to-[#FF719A] p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>

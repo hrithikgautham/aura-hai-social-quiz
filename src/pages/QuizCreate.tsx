@@ -25,6 +25,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cn } from '@/lib/utils';
 import { calculateMCQAuraPoints } from "@/utils/auraCalculations";
 import { QuestionAuraInfo } from "@/components/quiz/QuestionAuraInfo";
+import QuirkyLoading from '@/components/layout/QuirkyLoading';
 
 type Question = {
   id: string;
@@ -485,11 +486,7 @@ const QuizCreate = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF007F]"></div>
-      </div>
-    );
+    return <QuirkyLoading />;
   }
 
   if (limitReached) {
@@ -497,7 +494,7 @@ const QuizCreate = () => {
       <div 
         className="min-h-screen p-4 md:p-8 bg-cover bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: "url('/lovable-uploads/3ca7d763-28ee-4b0e-8250-e0945c70c185.png')",
+          backgroundImage: "url('/lovable-uploads/4514b60b-b002-4e55-9dcd-d61473f8509f.png')",
           backgroundColor: 'rgba(255, 255, 255, 0.8)',
           backgroundBlendMode: 'overlay'
         }}
@@ -532,7 +529,7 @@ const QuizCreate = () => {
     <div 
       className="min-h-screen p-4 md:p-8 bg-cover bg-center bg-no-repeat"
       style={{ 
-        backgroundImage: "url('/lovable-uploads/3ca7d763-28ee-4b0e-8250-e0945c70c185.png')",
+        backgroundImage: "url('/lovable-uploads/4514b60b-b002-4e55-9dcd-d61473f8509f.png')",
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
         backgroundBlendMode: 'overlay'
       }}

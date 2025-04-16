@@ -8,6 +8,7 @@ import { QuizCard } from '@/components/quiz/QuizCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, Baby, Rocket } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import QuirkyLoading from '@/components/ui/QuirkyLoading';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -145,15 +146,13 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF007F]"></div>
-      </div>
-    );
+    return <QuirkyLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div 
+      className="min-h-screen bg-gradient-to-br from-[#FFE29F] via-[#FFA99F] to-[#FF719A] p-4 md:p-8"
+    >
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB] animate-pulse">

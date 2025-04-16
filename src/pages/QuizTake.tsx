@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { QuizLoginForm } from '@/components/auth/QuizLoginForm';
 import confetti from 'canvas-confetti';
 import { QuizWelcome } from '@/components/quiz/QuizWelcome';
+import QuirkyLoading from '@/components/layout/QuirkyLoading';
 
 type QuizQuestion = {
   id: string;
@@ -256,17 +257,13 @@ const QuizTake = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF007F]"></div>
-      </div>
-    );
+    return <QuirkyLoading />;
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+      <div className="min-h-screen bg-gradient-to-r from-[#FFE29F] to-[#FF719A] p-4 md:p-8">
+        <div className="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6">
           <h1 className="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
             Login Required
           </h1>
