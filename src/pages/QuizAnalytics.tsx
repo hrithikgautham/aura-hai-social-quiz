@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   ResponsiveContainer,
   BarChart,
@@ -19,7 +26,6 @@ import {
   Cell,
 } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
 
 const COLORS = ['#FF007F', '#00DDEB', '#00FF5E', '#FFD700'];
 
@@ -34,6 +40,12 @@ const QuizAnalytics = () => {
   const [responses, setResponses] = useState<any[]>([]);
   const [chartData, setChartData] = useState<Record<string, any[]>>({});
 
+  // New state for leaderboard data
+  const [leaderboard, setLeaderboard] = useState<Array<{
+    username: string;
+    aura_points: number;
+  }>>([]);
+
   useEffect(() => {
     if (!quizId || !user) return;
 
@@ -42,7 +54,7 @@ const QuizAnalytics = () => {
       try {
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
-          .select('*')
+          .select('*, users:creator_id(username)')
           .eq('id', quizId)
           .single();
 
@@ -59,6 +71,30 @@ const QuizAnalytics = () => {
         }
 
         setQuiz(quizData);
+
+        // Add quiz creator to leaderboard with 100k points
+        setLeaderboard([
+          { username: quizData.users.username, aura_points: 100000 },
+        ]);
+
+        const { data: responseData, error: responseError } = await supabase
+          .from('responses')
+          .select(`
+            aura_points,
+            users:respondent_id(username)
+          `)
+          .eq('quiz_id', quizId)
+          .order('aura_points', { ascending: false });
+
+        if (responseError) throw responseError;
+
+        if (responseData) {
+          const formattedLeaderboard = responseData.map(response => ({
+            username: response.users?.username || 'Anonymous',
+            aura_points: response.aura_points,
+          }));
+          setLeaderboard(prev => [...prev, ...formattedLeaderboard]);
+        }
 
         const { data: questionData, error: questionError } = await supabase
           .from('quiz_questions')
@@ -110,7 +146,7 @@ const QuizAnalytics = () => {
           setQuestions(formattedQuestions);
         }
 
-        const { data: responseData, error: responseError } = await supabase
+        const { data: responseData2, error: responseError2 } = await supabase
           .from('responses')
           .select(`
             id,
@@ -121,10 +157,10 @@ const QuizAnalytics = () => {
           `)
           .eq('quiz_id', quizId);
 
-        if (responseError) throw responseError;
-        setResponses(responseData || []);
+        if (responseError2) throw responseError2;
+        setResponses(responseData2 || []);
 
-        if (questionData && responseData) {
+        if (questionData && responseData2) {
           const charts: Record<string, any[]> = {};
 
           questionData.forEach(question => {
@@ -151,7 +187,7 @@ const QuizAnalytics = () => {
                 return acc;
               }, {});
               
-              responseData.forEach(response => {
+              responseData2.forEach(response => {
                 const answer = response.answers[questionId];
                 if (answer && optionCounts.hasOwnProperty(answer)) {
                   optionCounts[answer]++;
@@ -164,7 +200,7 @@ const QuizAnalytics = () => {
               }));
             } 
             else if (questionType === 'number') {
-              const values = responseData
+              const values = responseData2
                 .map(response => {
                   const answer = response.answers[questionId];
                   return answer ? parseInt(answer.toString()) : null;
@@ -228,25 +264,13 @@ const QuizAnalytics = () => {
     fetchQuizData();
   }, [quizId, user, navigate, toast]);
 
-  const averageAuraScore = responses.length > 0
-    ? Math.round(responses.reduce((sum, r) => sum + r.aura_points, 0) / responses.length)
-    : 0;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF007F]"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">{quiz?.name} Analytics</h1>
-            <p className="text-gray-600">View how your friends responded to your aura quiz</p>
+            <h1 className="text-3xl font-bold">{quiz?.name}</h1>
+            <p className="text-gray-600">View how others responded to this quiz</p>
           </div>
           <Button
             onClick={() => navigate('/dashboard')}
@@ -257,167 +281,119 @@ const QuizAnalytics = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] text-white">
-              <CardTitle className="text-center">Total Responses</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 text-center">
-              <div className="text-5xl font-bold">{responses.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-[#00DDEB] to-[#00FF5E] text-white">
-              <CardTitle className="text-center">Average Aura Score</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 text-center">
-              <div className="text-5xl font-bold">{responses.length > 0
-                ? Math.round(responses.reduce((sum, r) => sum + r.aura_points, 0) / responses.length).toLocaleString()
-                : '0'}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-[#00FF5E] to-[#FFD700] text-white">
-              <CardTitle className="text-center">Highest Score</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 text-center">
-              <div className="text-5xl font-bold">
-                {responses.length > 0
-                  ? Math.max(...responses.map(r => r.aura_points)).toLocaleString()
-                  : '0'}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Leaderboard Table */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Top Aura Connections</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Aura Points</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {leaderboard.map((entry, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell>{entry.username}</TableCell>
+                    <TableCell>{entry.aura_points.toLocaleString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-        {responses.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <h2 className="text-xl font-bold mb-4">No responses yet</h2>
-              <p className="text-gray-500 mb-6">Share your quiz with friends to start collecting responses!</p>
-              <Button 
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/quiz/${quiz.shareable_link}`);
-                  toast({
-                    title: "Link copied!",
-                    description: "Share it with your friends to measure their aura!",
-                  });
-                }}
-                className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
-              >
-                Copy Quiz Link
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-12">
-            <Card>
+        {/* Distribution Charts */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Aura Points Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Legendary (90k+)', value: responses.filter(r => r.aura_points >= 90000).length },
+                    { name: 'Amazing (75-90k)', value: responses.filter(r => r.aura_points >= 75000 && r.aura_points < 90000).length },
+                    { name: 'Good (50-75k)', value: responses.filter(r => r.aura_points >= 50000 && r.aura_points < 75000).length },
+                    { name: 'Developing (<50k)', value: responses.filter(r => r.aura_points < 50000).length },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {COLORS.map((color, index) => (
+                    <Cell key={`cell-${index}`} fill={color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Question Response Charts */}
+        <h2 className="text-2xl font-bold mt-8 mb-4">Question Responses</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {questions.map((question, index) => (
+            <Card key={question.id} className="overflow-hidden">
               <CardHeader>
-                <CardTitle>Aura Points Distribution</CardTitle>
+                <CardTitle>
+                  Q{index + 1}: {question.text}
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-4 h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Legendary (90k+)', value: responses.filter(r => r.aura_points >= 90000).length },
-                        { name: 'Amazing (75-90k)', value: responses.filter(r => r.aura_points >= 75000 && r.aura_points < 90000).length },
-                        { name: 'Good (50-75k)', value: responses.filter(r => r.aura_points >= 50000 && r.aura_points < 75000).length },
-                        { name: 'Developing (<50k)', value: responses.filter(r => r.aura_points < 50000).length },
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {COLORS.map((color, index) => (
-                        <Cell key={`cell-${index}`} fill={color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                {question.type === 'mcq' && chartData[question.id] && (
+                  <ChartContainer
+                    config={{
+                      count: { color: "#FF007F" },
+                    }}
+                    className="w-full aspect-[4/3]"
+                  >
+                    <BarChart data={chartData[question.id]}>
+                      <XAxis dataKey="option" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="count" fill="var(--color-count)" />
+                    </BarChart>
+                  </ChartContainer>
+                )}
+                
+                {question.type === 'number' && chartData[question.id] && (
+                  <ChartContainer
+                    config={{
+                      count: { color: "#00DDEB" },
+                    }}
+                    className="w-full aspect-[4/3]"
+                  >
+                    <BarChart data={chartData[question.id]}>
+                      <XAxis dataKey="range" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="count" fill="var(--color-count)" />
+                    </BarChart>
+                  </ChartContainer>
+                )}
+                
+                {(!chartData[question.id] || chartData[question.id].length === 0) && (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No data available
+                  </div>
+                )}
               </CardContent>
             </Card>
-            
-            <h2 className="text-2xl font-bold mt-8 mb-4">Question Responses</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {questions.map((question, index) => (
-                <Card key={question.id} className="overflow-hidden">
-                  <CardHeader>
-                    <CardTitle>
-                      Q{index + 1}: {question.text}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 h-72">
-                    {question.type === 'mcq' && chartData[question.id] && (
-                      <ChartContainer
-                        config={{
-                          count: { color: "#FF007F" },
-                        }}
-                        className="w-full aspect-[4/3]"
-                      >
-                        <BarChart data={chartData[question.id]}>
-                          <XAxis dataKey="option" />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="count" fill="var(--color-count)" />
-                        </BarChart>
-                      </ChartContainer>
-                    )}
-                    
-                    {question.type === 'number' && chartData[question.id] && (
-                      <ChartContainer
-                        config={{
-                          count: { color: "#00DDEB" },
-                        }}
-                        className="w-full aspect-[4/3]"
-                      >
-                        <BarChart data={chartData[question.id]}>
-                          <XAxis dataKey="range" />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="count" fill="var(--color-count)" />
-                        </BarChart>
-                      </ChartContainer>
-                    )}
-                    
-                    {(!chartData[question.id] || chartData[question.id].length === 0) && (
-                      <div className="flex items-center justify-center h-full text-gray-500">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          
-            <Card>
-              <CardHeader>
-                <CardTitle>User Responses</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {responses
-                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                  .map((response) => (
-                    <UserAnswerCard
-                      key={response.id}
-                      username={response.users?.username}
-                      answers={response.answers}
-                      auraPoints={response.aura_points}
-                      questions={questions}
-                    />
-                  ))}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );

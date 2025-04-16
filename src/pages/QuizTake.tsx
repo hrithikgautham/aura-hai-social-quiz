@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { LoginForm } from '@/components/auth/LoginForm';
 import confetti from 'canvas-confetti';
 
-// Helper types
 type QuizQuestion = {
   id: string;
   questionId: string;
@@ -35,14 +34,12 @@ const QuizTake = () => {
   const [existingResponse, setExistingResponse] = useState<any>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Fetch quiz data
   useEffect(() => {
     if (!quizId) return;
 
     const fetchQuiz = async () => {
       setLoading(true);
       try {
-        // Fetch quiz by id or shareable link
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('*, users:creator_id(username)')
@@ -53,7 +50,6 @@ const QuizTake = () => {
         
         setQuiz(quizData);
 
-        // If user is logged in, check if they already responded to this quiz
         if (user) {
           const { data: responseData, error: responseError } = await supabase
             .from('responses')
@@ -66,7 +62,6 @@ const QuizTake = () => {
             setExistingResponse(responseData);
             setAuraPoints(responseData.aura_points);
             
-            // Trigger confetti if aura points are high
             if (responseData.aura_points >= 75000) {
               setTimeout(() => {
                 setShowConfetti(true);
@@ -75,7 +70,6 @@ const QuizTake = () => {
           }
         }
 
-        // Fetch quiz questions
         const { data: questionData, error: questionError } = await supabase
           .from('quiz_questions')
           .select(`
@@ -88,27 +82,21 @@ const QuizTake = () => {
         if (questionError) throw questionError;
 
         if (questionData) {
-          // Format questions into a more usable structure
           const formattedQuestions = questionData.map(item => {
-            // Safely parse options
             let parsedOptions;
             if (item.questions.options) {
               if (typeof item.questions.options === 'string') {
                 try {
                   parsedOptions = JSON.parse(item.questions.options);
                 } catch (e) {
-                  // If options is a string but not valid JSON, it might be a comma-separated list
-                  // This is a fallback for potentially malformed data
                   parsedOptions = item.questions.options.split(',').map(opt => opt.trim());
                   console.warn('Options were not in valid JSON format, falling back to comma-separated parsing', item.questions.options);
                 }
               } else {
-                // If options is already an object (array), use as is
                 parsedOptions = item.questions.options;
               }
             }
             
-            // Safely parse priority_order
             let parsedPriorityOrder;
             if (item.priority_order) {
               if (typeof item.priority_order === 'string') {
@@ -135,7 +123,6 @@ const QuizTake = () => {
           
           setQuestions(formattedQuestions);
           
-          // Initialize answers from session storage if available
           const storedAnswers = sessionStorage.getItem(`quiz_answers_${quizData.id}`);
           if (storedAnswers) {
             setAnswers(JSON.parse(storedAnswers));
@@ -157,14 +144,12 @@ const QuizTake = () => {
     fetchQuiz();
   }, [quizId, user, navigate, toast]);
 
-  // Save answers to session storage when they change
   useEffect(() => {
     if (quiz && Object.keys(answers).length > 0) {
       sessionStorage.setItem(`quiz_answers_${quiz.id}`, JSON.stringify(answers));
     }
   }, [answers, quiz]);
 
-  // Trigger confetti effect when showConfetti is true
   useEffect(() => {
     if (showConfetti) {
       confetti({
@@ -191,7 +176,6 @@ const QuizTake = () => {
     }
   };
 
-  // Calculate aura points based on answers
   const calculateAuraPoints = () => {
     let totalPoints = 0;
 
@@ -199,10 +183,8 @@ const QuizTake = () => {
       const answer = answers[question.id];
       
       if (answer && question.priority_order) {
-        // Find the position of the selected option in the priority order
         const position = question.priority_order.indexOf(answer);
         
-        // Calculate points based on position (10,000 for 1st, 7,500 for 2nd, etc.)
         const pointsMap = [10000, 7500, 5000, 2500];
         totalPoints += position >= 0 && position < pointsMap.length 
           ? pointsMap[position] 
@@ -217,11 +199,9 @@ const QuizTake = () => {
     if (!user || !quiz) return;
 
     try {
-      // Calculate aura points
       const points = calculateAuraPoints();
       setAuraPoints(points);
       
-      // Save response to database
       const { error } = await supabase
         .from('responses')
         .insert({
@@ -232,21 +212,27 @@ const QuizTake = () => {
         });
 
       if (error) throw error;
-
-      setSubmitted(true);
       
-      // Trigger confetti if aura points are high
-      if (points >= 75000) {
-        setShowConfetti(true);
-      }
-      
-      // Clear session storage
       sessionStorage.removeItem(`quiz_answers_${quiz.id}`);
       
       toast({
         title: "Quiz completed!",
-        description: "Your aura has been measured successfully.",
+        description: (
+          <div className="flex flex-col gap-2">
+            <p>Your aura has been measured successfully.</p>
+            <Button 
+              onClick={() => navigate(`/quiz/${quiz.id}/analytics`)}
+              size="sm"
+              className="mt-2"
+            >
+              View Results
+            </Button>
+          </div>
+        ),
+        duration: 5000,
       });
+
+      setSubmitted(true);
     } catch (error) {
       console.error('Error submitting response:', error);
       toast({
@@ -265,7 +251,6 @@ const QuizTake = () => {
     );
   }
 
-  // If not logged in, show login form
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
@@ -282,7 +267,6 @@ const QuizTake = () => {
     );
   }
 
-  // If user already responded to this quiz, show their results
   if (existingResponse) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
@@ -344,69 +328,30 @@ const QuizTake = () => {
     );
   }
 
-  // If quiz is submitted, show results
   if (submitted) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
         <div className="max-w-lg mx-auto text-center">
           <h1 className="text-3xl font-bold uppercase mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
-            Your Aura Results
+            Quiz Completed!
           </h1>
           
           <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-xl font-bold mb-2">{quiz.name}</h2>
-            <p className="text-gray-500 mb-6">Created by {quiz.users.username}</p>
+            <h2 className="text-xl font-bold mb-2">{quiz?.name}</h2>
+            <p className="text-gray-500 mb-6">Created by {quiz?.users?.username}</p>
             
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-2">Your Aura Points</h3>
-              <div className="text-5xl font-bold text-[#FF007F]">
-                {auraPoints.toLocaleString()}
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {auraPoints >= 90000 && (
-                <div className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] text-white p-4 rounded-lg">
-                  <p className="font-bold">LEGENDARY AURA!</p>
-                  <p>You share an incredible connection with {quiz.users.username}!</p>
-                </div>
-              )}
-              
-              {auraPoints >= 75000 && auraPoints < 90000 && (
-                <div className="bg-[#00DDEB] text-white p-4 rounded-lg">
-                  <p className="font-bold">AMAZING AURA!</p>
-                  <p>You have a great connection with {quiz.users.username}!</p>
-                </div>
-              )}
-              
-              {auraPoints >= 50000 && auraPoints < 75000 && (
-                <div className="bg-[#00FF5E] text-white p-4 rounded-lg">
-                  <p className="font-bold">GOOD AURA!</p>
-                  <p>You have a solid connection with {quiz.users.username}.</p>
-                </div>
-              )}
-              
-              {auraPoints < 50000 && (
-                <div className="bg-[#FFD700] text-white p-4 rounded-lg">
-                  <p className="font-bold">DEVELOPING AURA</p>
-                  <p>You're still getting to know {quiz.users.username} better.</p>
-                </div>
-              )}
-            </div>
+            <Button
+              onClick={() => navigate(`/quiz/${quiz?.id}/analytics`)}
+              className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
+            >
+              View Results
+            </Button>
           </div>
-          
-          <Button
-            onClick={() => navigate('/dashboard')}
-            className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transition-transform"
-          >
-            Back to Dashboard
-          </Button>
         </div>
       </div>
     );
   }
 
-  // Show quiz taking interface
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
