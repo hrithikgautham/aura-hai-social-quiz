@@ -14,6 +14,11 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const formattedDate = new Date(response.created_at).toLocaleDateString();
 
+  // Ensure answers are properly parsed
+  const parsedAnswers = typeof response.answers === 'string' 
+    ? JSON.parse(response.answers) 
+    : response.answers;
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -32,8 +37,7 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
         <CardContent>
           <div className="space-y-3">
             {questions.map((question) => {
-              // Find the answer for this question in the response
-              const answer = response.answers[question.id];
+              const answer = parsedAnswers[question.id];
               
               return (
                 <div key={question.id} className="border-b pb-2 last:border-b-0">
