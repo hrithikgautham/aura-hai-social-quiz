@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -169,6 +170,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (signupUsername) {
         setPendingSignupUsername(signupUsername.toLowerCase());
         
+        // Store the username in localStorage temporarily
+        localStorage.setItem('pendingUsername', signupUsername.toLowerCase());
+        
         await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -176,9 +180,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',
-            },
-            data: {
-              pendingUsername: signupUsername.toLowerCase()
+              pendingUsername: signupUsername.toLowerCase() // Pass the username as a query parameter
             }
           }
         });
