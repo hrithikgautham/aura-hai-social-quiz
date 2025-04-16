@@ -25,6 +25,7 @@ interface UserData {
 
 export function LeaderboardCard({ responses }: LeaderboardCardProps) {
   const [usersData, setUsersData] = useState<Record<string, UserData>>({});
+  const [creatorData, setCreatorData] = useState<{ id: string; username: string; avatar_url?: string } | null>(null);
   
   useEffect(() => {
     const fetchUsers = async () => {
@@ -75,7 +76,7 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
         <CardDescription>All respondents by aura points</CardDescription>
       </CardHeader>
       <CardContent>
-        {sortedResponses.length > 0 ? (
+        {sortedResponses.length > 0 || creatorData ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -85,8 +86,29 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {creatorData && (
+                <TableRow>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-yellow-500" />
+                      Creator
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={creatorData.avatar_url || ''} alt={creatorData.username} />
+                        <AvatarFallback>{creatorData.username[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {creatorData.username}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">100000</TableCell>
+                </TableRow>
+              )}
               {sortedResponses.map((response, index) => {
                 const user = usersData[response.respondent_id];
+                if (!user) return null;
                 return (
                   <TableRow key={response.id}>
                     <TableCell className="font-medium">
@@ -98,10 +120,10 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={user?.avatar_url || ''} alt={user?.username || 'User'} />
-                          <AvatarFallback>{(user?.username || '?')[0].toUpperCase()}</AvatarFallback>
+                          <AvatarImage src={user.avatar_url || ''} alt={user.username} />
+                          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        {user?.username || 'Unknown User'}
+                        {user.username}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">{response.aura_points}</TableCell>

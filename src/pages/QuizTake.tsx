@@ -53,6 +53,16 @@ const QuizTake = () => {
         setQuiz(quizData);
         setQuizCreator(quizData.users?.username || null);
 
+        if (user && quizData.creator_id === user.id) {
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: "You cannot take your own quiz. View analytics instead.",
+          });
+          navigate(`/quiz/${quizData.id}/analytics`);
+          return;
+        }
+
         if (user) {
           const { data: responseData, error: responseError } = await supabase
             .from('responses')
