@@ -16,7 +16,7 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (signupUsername?: string) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
 };
@@ -50,6 +50,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Store a local reference to the signup username for Google OAuth flow
+  const [pendingSignupUsername, setPendingSignupUsername] = useState<string | null>(null);
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -77,29 +80,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               console.log("Existing user found:", existingUser);
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
+              setPendingSignupUsername(null); // Clear any pending signup
             } else if (session.user.email) {
               // Need to create a new user record
-              // Extract username from email
               console.log("Creating new user from session:", session.user);
-              let proposedUsername = session.user.email.split('@')[0].toLowerCase();
               
-              // Check if username exists
-              let usernameExists = true;
-              let counter = 0;
-              let finalUsername = proposedUsername;
+              // Use pending signup username if available, otherwise extract from email
+              let finalUsername = pendingSignupUsername;
               
-              while (usernameExists && counter < 100) {
-                const { data, error } = await supabase
-                  .from('users')
-                  .select('username')
-                  .eq('username', finalUsername)
-                  .single();
+              if (!finalUsername) {
+                let proposedUsername = session.user.email.split('@')[0].toLowerCase();
                 
-                if (error || !data) {
-                  usernameExists = false;
-                } else {
-                  counter++;
-                  finalUsername = `${proposedUsername}${counter}`;
+                // Check if username exists
+                let usernameExists = true;
+                let counter = 0;
+                finalUsername = proposedUsername;
+                
+                while (usernameExists && counter < 100) {
+                  const { data, error } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('username', finalUsername)
+                    .single();
+                  
+                  if (error || !data) {
+                    usernameExists = false;
+                  } else {
+                    counter++;
+                    finalUsername = `${proposedUsername}${counter}`;
+                  }
                 }
               }
               
@@ -123,6 +132,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.log("New user created:", newUser);
                 setUser(newUser);
                 localStorage.setItem('user', JSON.stringify(newUser));
+                setPendingSignupUsername(null); // Clear the pending username
               } else {
                 console.error('Error creating user:', createError);
               }
@@ -134,6 +144,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("User signed out");
           setUser(null);
           localStorage.removeItem('user');
+          setPendingSignupUsername(null);
         }
       }
     );
@@ -151,7 +162,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [pendingSignupUsername]);
 
   const login = async (username: string) => {
     try {
@@ -196,8 +207,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (signupUsername?: string) => {
     try {
+      if (signupUsername) {
+        // If signupUsername is provided, we're in signup mode
+        // Store the username to use when the OAuth flow completes
+        setPendingSignupUsername(signupUsername.toLowerCase());
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

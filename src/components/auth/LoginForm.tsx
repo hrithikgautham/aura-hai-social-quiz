@@ -94,7 +94,7 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
 
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle();
+      await loginWithGoogle(isSignup ? username : undefined);
     } catch (error) {
       toast({
         variant: "destructive",
