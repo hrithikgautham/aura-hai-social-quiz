@@ -27,13 +27,3 @@ export const calculateMCQAuraPoints = (priorityOrder: string[] | any): number =>
   });
   return totalPoints;
 };
-
-// Calculate aura points for number type questions
-export const calculateNumberAuraPoints = (value: number): number => {
-  // Normalize number inputs to a 1-4 point scale
-  if (value <= 0) return 0;
-  if (value <= 25) return 1;
-  if (value <= 50) return 2;
-  if (value <= 75) return 3;
-  return 4;
-};

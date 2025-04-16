@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,9 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { Label } from '@/components/ui/label';
 import { LoginForm } from '@/components/auth/LoginForm';
 import confetti from 'canvas-confetti';
 
@@ -16,10 +16,9 @@ type QuizQuestion = {
   id: string;
   questionId: string;
   text: string;
-  type: 'mcq' | 'number';
+  type: 'mcq';
   options?: string[];
   priority_order?: string[];
-  correct_answer?: number;
 };
 
 const QuizTake = () => {
@@ -83,7 +82,6 @@ const QuizTake = () => {
           .select(`
             id,
             priority_order,
-            correct_answer,
             questions:question_id(id, text, type, options)
           `)
           .eq('quiz_id', quizData.id);
@@ -96,10 +94,9 @@ const QuizTake = () => {
             id: item.id,
             questionId: item.questions.id,
             text: item.questions.text,
-            type: item.questions.type as 'mcq' | 'number',
+            type: item.questions.type as 'mcq',
             options: item.questions.options ? JSON.parse(item.questions.options as string) : undefined,
             priority_order: item.priority_order ? JSON.parse(item.priority_order as string) : undefined,
-            correct_answer: item.correct_answer,
           }));
           
           setQuestions(formattedQuestions);
@@ -167,7 +164,7 @@ const QuizTake = () => {
     questions.forEach(question => {
       const answer = answers[question.id];
       
-      if (question.type === 'mcq' && answer && question.priority_order) {
+      if (answer && question.priority_order) {
         // Find the position of the selected option in the priority order
         const position = question.priority_order.indexOf(answer);
         
@@ -176,17 +173,6 @@ const QuizTake = () => {
         totalPoints += position >= 0 && position < pointsMap.length 
           ? pointsMap[position] 
           : 0;
-      }
-      else if (question.type === 'number' && answer && question.correct_answer) {
-        // Calculate points for number questions
-        const userAnswer = Number(answer);
-        const targetAnswer = question.correct_answer;
-        
-        if (userAnswer >= targetAnswer) {
-          totalPoints += 10000;
-        } else {
-          totalPoints += Math.floor((userAnswer / targetAnswer) * 10000);
-        }
       }
     });
 
@@ -412,48 +398,26 @@ const QuizTake = () => {
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-bold mb-6">{questions[currentQuestionIndex].text}</h2>
             
-            {questions[currentQuestionIndex].type === 'mcq' && (
-              <RadioGroup
-                value={answers[questions[currentQuestionIndex].id] || ''}
-                onValueChange={(value) => 
-                  handleAnswer(questions[currentQuestionIndex].id, value)
-                }
-                className="space-y-3"
-              >
-                {questions[currentQuestionIndex].options?.map((option) => (
-                  <div key={option} className="flex items-center space-x-2 p-3 border rounded-lg hover:border-[#FF007F] transition-colors">
-                    <RadioGroupItem 
-                      id={`option-${option}`} 
-                      value={option} 
-                      className="text-[#FF007F]"
-                    />
-                    <Label htmlFor={`option-${option}`} className="w-full cursor-pointer">
-                      {option}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            )}
-            
-            {questions[currentQuestionIndex].type === 'number' && (
-              <div className="space-y-2">
-                <Label htmlFor="numberInput">Enter a positive number:</Label>
-                <Input
-                  id="numberInput"
-                  type="number"
-                  min="1"
-                  placeholder="Enter a positive number"
-                  value={answers[questions[currentQuestionIndex].id] || ''}
-                  onChange={(e) => 
-                    handleAnswer(
-                      questions[currentQuestionIndex].id, 
-                      e.target.value.replace(/[^0-9]/g, '')
-                    )
-                  }
-                  className="border-2 focus:border-[#FF007F]"
-                />
-              </div>
-            )}
+            <RadioGroup
+              value={answers[questions[currentQuestionIndex].id] || ''}
+              onValueChange={(value) => 
+                handleAnswer(questions[currentQuestionIndex].id, value)
+              }
+              className="space-y-3"
+            >
+              {questions[currentQuestionIndex].options?.map((option) => (
+                <div key={option} className="flex items-center space-x-2 p-3 border rounded-lg hover:border-[#FF007F] transition-colors">
+                  <RadioGroupItem 
+                    id={`option-${option}`} 
+                    value={option} 
+                    className="text-[#FF007F]"
+                  />
+                  <Label htmlFor={`option-${option}`} className="w-full cursor-pointer">
+                    {option}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
           </div>
         )}
         

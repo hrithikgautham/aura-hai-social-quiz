@@ -33,6 +33,10 @@ export const QuestionForm = ({ initialData, onSubmit, onCancel }: QuestionFormPr
       setOptions([...options, newOption.trim()]);
       setNewOption('');
       setError(null);
+    } else if (newOption.trim() === '') {
+      setError('Option text cannot be empty');
+    } else if (options.includes(newOption.trim())) {
+      setError('Option already exists');
     }
   };
 

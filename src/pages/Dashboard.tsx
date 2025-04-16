@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +16,7 @@ const Dashboard = () => {
   const [createdQuizzes, setCreatedQuizzes] = useState<any[]>([]);
   const [takenQuizzes, setTakenQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-	const [customQuestionsSelected, setCustomQuestionsSelected] = useState(false);
+  const [inProgressQuizzes, setInProgressQuizzes] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -47,12 +48,27 @@ const Dashboard = () => {
         // Extract the quiz objects from the responses
         const takenQuizList = takenData ? takenData.map(response => response.quizzes) : [];
         setTakenQuizzes(takenQuizList || []);
-				
-				// Check if custom questions have been selected
-				if (createdData && createdData.length > 0) {
-					const hasCustomQuestions = createdData.some(quiz => quiz.custom_questions);
-					setCustomQuestionsSelected(hasCustomQuestions);
-				}
+        
+        // Find in-progress quizzes (quizzes where not all required questions have been added)
+        if (createdData && createdData.length > 0) {
+          const inProgressQuizIds = [];
+          
+          for (const quiz of createdData) {
+            const { count: questionsCount } = await supabase
+              .from('quiz_questions')
+              .select('*', { count: 'exact', head: true })
+              .eq('quiz_id', quiz.id);
+              
+            // If the quiz has less than the required number of questions, it's in progress
+            if (questionsCount < 7) {
+              inProgressQuizIds.push(quiz.id);
+            }
+          }
+          
+          // Filter the created quizzes to find those in progress
+          const inProgress = createdData.filter(quiz => inProgressQuizIds.includes(quiz.id));
+          setInProgressQuizzes(inProgress);
+        }
       } catch (error) {
         console.error('Error fetching quizzes:', error);
         toast({
@@ -90,7 +106,7 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Your Aura Dashboard</h1>
           <div className="flex gap-4">
-            {customQuestionsSelected && (
+            {inProgressQuizzes.length > 0 && (
               <Button
                 onClick={() => navigate('/quiz/create')}
                 className="bg-[#00DDEB] hover:bg-[#00BBCC] hover:scale-105 transition-transform"
@@ -131,7 +147,7 @@ const Dashboard = () => {
                   <QuizCard
                     key={quiz.id}
                     quiz={quiz}
-                    onAnalytics={() => navigate(`/quiz/${quiz.id}/analytics`)}
+                    onViewAnalytics={() => navigate(`/quiz/${quiz.id}/analytics`)}
                     actionButtons={
                       <Button
                         onClick={() => handleCopyLink(quiz.shareable_link)}
