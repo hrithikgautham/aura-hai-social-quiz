@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,9 +8,12 @@ import QuirkyLoading from '../layout/QuirkyLoading'; // Changed to default impor
 const AuthCallback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [processed, setProcessed] = useState(false);
   
   useEffect(() => {
     const handleAuthCallback = async () => {
+      if (processed) return;
+      
       try {
         // Get the session information
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -43,11 +46,13 @@ const AuthCallback = () => {
           description: "Could not complete the sign-in. Please try again.",
         });
         navigate('/', { replace: true });
+      } finally {
+        setProcessed(true);
       }
     };
     
     handleAuthCallback();
-  }, [navigate, toast]);
+  }, [navigate, toast, processed]);
   
   return <QuirkyLoading />;
 };

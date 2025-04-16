@@ -21,6 +21,7 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
   const { toast } = useToast();
   const location = useLocation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (location.pathname.includes('/quiz/')) {
@@ -88,7 +89,11 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
   }, [username, checkUsernameExists, isSignup]);
 
   const handleGoogleLogin = async () => {
+    if (isLoggingIn) return;
+    
     try {
+      setIsLoggingIn(true);
+      
       if (isSignup) {
         localStorage.setItem('pendingUsername', username);
       }
@@ -110,6 +115,7 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
         title: "Error",
         description: "Could not log in with Google. Please try again.",
       });
+      setIsLoggingIn(false);
     }
   };
 

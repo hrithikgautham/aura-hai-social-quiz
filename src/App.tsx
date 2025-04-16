@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,7 +18,7 @@ import ProfileEdit from "./pages/ProfileEdit";
 import { FloatingMenu } from "./components/layout/FloatingMenu";
 import PageLayout from "./components/layout/PageLayout";
 import { useAuth } from "./contexts/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "./integrations/supabase/client";
 import AuthCallback from "./components/auth/AuthCallback";
 
@@ -25,18 +26,17 @@ import AuthCallback from "./components/auth/AuthCallback";
 const AuthRedirectHandler = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const redirectProcessed = useRef(false);
   
   useEffect(() => {
     // Check if the URL contains an access_token (OAuth redirect)
-    if (location.hash && location.hash.includes('access_token')) {
+    if (location.hash && location.hash.includes('access_token') && !redirectProcessed.current) {
       console.log("Detected OAuth redirect - handling authentication");
+      redirectProcessed.current = true;
       
-      // Wait briefly for the auth state to be processed by Supabase
-      setTimeout(() => {
-        // Replace the current URL to remove the hash
-        window.history.replaceState({}, document.title, window.location.pathname);
-        navigate('/dashboard', { replace: true });
-      }, 800); // Increased timeout for more reliability
+      // Replace the current URL to remove the hash
+      window.history.replaceState({}, document.title, window.location.pathname);
+      navigate('/dashboard', { replace: true });
     }
   }, [location, navigate]);
   
