@@ -6,8 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ResponseData, QuestionData } from '@/types/quiz';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { AnalyticsHeader } from '@/components/quiz/analytics/AnalyticsHeader';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
+import QuirkyLoading from '@/components/layout/QuirkyLoading';
 
 export default function QuizAnalytics() {
   const { quizId } = useParams<{ quizId: string }>();
@@ -124,10 +124,7 @@ export default function QuizAnalytics() {
         <AnalyticsHeader quizName={quizName} loading={loading} />
         
         {loading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
+          <QuirkyLoading />
         ) : (
           <div className="space-y-8">
             {responses.length > 0 ? (
