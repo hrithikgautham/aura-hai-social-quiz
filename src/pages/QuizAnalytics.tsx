@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +29,7 @@ export default function QuizAnalytics() {
   const [auraDistribution, setAuraDistribution] = useState<ChartData[]>([]);
   const [chartData, setChartData] = useState<Record<string, { name: string; count: number }[]>>({});
   const [userResponse, setUserResponse] = useState<ResponseData | null>(null);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [hasAccess, setHasAccess] = useState(true); // Changed default to true to fix blank screen
 
   useEffect(() => {
     if (!quizId || !user) return;
@@ -45,9 +46,19 @@ export default function QuizAnalytics() {
         
         if (quizError) throw quizError;
         
+        // Check if user is the creator or allow viewing of analytics
         if (quizData.creator_id !== user?.id) {
-          navigate('/dashboard');
-          return;
+          const { data: userResponse } = await supabase
+            .from('responses')
+            .select('*')
+            .eq('quiz_id', quizId)
+            .eq('respondent_id', user.id)
+            .single();
+            
+          if (!userResponse) {
+            navigate('/dashboard');
+            return;
+          }
         }
         
         setQuizName(quizData.name);
@@ -94,6 +105,14 @@ export default function QuizAnalytics() {
         }) as ResponseData[];
         
         setResponses(processedResponses);
+        
+        // Check if current user has responded to this quiz
+        if (user) {
+          const userResp = processedResponses.find(r => r.respondent_id === user.id);
+          if (userResp) {
+            setUserResponse(userResp);
+          }
+        }
         
         const auraPoints: Record<string, number> = {
           'Red': 0,
@@ -143,10 +162,12 @@ export default function QuizAnalytics() {
             }
           });
           
-          answerData[question.id] = question.options.map((option, index) => ({
-            name: option,
-            count: counts[index] || 0
-          }));
+          if (question.options) {
+            answerData[question.id] = question.options.map((option: string, index: number) => ({
+              name: option,
+              count: counts[option] || 0
+            }));
+          }
         });
         
         setChartData(answerData);
@@ -165,8 +186,6 @@ export default function QuizAnalytics() {
     
     fetchQuizData();
   }, [quizId, user, navigate, toast]);
-
-  if (!hasAccess) return null;
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">

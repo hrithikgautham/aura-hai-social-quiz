@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,9 +39,7 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
                   <p className="font-medium text-sm">{question.text}</p>
                   <p className="text-sm mt-1">
                     <span className="text-gray-500">Answer:</span>{" "}
-                    {question.type === 'mcq' && question.options 
-                      ? question.options[answer] 
-                      : answer}
+                    {answer || "No answer provided"}
                   </p>
                 </div>
               );
