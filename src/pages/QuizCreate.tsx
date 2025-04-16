@@ -491,10 +491,17 @@ const QuizCreate = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div 
+      className="min-h-screen p-4 md:p-8 bg-cover bg-center bg-no-repeat"
+      style={{ 
+        backgroundImage: "url('/lovable-uploads/3ca7d763-28ee-4b0e-8250-e0945c70c185.png')",
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        backgroundBlendMode: 'overlay'
+      }}
+    >
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold uppercase">Create Your Quiz</h1>
+          <h1 className="text-2xl md:text-3xl font-bold uppercase text-[#FF007F]">Create Your Quiz</h1>
           
           <div className="flex items-center space-x-2">
             {(['name', 'fixed', 'custom', 'review'] as Step[]).map((step, index) => (
@@ -506,7 +513,7 @@ const QuizCreate = () => {
           </div>
         </div>
 
-        <Card className="mb-6">
+        <Card className="mb-6 backdrop-blur-sm bg-white/90 shadow-xl border-none">
           <CardHeader>
             {currentStep === 'name' && (
               <>
