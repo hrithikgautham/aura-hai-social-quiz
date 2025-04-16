@@ -36,6 +36,7 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
     fetchUsername();
   }, [response.respondent_id]);
 
+  // Ensure answers is an object, not a string
   const parsedAnswers = typeof response.answers === 'string' 
     ? JSON.parse(response.answers) 
     : response.answers;
@@ -58,12 +59,13 @@ export function UserAnswerCard({ response, questions }: UserAnswerCardProps) {
         <CardContent>
           <div className="space-y-3">
             {questions.map((question) => {
+              // Simply use the question.id to get the answer, no complex parsing needed
               const answer = parsedAnswers[question.id];
               let displayAnswer = "No answer provided";
               
               if (answer !== undefined) {
                 if (question.options && Array.isArray(question.options)) {
-                  displayAnswer = question.options[answer] || answer;
+                  displayAnswer = question.options[answer] || String(answer);
                 } else {
                   displayAnswer = String(answer);
                 }
