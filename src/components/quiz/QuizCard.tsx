@@ -1,8 +1,10 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Link2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ReactNode } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface QuizCardProps {
   quiz: {
@@ -12,6 +14,7 @@ interface QuizCardProps {
     responses?: any[];
     users?: {
       username: string;
+      avatar_url?: string;
     };
   };
   onViewAnalytics?: () => void;
@@ -38,7 +41,13 @@ export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionBut
       <CardHeader className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB] text-white">
         <CardTitle className="truncate">{quiz.name}</CardTitle>
         {showCreator && quiz.users && (
-          <p className="text-sm opacity-80">by {quiz.users.username}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={quiz.users.avatar_url || ''} alt={quiz.users.username} />
+              <AvatarFallback>{quiz.users.username[0].toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <p className="text-sm opacity-80">by {quiz.users.username}</p>
+          </div>
         )}
       </CardHeader>
       <CardContent className="p-6">
@@ -90,3 +99,4 @@ export const QuizCard = ({ quiz, onViewAnalytics, onView, showCreator, actionBut
     </Card>
   );
 };
+
