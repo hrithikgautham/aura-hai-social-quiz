@@ -22,8 +22,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cn } from '@/lib/utils';
-import { AuraCalculationInfo } from "@/components/quiz/AuraCalculationInfo";
 import { calculateMCQAuraPoints } from "@/utils/auraCalculations";
+import { QuestionAuraInfo } from "@/components/quiz/QuestionAuraInfo";
 
 type Question = {
   id: string;
@@ -465,13 +465,8 @@ const QuizCreate = () => {
           <CardHeader>
             {currentStep === 'name' && (
               <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Name Your Quiz</CardTitle>
-                    <CardDescription>Choose a catchy name for your aura quiz</CardDescription>
-                  </div>
-                  <AuraCalculationInfo />
-                </div>
+                <CardTitle>Name Your Quiz</CardTitle>
+                <CardDescription>Choose a catchy name for your aura quiz</CardDescription>
               </>
             )}
 
@@ -523,9 +518,12 @@ const QuizCreate = () => {
               <div>
                 {fixedQuestions[currentQuestionIndex] && (
                   <div className="space-y-6">
-                    <h3 className="text-lg font-medium">
-                      {fixedQuestions[currentQuestionIndex].text}
-                    </h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium">
+                        {fixedQuestions[currentQuestionIndex].text}
+                      </h3>
+                      <QuestionAuraInfo type={fixedQuestions[currentQuestionIndex].type} />
+                    </div>
 
                     {fixedQuestions[currentQuestionIndex].type === 'mcq' && (
                       <div className="space-y-2">
@@ -647,9 +645,12 @@ const QuizCreate = () => {
 
                       return (
                         <>
-                          <h3 className="text-lg font-medium">
-                            {currentQuestion.text}
-                          </h3>
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-medium">
+                              {currentQuestion.text}
+                            </h3>
+                            <QuestionAuraInfo type={currentQuestion.type} />
+                          </div>
 
                           {currentQuestion.type === 'mcq' && (
                             <div className="space-y-2">

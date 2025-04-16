@@ -36,7 +36,6 @@ const QuizAnalytics = () => {
   const [responses, setResponses] = useState<any[]>([]);
   const [chartData, setChartData] = useState<Record<string, any[]>>({});
 
-  // New state for leaderboard data
   const [leaderboard, setLeaderboard] = useState<Array<{
     username: string;
     aura_points: number;
@@ -68,7 +67,6 @@ const QuizAnalytics = () => {
 
         setQuiz(quizData);
 
-        // Add quiz creator to leaderboard with 100k points
         setLeaderboard([
           { username: quizData.users.username, aura_points: 100000 },
         ]);
@@ -231,7 +229,6 @@ const QuizAnalytics = () => {
           </Button>
         </div>
 
-        {/* Leaderboard Table */}
         <Card className="mb-8 hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
@@ -260,7 +257,6 @@ const QuizAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* Distribution Chart */}
         <Card className="mb-8 hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
@@ -296,7 +292,6 @@ const QuizAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* Question Response Charts */}
         <h2 className="text-2xl font-bold mt-8 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
           Question Responses
         </h2>
@@ -308,19 +303,19 @@ const QuizAnalytics = () => {
                   Q{index + 1}: {question.text}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 h-72">
+              <CardContent className="p-4 h-[400px]">
                 {chartData[question.id] && (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={chartData[question.id]}
                         cx="50%"
-                        cy="50%"
+                        cy="40%"
                         labelLine={true}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="count"
-                        label={({ option, percentage }) => `${option}: ${percentage}%`}
+                        label={({ option, percentage }) => `${percentage}%`}
                       >
                         {chartData[question.id].map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -338,7 +333,16 @@ const QuizAnalytics = () => {
                         }
                         return null;
                       }} />
-                      <Legend />
+                      <Legend 
+                        layout="vertical"
+                        verticalAlign="bottom"
+                        align="center"
+                        wrapperStyle={{
+                          paddingTop: "20px",
+                          width: "100%",
+                          fontSize: "12px"
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
