@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -63,32 +64,38 @@ export default function ProfileEdit() {
 
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${user?.id}-${Math.random()}.${fileExt}`;
 
+      // Upload the file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, file, {
-          upsert: true
-        });
+        .upload(filePath, file);
 
       if (uploadError) {
+        console.error('Error uploading:', uploadError);
         throw uploadError;
       }
 
+      // Get the public URL
       const { data } = supabase.storage
         .from('avatars')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
 
       if (data) {
+        // Update the user record with the new avatar URL
         const { error: updateError } = await supabase
           .from('users')
           .update({ avatar_url: data.publicUrl })
           .eq('id', user?.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating user:', updateError);
+          throw updateError;
+        }
         
         setAvatarUrl(data.publicUrl);
         
+        // Update local storage user data
         if (user) {
           const updatedUser = { ...user, avatar_url: data.publicUrl };
           localStorage.setItem('user', JSON.stringify(updatedUser));
