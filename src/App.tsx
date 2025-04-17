@@ -40,7 +40,7 @@ const AuthRedirectHandler = () => {
       // If user is authenticated, redirect to dashboard
       if (user) {
         console.log("User is authenticated, redirecting to dashboard");
-        setTimeout(() => navigate('/dashboard'), 100);
+        navigate('/dashboard');
       }
     }
   }, [location, navigate, user]);
@@ -87,7 +87,11 @@ const App = () => (
           <AuthRedirectHandler />
           <FloatingMenuWrapper />
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={
+              <UnauthorizedRoute>
+                <Index />
+              </UnauthorizedRoute>
+            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <PageLayout>
