@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,126 +50,87 @@ const PLACEHOLDER_IMAGES = [
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authFinalized, setAuthFinalized] = useState(false);
 
   useEffect(() => {
-    // First, check for stored user to show something immediately
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-        // Don't set loading to false here - we still need to verify with Supabase
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-      }
-    }
-    
-    // Set up the auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.email);
-        
-        if (session?.user) {
-          try {
-            const { data: existingUser, error: fetchError } = await supabase
+    let timeoutId: NodeJS.Timeout;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email);
+
+      if (session?.user) {
+        try {
+          const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (existingUser) {
+            console.log("User found in database:", existingUser);
+            setUser(existingUser);
+            localStorage.setItem('user', JSON.stringify(existingUser));
+          } else if (event === 'SIGNED_IN') {
+            console.log("Creating new user record");
+            const avatarUrl = session.user.user_metadata.avatar_url || 
+                            session.user.user_metadata.picture ||
+                            `https://images.unsplash.com/photo-${
+                              PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+                            }?w=150&h=150&fit=crop`;
+            
+            const username = session.user.user_metadata.full_name?.toLowerCase().replace(/\s+/g, '_') || 
+                          session.user.email?.split('@')[0] || 
+                          `user_${Math.random().toString(36).substring(2, 10)}`;
+            
+            const { data: newUser, error: insertError } = await supabase
               .from('users')
-              .select('*')
-              .eq('id', session.user.id)
+              .insert([{ 
+                id: session.user.id,
+                username: username,
+                avatar_url: avatarUrl,
+                email: session.user.email
+              }])
+              .select()
               .single();
-
-            if (existingUser) {
-              console.log("User found in database:", existingUser);
-              setUser(existingUser);
-              localStorage.setItem('user', JSON.stringify(existingUser));
-              setLoading(false);
-              setAuthFinalized(true);
-            } else {
-              console.log("No user found in database, creating new user");
-              
-              const avatarUrl = session.user.user_metadata.avatar_url || 
-                              session.user.user_metadata.picture ||
-                              `https://images.unsplash.com/photo-${
-                                PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
-                              }?w=150&h=150&fit=crop`;
-              
-              const username = session.user.user_metadata.full_name?.toLowerCase().replace(/\s+/g, '_') || 
-                            session.user.email?.split('@')[0] || 
-                            `user_${Math.random().toString(36).substring(2, 10)}`;
-              
-              const { data: newUser, error: insertError } = await supabase
-                .from('users')
-                .insert([{ 
-                  id: session.user.id,
-                  username: username,
-                  avatar_url: avatarUrl,
-                  email: session.user.email
-                }])
-                .select()
-                .single();
-              
-              if (insertError) {
-                console.error("Failed to create user record:", insertError);
-                setLoading(false);
-                setAuthFinalized(true);
-              } else if (newUser) {
-                console.log("Created new user:", newUser);
-                setUser(newUser);
-                localStorage.setItem('user', JSON.stringify(newUser));
-                setLoading(false);
-                setAuthFinalized(true);
-              }
+            
+            if (newUser) {
+              console.log("Created new user:", newUser);
+              setUser(newUser);
+              localStorage.setItem('user', JSON.stringify(newUser));
             }
-          } catch (error) {
-            console.error('Error handling user data after auth:', error);
-            setLoading(false);
-            setAuthFinalized(true);
           }
-        } else if (event === 'SIGNED_OUT') {
-          console.log("User signed out");
-          setUser(null);
-          localStorage.removeItem('user');
-          setLoading(false);
-          setAuthFinalized(true);
-        } else {
-          console.log("Other auth event, setting loading to false:", event);
-          // For any other auth event, finish loading but don't clear the user
-          // if we already have one in state or localStorage
-          setLoading(false);
-          setAuthFinalized(true);
+        } catch (error) {
+          console.error('Error handling user data:', error);
         }
+      } else if (event === 'SIGNED_OUT') {
+        console.log("User signed out");
+        setUser(null);
+        localStorage.removeItem('user');
       }
-    );
+      
+      setLoading(false);
+    });
 
-    // Then check the current session
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("Initial session check:", session);
-        
         if (!session) {
-          // No active session found, set loading to false
           setLoading(false);
-          setAuthFinalized(true);
         }
-        // If session exists, wait for onAuthStateChange to handle it
       } catch (error) {
         console.error("Error checking session:", error);
         setLoading(false);
-        setAuthFinalized(true);
       }
     };
-    
-    checkSession();
-    
-    // Timeout as a failsafe
-    const timeoutId = setTimeout(() => {
+
+    timeoutId = setTimeout(() => {
       if (loading) {
-        console.log("Auth loading timed out after 5 seconds, forcing state update");
+        console.log("Auth loading timed out");
         setLoading(false);
-        setAuthFinalized(true);
       }
-    }, 5000); // Reduced from 10s to 5s to improve user experience
-    
+    }, 3000);
+
+    checkSession();
+
     return () => {
       subscription.unsubscribe();
       clearTimeout(timeoutId);
@@ -393,20 +353,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       checkUsernameExists,
       checkIfUserExists 
     }}>
-      {authFinalized ? children : (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-[#FFA99F] to-[#FF719A]">
-          <div className="bg-white p-8 rounded-2xl shadow-lg">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF719A] to-[#FFA99F]">
-                Initializing...
-              </h2>
-            </div>
-            <div className="mt-4 flex justify-center">
-              <div className="w-16 h-16 border-4 border-[#FF719A] border-t-transparent rounded-full animate-spin" />
-            </div>
-          </div>
-        </div>
-      )}
+      {children}
     </AuthContext.Provider>
   );
 };

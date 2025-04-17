@@ -14,16 +14,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   
   console.log("ProtectedRoute - User:", user, "Loading:", loading);
   
-  // Add a timeout to prevent infinite loading
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     
     if (loading) {
-      // If still loading after 3 seconds, force a decision
+      // If still loading after 2 seconds, force a decision
       timeoutId = setTimeout(() => {
         console.log("Loading timed out in ProtectedRoute, forcing navigation decision");
         setForceRender(true);
-      }, 3000); // Reduced from 5s to 3s
+      }, 2000);
     }
     
     return () => {
@@ -31,19 +30,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     };
   }, [loading]);
 
-  // If we have a user (either from localStorage or authenticated), render content
-  // even if technically still loading from Supabase
+  // If we have a user, render content immediately
   if (user) {
     console.log("User found, rendering protected content");
     return <>{children}</>;
   }
   
-  // If still loading and timeout hasn't been reached, show loading
+  // Show loading only briefly
   if (loading && !forceRender) {
     return <QuirkyLoading />;
   }
 
-  // If not loading anymore or timeout reached, and we don't have a user, redirect
+  // If not loading or timeout reached, and no user, redirect
   console.log("No user found in ProtectedRoute, redirecting to home");
   return <Navigate to="/" replace />;
 };
