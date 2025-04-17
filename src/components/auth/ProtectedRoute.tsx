@@ -2,7 +2,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  const [forceRender, setForceRender] = useState(false);
   
   console.log("ProtectedRoute - User:", user, "Loading:", loading);
   
@@ -18,12 +19,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     let timeoutId: NodeJS.Timeout | null = null;
     
     if (loading) {
-      // If still loading after 5 seconds, force timeout
+      // If still loading after 3 seconds, force a decision
       timeoutId = setTimeout(() => {
         console.log("Loading timed out in ProtectedRoute, forcing navigation decision");
-        // The timeout won't change the state, but the component will re-render
-        // and evaluate the conditions below with the current state
-      }, 5000);
+        setForceRender(true);
+      }, 3000); // Reduced from 5s to 3s
     }
     
     return () => {
@@ -31,23 +31,21 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     };
   }, [loading]);
 
-  // If loading for more than 3 seconds and we have a user, just render content
-  if (loading && user) {
-    console.log("User found but still loading, proceeding to render content");
+  // If we have a user (either from localStorage or authenticated), render content
+  // even if technically still loading from Supabase
+  if (user) {
+    console.log("User found, rendering protected content");
     return <>{children}</>;
   }
   
-  // If still loading and no user, show loading
-  if (loading && !user) {
+  // If still loading and timeout hasn't been reached, show loading
+  if (loading && !forceRender) {
     return <QuirkyLoading />;
   }
 
-  if (!user) {
-    console.log("No user found in ProtectedRoute, redirecting to home");
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
+  // If not loading anymore or timeout reached, and we don't have a user, redirect
+  console.log("No user found in ProtectedRoute, redirecting to home");
+  return <Navigate to="/" replace />;
 };
 
 export default ProtectedRoute;
