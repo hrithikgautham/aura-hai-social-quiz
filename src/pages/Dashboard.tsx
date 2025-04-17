@@ -26,9 +26,21 @@ const Dashboard = () => {
   useEffect(() => {
     console.log("Dashboard mounted, current user:", user);
 
-    // Parse session from URL - fixed method to use the current Supabase API
-    const { data } = supabase.auth.getSession();
-    console.log("Current session data:", data);
+    // Parse session from URL - corrected method to properly handle the Promise
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        console.log("Current session data:", data);
+        
+        // Add debugging for manual URL parsing
+        const result = await supabase.auth.getSessionFromUrl();
+        console.log("Manual session from URL parsing:", result);
+      } catch (err) {
+        console.error("Error checking session:", err);
+      }
+    };
+    
+    checkSession();
     
     // Handle hash fragment for OAuth redirects
     if (window.location.hash) {
