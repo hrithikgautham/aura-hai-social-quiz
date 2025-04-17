@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { QuizCard } from '@/components/quiz/QuizCard';
@@ -24,12 +23,26 @@ const Dashboard = () => {
   const [previousUnlockedSlots, setPreviousUnlockedSlots] = useState(0);
 
   useEffect(() => {
+    console.log("Dashboard mounted, current user:", user);
+
+    // Parse session from URL
+    supabase.auth
+      .getSessionFromUrl()
+      .then(({ data, error }) => {
+        console.log("Session from URL data:", data);
+        if (error) {
+          console.error("Error getting session from URL:", error);
+        }
+      });
+
     if (!user) {
+      console.log("No user found, redirecting to home");
       navigate('/');
       return;
     }
 
     const fetchQuizzes = async () => {
+      console.log("Fetching quizzes for user:", user.id);
       setLoading(true);
       try {
         const { data: createdData, error: createdError } = await supabase
