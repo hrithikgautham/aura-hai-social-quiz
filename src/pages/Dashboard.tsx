@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,9 +31,11 @@ const Dashboard = () => {
         const { data, error } = await supabase.auth.getSession();
         console.log("Current session data:", data);
         
-        // Add debugging for manual URL parsing
-        const result = await supabase.auth.getSessionFromUrl();
-        console.log("Manual session from URL parsing:", result);
+        // Add debugging for hash fragment which might contain auth tokens
+        if (window.location.hash) {
+          console.log("Hash fragment detected:", window.location.hash);
+          // The supabase client should automatically handle this via detectSessionInUrl
+        }
       } catch (err) {
         console.error("Error checking session:", err);
       }
