@@ -18,7 +18,7 @@ import ProfileEdit from "./pages/ProfileEdit";
 import { FloatingMenu } from "./components/layout/FloatingMenu";
 import PageLayout from "./components/layout/PageLayout";
 import { useAuth } from "./contexts/AuthContext";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
 // Handle auth redirects from OAuth providers
@@ -26,6 +26,7 @@ const AuthRedirectHandler = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [isAuthRedirect, setIsAuthRedirect] = useState(false);
   const redirectProcessed = useRef(false);
   
   useEffect(() => {
@@ -33,6 +34,7 @@ const AuthRedirectHandler = () => {
     if (location.hash && location.hash.includes('access_token') && !redirectProcessed.current) {
       console.log("Detected OAuth redirect with hash:", location.hash);
       redirectProcessed.current = true;
+      setIsAuthRedirect(true);
       
       // Clear the hash, the AuthProvider will handle the session
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -41,11 +43,15 @@ const AuthRedirectHandler = () => {
 
   // Add a second effect to handle navigation once user is loaded
   useEffect(() => {
-    if (!loading && user && location.pathname === '/') {
-      console.log("User is authenticated after OAuth redirect, navigating to dashboard");
-      navigate('/dashboard');
+    if (isAuthRedirect && !loading) {
+      if (user) {
+        console.log("User is authenticated after OAuth redirect, navigating to dashboard");
+        navigate('/dashboard', { replace: true });
+      } else if (!loading) {
+        console.log("Auth redirect processed but no user found");
+      }
     }
-  }, [user, loading, navigate, location.pathname]);
+  }, [user, loading, navigate, isAuthRedirect]);
   
   return null;
 };

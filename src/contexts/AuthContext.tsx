@@ -188,17 +188,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       // Get the current origin for redirections
       const origin = window.location.origin;
-      console.log(`Initiating Google login with redirect to: ${origin}/dashboard`);
+      const redirectUrl = `${origin}/dashboard`;
+      console.log(`Initiating Google login with redirect to: ${redirectUrl}`);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
-          },
-          // Important: Make sure this matches the redirect URL in both Google Cloud and Supabase
-          redirectTo: `${origin}/dashboard`
+          }
         }
       });
       

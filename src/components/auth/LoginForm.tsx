@@ -12,97 +12,11 @@ interface LoginFormProps {
 
 export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
   const [quizCreator, setQuizCreator] = useState<string | null>(null);
-  const { loginWithGoogle, signInWithIdToken } = useAuth();
+  const { loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-
-  // Google One Tap setup
-  useEffect(() => {
-    // Only initialize Google One Tap on the login/signup page
-    // and not when the user is already in a login process
-    if (isLoggingIn) return;
-    
-    // Load the Google Identity Services script
-    const loadGoogleScript = () => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-      
-      script.onload = initializeOneTap;
-    };
-
-    const initializeOneTap = () => {
-      if (window.google && !document.getElementById('google-one-tap-container')) {
-        // Create container for One Tap
-        const containerDiv = document.createElement('div');
-        containerDiv.id = 'google-one-tap-container';
-        document.body.appendChild(containerDiv);
-        
-        window.google.accounts.id.initialize({
-          client_id: '539258633496-l6fi7nsu457imj74156b9g7tu4d4iro1.apps.googleusercontent.com',
-          callback: handleGoogleOneTapResponse,
-          auto_select: true,
-          cancel_on_tap_outside: false
-        });
-        
-        window.google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            console.log('One Tap not displayed:', notification.getNotDisplayedReason() || notification.getSkippedReason());
-          }
-        });
-      }
-    };
-    
-    loadGoogleScript();
-    
-    return () => {
-      // Clean up
-      const container = document.getElementById('google-one-tap-container');
-      if (container) {
-        document.body.removeChild(container);
-      }
-    };
-  }, [isLoggingIn]);
-
-  // Handle Google One Tap response
-  const handleGoogleOneTapResponse = async (response: any) => {
-    if (response.credential) {
-      setIsLoggingIn(true);
-      setAuthError(null);
-      
-      try {
-        // Authenticate with Supabase using the ID token
-        const result = await signInWithIdToken(response.credential, isSignup);
-
-        if (!result.success) {
-          setAuthError(result.error);
-          toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: result.error,
-          });
-        } else {
-          toast({
-            title: isSignup ? "Signup successful!" : "Login successful!",
-            description: "Welcome to Aura Hai!",
-          });
-        }
-      } catch (error) {
-        console.error("Google One Tap auth error:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not authenticate with Google. Please try again.",
-        });
-      } finally {
-        setIsLoggingIn(false);
-      }
-    }
-  };
 
   useEffect(() => {
     if (location.pathname.includes('/quiz/')) {
@@ -141,10 +55,8 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
       setIsLoggingIn(true);
       setAuthError(null);
       
-      const appUrl = window.location.origin;
       console.log(`Initiating Google ${isSignup ? 'signup' : 'login'}`);
       
-      // Update: using updated loginWithGoogle function signature (isSignup parameter only)
       await loginWithGoogle(isSignup);
       
       toast({
