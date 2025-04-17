@@ -106,12 +106,10 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
       setIsLoggingIn(true);
       setAuthError(null);
       
-      const appUrl = window.location.origin;
-      const redirectURL = `${appUrl}/dashboard`;
+      console.log("Initiating Google login");
       
-      console.log("Initiating Google login with redirect to:", redirectURL);
-      
-      await loginWithGoogle(redirectURL);
+      // Update: removed the redirectURL parameter as it's no longer accepted
+      await loginWithGoogle();
       
       // We only show the toast once here
       toast({

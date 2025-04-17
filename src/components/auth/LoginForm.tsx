@@ -142,11 +142,10 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
       setAuthError(null);
       
       const appUrl = window.location.origin;
-      const redirectURL = `${appUrl}/dashboard`;
+      console.log(`Initiating Google ${isSignup ? 'signup' : 'login'}`);
       
-      console.log(`Initiating Google ${isSignup ? 'signup' : 'login'} with redirect to:`, redirectURL);
-      
-      await loginWithGoogle(redirectURL, isSignup);
+      // Update: using updated loginWithGoogle function signature (isSignup parameter only)
+      await loginWithGoogle(isSignup);
       
       toast({
         title: isSignup ? "Signing you up..." : "Logging you in...",
