@@ -19,7 +19,6 @@ import { FloatingMenu } from "./components/layout/FloatingMenu";
 import PageLayout from "./components/layout/PageLayout";
 import { useAuth } from "./contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "./integrations/supabase/client";
 
 // Handle auth redirects from OAuth providers
 const AuthRedirectHandler = () => {
@@ -48,12 +47,29 @@ const AuthRedirectHandler = () => {
   // Add a second effect to handle navigation once user is loaded
   useEffect(() => {
     // Only attempt navigation once to prevent infinite redirects
-    if (!loading && user && isAuthRedirect && !navigationAttempted.current) {
-      console.log("User is authenticated after redirect, navigating to dashboard:", user);
-      navigationAttempted.current = true;
+    if (isAuthRedirect && !navigationAttempted.current) {
+      console.log("Auth redirect detected, user:", user, "loading:", loading);
       
-      // Navigate to dashboard with replace to prevent back button issues
-      navigate('/dashboard', { replace: true });
+      // Set a timeout to prevent being stuck if auth never completes
+      const timeoutId = setTimeout(() => {
+        if (!navigationAttempted.current) {
+          console.log("Navigation timeout reached, redirecting to dashboard anyway");
+          navigationAttempted.current = true;
+          navigate('/dashboard', { replace: true });
+        }
+      }, 5000);
+      
+      // If user is available, navigate immediately
+      if (!loading && user) {
+        console.log("User is authenticated after redirect, navigating to dashboard:", user);
+        navigationAttempted.current = true;
+        clearTimeout(timeoutId);
+        
+        // Navigate to dashboard with replace to prevent back button issues
+        navigate('/dashboard', { replace: true });
+      }
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [user, loading, navigate, isAuthRedirect]);
   
@@ -65,14 +81,39 @@ const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const navigationAttempted = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Clear previous timeout if it exists
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     if (!loading && user && !navigationAttempted.current) {
       console.log("User is already logged in, redirecting to dashboard");
       navigationAttempted.current = true;
       navigate('/dashboard', { replace: true });
     }
+    
+    // Set a timeout to prevent infinite loading
+    if (loading) {
+      timeoutRef.current = setTimeout(() => {
+        console.log("UnauthorizedRoute loading timeout reached");
+        // Just force a re-render without changing loading state
+      }, 5000);
+    }
+    
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, [user, loading, navigate]);
+
+  // If we have a user but we're still loading, just render content
+  if (loading && user) {
+    console.log("UnauthorizedRoute - User available but still loading, rendering dashboard");
+    return <Navigate to="/dashboard" replace />;
+  }
 
   if (loading) {
     return (

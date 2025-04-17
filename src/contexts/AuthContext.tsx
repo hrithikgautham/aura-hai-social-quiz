@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -50,6 +51,7 @@ const PLACEHOLDER_IMAGES = [
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -61,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     
+    // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
@@ -113,35 +116,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.error('Error handling user data after auth:', error);
           } finally {
             setLoading(false);
+            setAuthChecked(true);
           }
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out");
           setUser(null);
           localStorage.removeItem('user');
           setLoading(false);
+          setAuthChecked(true);
         } else {
           setLoading(false);
+          setAuthChecked(true);
         }
       }
     );
 
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Initial session check:", session);
-      
-      if (session && !user) {
-        console.log("Found existing session but no user, processing...");
-      }
-      
-      if (!session) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session);
+        
+        if (!session) {
+          setLoading(false);
+          setAuthChecked(true);
+        }
+        // Session exists, wait for onAuthStateChange to handle it
+      } catch (error) {
+        console.error("Error checking session:", error);
         setLoading(false);
+        setAuthChecked(true);
       }
     };
     
     checkSession();
     
+    // Add a failsafe timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log("Auth loading timed out after 10 seconds, forcing state update");
+        setLoading(false);
+        setAuthChecked(true);
+      }
+    }, 10000);
+    
     return () => {
       subscription.unsubscribe();
+      clearTimeout(timeoutId);
     };
   }, []);
 
