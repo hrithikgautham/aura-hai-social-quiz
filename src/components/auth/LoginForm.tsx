@@ -57,7 +57,9 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
       
       console.log(`Initiating Google ${isSignup ? 'signup' : 'login'} for production`);
       
-      await loginWithGoogle(isSignup);
+      // Use explicit production domain for redirection to solve the issue
+      const productionDomain = 'https://aura-hai-social-quiz.lovable.app';
+      await loginWithGoogle(isSignup, productionDomain);
       
       toast({
         title: isSignup ? "Signing you up..." : "Logging you in...",

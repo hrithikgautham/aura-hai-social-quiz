@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,7 +15,7 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: (isSignup?: boolean) => Promise<void>;
+  loginWithGoogle: (isSignup?: boolean, redirectDomain?: string) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
   signInWithIdToken: (token: string, isSignup?: boolean) => Promise<{success: boolean; error?: string}>;
@@ -216,10 +215,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = async (isSignup?: boolean) => {
+  const loginWithGoogle = async (isSignup?: boolean, redirectDomain?: string) => {
     try {
-      // For production, set the redirectTo URL to the production domain + dashboard
-      const redirectUrl = 'https://aura-hai-social-quiz.lovable.app/dashboard';
+      // Default to the current domain if no domain is provided
+      const baseUrl = redirectDomain || window.location.origin;
+      const redirectUrl = `${baseUrl}/dashboard`;
+      
       console.log(`Initiating Google login with redirect to: ${redirectUrl}`);
       
       const { data, error } = await supabase.auth.signInWithOAuth({

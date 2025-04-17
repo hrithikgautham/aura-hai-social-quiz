@@ -50,7 +50,7 @@ const AuthRedirectHandler = () => {
           // Add a small delay to ensure the auth state is fully processed
           setTimeout(() => {
             navigate('/dashboard', { replace: true });
-          }, 100);
+          }, 500); // Increased delay for extra safety
         } else if (isAuthRedirect) {
           console.log("Auth redirect processed but no user found, staying on current page");
         }
