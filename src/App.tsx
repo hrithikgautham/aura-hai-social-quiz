@@ -31,15 +31,16 @@ const AuthRedirectHandler = () => {
   useEffect(() => {
     // Check if the URL contains an access_token (OAuth redirect)
     if (location.hash && location.hash.includes('access_token') && !redirectProcessed.current) {
-      console.log("Detected OAuth redirect - handling authentication");
+      console.log("Detected OAuth redirect with hash:", location.hash);
       redirectProcessed.current = true;
       
       // Clear the hash, the AuthProvider will handle the session
       window.history.replaceState({}, document.title, window.location.pathname);
       
-      // The redirect to dashboard is now handled by the redirectTo option in loginWithGoogle
+      // Note: We don't need to navigate here as the UnauthorizedRoute component will handle redirects
+      // when the user state is updated by AuthProvider
     }
-  }, [location, user]);
+  }, [location]);
   
   return null;
 };
