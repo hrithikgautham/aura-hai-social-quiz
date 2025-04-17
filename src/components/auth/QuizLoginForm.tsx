@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
-export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
+export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, quizId?: string }) => {
   const { loginWithGoogle, signInWithIdToken } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -85,6 +87,9 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
             title: "Login successful!",
             description: "Welcome to Aura Hai!",
           });
+          
+          // Reload the current page to trigger the auth check again
+          window.location.reload();
         }
       } catch (error) {
         console.error("Google One Tap auth error:", error);
@@ -108,8 +113,20 @@ export const QuizLoginForm = ({ quizCreator }: { quizCreator?: string }) => {
       
       console.log("Initiating Google login");
       
-      // Update: removed the redirectURL parameter as it's no longer accepted
-      await loginWithGoogle();
+      const productionDomain = window.location.origin;
+      
+      // If we're on a quiz page, redirect back to the same quiz after login
+      let redirectPath = '/dashboard';
+      if (quizId) {
+        redirectPath = `/quiz/${quizId}`;
+      } else if (location.pathname.includes('/quiz/')) {
+        const pathQuizId = location.pathname.split('/quiz/')[1].split('/')[0];
+        if (pathQuizId) {
+          redirectPath = `/quiz/${pathQuizId}`;
+        }
+      }
+      
+      await loginWithGoogle(false, productionDomain, redirectPath);
       
       // We only show the toast once here
       toast({

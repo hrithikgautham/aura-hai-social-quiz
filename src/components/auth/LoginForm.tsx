@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   isSignup?: boolean;
@@ -15,20 +15,27 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
   const { loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [quizId, setQuizId] = useState<string | null>(null);
 
   useEffect(() => {
     if (location.pathname.includes('/quiz/')) {
+      const quizPathId = location.pathname.split('/quiz/')[1].split('/')[0];
+      if (quizPathId) {
+        setQuizId(quizPathId);
+      }
+      
       const fetchQuizCreator = async () => {
-        const quizId = location.pathname.split('/quiz/')[1];
+        const quizId = location.pathname.split('/quiz/')[1].split('/')[0];
         if (!quizId) return;
         
         try {
           const { data, error } = await supabase
             .from('quizzes')
             .select('creator_id, users:creator_id(username)')
-            .eq('shareable_link', quizId)
+            .or(`id.eq.${quizId},shareable_link.eq.${quizId}`)
             .single();
 
           if (error || !data) {
@@ -60,8 +67,16 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
       // Use explicit production domain for redirection to solve the issue
       const productionDomain = window.location.origin;
       console.log("Using redirect domain:", productionDomain);
-      await loginWithGoogle(isSignup, productionDomain);
       
+      // If we're on a quiz page, redirect back to the quiz after login
+      let redirectPath = '/dashboard';
+      if (quizId) {
+        redirectPath = `/quiz/${quizId}`;
+      }
+      
+      await loginWithGoogle(isSignup, productionDomain, redirectPath);
+      
+      // Only show one toast message
       toast({
         title: isSignup ? "Signing you up..." : "Logging you in...",
         description: "Please wait while we connect to Google.",

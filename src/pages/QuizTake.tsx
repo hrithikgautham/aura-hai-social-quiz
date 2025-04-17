@@ -95,7 +95,7 @@ const QuizTake = () => {
           if (questionError) throw questionError;
 
           if (questionData) {
-            const formattedQuestions = questionData.map(item => {
+            setQuestions(questionData.map(item => {
               let parsedOptions;
               if (item.questions.options) {
                 if (typeof item.questions.options === 'string') {
@@ -132,9 +132,7 @@ const QuizTake = () => {
                 options: parsedOptions,
                 priority_order: parsedPriorityOrder,
               };
-            });
-            
-            setQuestions(formattedQuestions);
+            }));
             
             const storedAnswers = sessionStorage.getItem(`quiz_answers_${quizData.id}`);
             if (storedAnswers) {
@@ -271,7 +269,7 @@ const QuizTake = () => {
           <p className="text-gray-600 text-center mb-8">
             You need to be logged in to take this quiz and measure your aura.
           </p>
-          <QuizLoginForm quizCreator={quizCreator || undefined} />
+          <QuizLoginForm quizCreator={quizCreator || undefined} quizId={quizId} />
         </div>
       </PageLayout>
     );
