@@ -68,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (session?.user) {
           try {
+            // Check if user exists in our users table
             const { data: existingUser, error: fetchError } = await supabase
               .from('users')
               .select('*')
@@ -79,10 +80,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
             } else {
-              console.log("No user found in database despite successful auth");
+              console.log("No user found in database, creating new user");
+              
+              // User doesn't exist yet, create a new user record
+              const avatarUrl = session.user.user_metadata.avatar_url || 
+                                session.user.user_metadata.picture ||
+                                `https://images.unsplash.com/photo-${
+                                  PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+                                }?w=150&h=150&fit=crop`;
+              
+              const username = session.user.user_metadata.full_name?.toLowerCase().replace(/\s+/g, '_') || 
+                              session.user.email?.split('@')[0] || 
+                              `user_${Math.random().toString(36).substring(2, 10)}`;
+              
+              // Insert the new user
+              const { data: newUser, error: insertError } = await supabase
+                .from('users')
+                .insert([{ 
+                  id: session.user.id,
+                  username: username,
+                  avatar_url: avatarUrl,
+                  email: session.user.email
+                }])
+                .select()
+                .single();
+              
+              if (insertError) {
+                console.error("Failed to create user record:", insertError);
+              } else if (newUser) {
+                console.log("Created new user:", newUser);
+                setUser(newUser);
+                localStorage.setItem('user', JSON.stringify(newUser));
+              }
             }
           } catch (error) {
-            console.error('Error fetching user data after auth:', error);
+            console.error('Error handling user data after auth:', error);
           } finally {
             setLoading(false);
           }
@@ -186,9 +218,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = async (isSignup?: boolean) => {
     try {
-      // Get the current origin for redirections
-      const origin = window.location.origin;
-      const redirectUrl = `${origin}/dashboard`;
+      // For production, set the redirectTo URL to the production domain + dashboard
+      const redirectUrl = 'https://aura-hai-social-quiz.lovable.app/dashboard';
       console.log(`Initiating Google login with redirect to: ${redirectUrl}`);
       
       const { data, error } = await supabase.auth.signInWithOAuth({

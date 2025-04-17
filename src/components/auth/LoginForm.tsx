@@ -55,7 +55,7 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
       setIsLoggingIn(true);
       setAuthError(null);
       
-      console.log(`Initiating Google ${isSignup ? 'signup' : 'login'}`);
+      console.log(`Initiating Google ${isSignup ? 'signup' : 'login'} for production`);
       
       await loginWithGoogle(isSignup);
       

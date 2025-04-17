@@ -43,14 +43,21 @@ const AuthRedirectHandler = () => {
 
   // Add a second effect to handle navigation once user is loaded
   useEffect(() => {
-    if (isAuthRedirect && !loading) {
-      if (user) {
-        console.log("User is authenticated after OAuth redirect, navigating to dashboard");
-        navigate('/dashboard', { replace: true });
-      } else if (!loading) {
-        console.log("Auth redirect processed but no user found");
+    const checkUserAndNavigate = async () => {
+      if (!loading) {
+        if (user) {
+          console.log("User is authenticated, navigating to dashboard:", user);
+          // Add a small delay to ensure the auth state is fully processed
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 100);
+        } else if (isAuthRedirect) {
+          console.log("Auth redirect processed but no user found, staying on current page");
+        }
       }
-    }
+    };
+    
+    checkUserAndNavigate();
   }, [user, loading, navigate, isAuthRedirect]);
   
   return null;
@@ -60,7 +67,6 @@ const AuthRedirectHandler = () => {
 const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     if (!loading && user) {
