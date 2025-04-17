@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,7 +16,7 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: (redirectTo?: string, isSignup?: boolean) => Promise<void>;
+  loginWithGoogle: (isSignup?: boolean) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
   signInWithIdToken: (token: string, isSignup?: boolean) => Promise<{success: boolean; error?: string}>;
@@ -203,7 +204,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       if (data && data.users) {
-        return data.users.some(user => user.email === email);
+        // Properly type the users array
+        return data.users.some((user: { email?: string }) => user.email === email);
       }
       
       return false;
@@ -213,7 +215,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = async (redirectTo?: string, isSignup?: boolean) => {
+  const loginWithGoogle = async (isSignup?: boolean) => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -242,6 +244,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const tokenParts = token.split('.');
       if (tokenParts.length === 3) {
         try {
+          // Define a proper interface for the Google JWT payload
           interface GoogleJWTPayload {
             email?: string;
             name?: string;
