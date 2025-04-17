@@ -25,7 +25,7 @@ import { supabase } from "./integrations/supabase/client";
 const AuthRedirectHandler = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const redirectProcessed = useRef(false);
   
   useEffect(() => {
@@ -36,11 +36,16 @@ const AuthRedirectHandler = () => {
       
       // Clear the hash, the AuthProvider will handle the session
       window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Note: We don't need to navigate here as the UnauthorizedRoute component will handle redirects
-      // when the user state is updated by AuthProvider
     }
   }, [location]);
+
+  // Add a second effect to handle navigation once user is loaded
+  useEffect(() => {
+    if (!loading && user && location.pathname === '/') {
+      console.log("User is authenticated after OAuth redirect, navigating to dashboard");
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate, location.pathname]);
   
   return null;
 };
@@ -49,6 +54,7 @@ const AuthRedirectHandler = () => {
 const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && user) {
