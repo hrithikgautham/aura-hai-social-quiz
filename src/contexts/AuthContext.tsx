@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,7 +15,7 @@ type AuthContextType = {
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: (isSignup?: boolean, redirectDomain?: string) => Promise<void>;
+  loginWithGoogle: (isSignup?: boolean, redirectDomain?: string, redirectPath?: string) => Promise<void>;
   updateUsername: (newUsername: string) => Promise<boolean>;
   checkUsernameExists: (username: string) => Promise<boolean>;
   signInWithIdToken: (token: string, isSignup?: boolean) => Promise<{success: boolean; error?: string}>;
@@ -63,7 +62,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     
-    // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
@@ -150,7 +148,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     checkSession();
     
-    // Add a failsafe timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       if (loading) {
         console.log("Auth loading timed out after 10 seconds, forcing state update");
@@ -235,10 +232,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = async (isSignup?: boolean, redirectDomain?: string) => {
+  const loginWithGoogle = async (isSignup?: boolean, redirectDomain?: string, redirectPath?: string) => {
     try {
       const baseUrl = redirectDomain || window.location.origin;
-      const redirectUrl = `${baseUrl}/dashboard`;
+      const redirectUrl = `${baseUrl}${redirectPath || '/dashboard'}`;
       
       console.log(`Initiating Google login with redirect to: ${redirectUrl}`);
       
