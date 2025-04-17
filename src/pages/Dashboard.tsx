@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,15 +26,15 @@ const Dashboard = () => {
   useEffect(() => {
     console.log("Dashboard mounted, current user:", user);
 
-    // Parse session from URL
-    supabase.auth
-      .getSessionFromUrl()
-      .then(({ data, error }) => {
-        console.log("Session from URL data:", data);
-        if (error) {
-          console.error("Error getting session from URL:", error);
-        }
-      });
+    // Parse session from URL - fixed method to use the current Supabase API
+    const { data } = supabase.auth.getSession();
+    console.log("Current session data:", data);
+    
+    // Handle hash fragment for OAuth redirects
+    if (window.location.hash) {
+      console.log("Hash fragment detected:", window.location.hash);
+      // The AuthContext should handle this automatically through the onAuthStateChange listener
+    }
 
     if (!user) {
       console.log("No user found, redirecting to home");

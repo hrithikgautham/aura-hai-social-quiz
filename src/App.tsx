@@ -31,13 +31,16 @@ const AuthRedirectHandler = () => {
   
   useEffect(() => {
     // Check if the URL contains an access_token (OAuth redirect)
-    if (location.hash && location.hash.includes('access_token') && !redirectProcessed.current) {
+    if ((location.hash && location.hash.includes('access_token')) && !redirectProcessed.current) {
       console.log("Detected OAuth redirect with hash:", location.hash);
       redirectProcessed.current = true;
       setIsAuthRedirect(true);
       
-      // Clear the hash, the AuthProvider will handle the session
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // Let the hash be processed by supabase client's detectSessionInUrl
+      // then clear it to prevent confusion on page reloads
+      setTimeout(() => {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 1000);
     }
   }, [location]);
 
@@ -50,7 +53,7 @@ const AuthRedirectHandler = () => {
           // Add a small delay to ensure the auth state is fully processed
           setTimeout(() => {
             navigate('/dashboard', { replace: true });
-          }, 500); // Increased delay for extra safety
+          }, 1000); // Increased delay for extra safety
         } else if (isAuthRedirect) {
           console.log("Auth redirect processed but no user found, staying on current page");
         }

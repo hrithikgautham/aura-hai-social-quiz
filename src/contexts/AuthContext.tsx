@@ -67,7 +67,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (session?.user) {
           try {
-            // Check if user exists in our users table
             const { data: existingUser, error: fetchError } = await supabase
               .from('users')
               .select('*')
@@ -81,7 +80,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
               console.log("No user found in database, creating new user");
               
-              // User doesn't exist yet, create a new user record
               const avatarUrl = session.user.user_metadata.avatar_url || 
                                 session.user.user_metadata.picture ||
                                 `https://images.unsplash.com/photo-${
@@ -92,7 +90,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                               session.user.email?.split('@')[0] || 
                               `user_${Math.random().toString(36).substring(2, 10)}`;
               
-              // Insert the new user
               const { data: newUser, error: insertError } = await supabase
                 .from('users')
                 .insert([{ 
@@ -130,6 +127,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("Initial session check:", session);
+      
+      if (session && !user) {
+        console.log("Found existing session but no user, processing...");
+      }
+      
       if (!session) {
         setLoading(false);
       }
@@ -187,12 +190,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkIfUserExists = async (email: string): Promise<boolean> => {
     try {
-      // If we have admin access, use the admin API
       const { data, error } = await supabase.auth.admin.listUsers();
       
       if (error) {
         console.log("Using fallback method to check if user exists");
-        // Fallback: try to sign in without creating a user
         const { error: signInError } = await supabase.auth.signInWithOtp({
           email,
           options: {
@@ -204,7 +205,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       if (data && data.users) {
-        // Properly type the users array
         return data.users.some((user: { email?: string }) => user.email === email);
       }
       
@@ -217,7 +217,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = async (isSignup?: boolean, redirectDomain?: string) => {
     try {
-      // Default to the current domain if no domain is provided
       const baseUrl = redirectDomain || window.location.origin;
       const redirectUrl = `${baseUrl}/dashboard`;
       
@@ -252,12 +251,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const tokenParts = token.split('.');
       if (tokenParts.length === 3) {
         try {
-          // Define a proper interface for the Google JWT payload
           interface GoogleJWTPayload {
             email?: string;
             name?: string;
             picture?: string;
-            [key: string]: any; // Allow for other properties
+            [key: string]: any;
           }
           
           const payload = JSON.parse(atob(tokenParts[1])) as GoogleJWTPayload;
