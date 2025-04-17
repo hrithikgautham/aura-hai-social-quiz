@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -68,10 +67,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (session?.user) {
           try {
-            const randomAvatarUrl = `https://images.unsplash.com/photo-${
-              PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
-            }?w=150&h=150&fit=crop`;
-            
             const { data: existingUser, error: fetchError } = await supabase
               .from('users')
               .select('*')
@@ -79,41 +74,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               .single();
 
             if (existingUser) {
-              console.log("Existing user found:", existingUser);
+              console.log("User found in database:", existingUser);
               setUser(existingUser);
               localStorage.setItem('user', JSON.stringify(existingUser));
             } else {
-              console.log("No existing user found in the database");
-              
-              // Generate a username from email
-              const emailUsername = session.user.email ? 
-                session.user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') : 
-                `user_${Math.floor(Math.random() * 10000)}`;
-                
-              console.log("Creating new user with generated username:", emailUsername);
-              
-              const { data: newUser, error: insertError } = await supabase
-                .from('users')
-                .insert([{ 
-                  id: session.user.id,
-                  username: emailUsername.toLowerCase(),
-                  avatar_url: session.user.user_metadata.avatar_url || 
-                             session.user.user_metadata.picture ||
-                             randomAvatarUrl
-                }])
-                .select()
-                .single();
-              
-              if (newUser) {
-                console.log("Successfully created new user:", newUser);
-                setUser(newUser);
-                localStorage.setItem('user', JSON.stringify(newUser));
-              } else {
-                console.error("Error creating new user:", insertError);
-              }
+              console.log("No user found in database despite successful auth");
             }
           } catch (error) {
-            console.error('Error handling auth state change:', error);
+            console.error('Error fetching user data after auth:', error);
           } finally {
             setLoading(false);
           }
@@ -223,7 +191,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
-          }
+          },
+          redirectTo: `${window.location.origin}/dashboard`
         }
       });
       

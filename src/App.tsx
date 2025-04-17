@@ -37,13 +37,9 @@ const AuthRedirectHandler = () => {
       // Clear the hash, the AuthProvider will handle the session
       window.history.replaceState({}, document.title, window.location.pathname);
       
-      // If user is authenticated, redirect to dashboard
-      if (user) {
-        console.log("User is authenticated, redirecting to dashboard");
-        navigate('/dashboard');
-      }
+      // The redirect to dashboard is now handled by the redirectTo option in loginWithGoogle
     }
-  }, [location, navigate, user]);
+  }, [location, user]);
   
   return null;
 };
@@ -55,6 +51,7 @@ const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!loading && user) {
+      console.log("User is already logged in, redirecting to dashboard");
       navigate('/dashboard');
     }
   }, [user, loading, navigate]);
