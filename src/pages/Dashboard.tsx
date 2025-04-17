@@ -21,110 +21,93 @@ const Dashboard = () => {
   const [inProgressQuizzes, setInProgressQuizzes] = useState<any[]>([]);
   const [responseCount, setResponseCount] = useState(0);
   const [previousUnlockedSlots, setPreviousUnlockedSlots] = useState(0);
+  const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
 
   useEffect(() => {
     console.log("Dashboard mounted, current user:", user);
 
-    // Parse session from URL - corrected method to properly handle the Promise
-    const checkSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        console.log("Current session data:", data);
-        
-        // Add debugging for hash fragment which might contain auth tokens
-        if (window.location.hash) {
-          console.log("Hash fragment detected:", window.location.hash);
-          // The supabase client should automatically handle this via detectSessionInUrl
-        }
-      } catch (err) {
-        console.error("Error checking session:", err);
-      }
-    };
-    
-    checkSession();
-    
-    // Handle hash fragment for OAuth redirects
+    // Handle hash fragment for OAuth redirects - just log it for debugging
     if (window.location.hash) {
-      console.log("Hash fragment detected:", window.location.hash);
-      // The AuthContext should handle this automatically through the onAuthStateChange listener
+      console.log("Hash fragment detected in Dashboard:", window.location.hash);
     }
 
-    if (!user) {
-      console.log("No user found, redirecting to home");
-      navigate('/');
-      return;
+    // Only fetch data if user is authenticated and we haven't tried fetching yet
+    if (user && !dataFetchAttempted) {
+      fetchQuizzes();
+      setDataFetchAttempted(true);
+    } else if (!user) {
+      // If no user, don't show loading state
+      setLoading(false);
     }
+  }, [user]);
 
-    const fetchQuizzes = async () => {
-      console.log("Fetching quizzes for user:", user.id);
-      setLoading(true);
-      try {
-        const { data: createdData, error: createdError } = await supabase
-          .from('quizzes')
-          .select('*, responses(*)')
-          .eq('creator_id', user.id);
+  const fetchQuizzes = async () => {
+    console.log("Fetching quizzes for user:", user?.id);
+    setLoading(true);
+    try {
+      const { data: createdData, error: createdError } = await supabase
+        .from('quizzes')
+        .select('*, responses(*)')
+        .eq('creator_id', user?.id);
 
-        if (createdError) throw createdError;
-        setCreatedQuizzes(createdData || []);
+      if (createdError) throw createdError;
+      setCreatedQuizzes(createdData || []);
 
-        const { data: takenData, error: takenError } = await supabase
-          .from('responses')
-          .select('*, quizzes(*, responses(*), users(*))')
-          .eq('respondent_id', user.id)
-          .not('quizzes', 'is', null);
+      const { data: takenData, error: takenError } = await supabase
+        .from('responses')
+        .select('*, quizzes(*, responses(*), users(*))')
+        .eq('respondent_id', user?.id)
+        .not('quizzes', 'is', null);
 
-        if (takenError) throw takenError;
+      if (takenError) throw takenError;
 
-        const takenQuizList = takenData ? takenData.map(response => response.quizzes) : [];
-        setTakenQuizzes(takenQuizList || []);
+      const takenQuizList = takenData ? takenData.map(response => response.quizzes) : [];
+      setTakenQuizzes(takenQuizList || []);
 
-        const inProgressQuizIds = [];
-        
-        for (const quiz of createdData) {
-          const { count: questionsCount } = await supabase
-            .from('quiz_questions')
-            .select('*', { count: 'exact', head: true })
-            .eq('quiz_id', quiz.id);
-            
-          if (questionsCount < 7) {
-            inProgressQuizIds.push(quiz.id);
-          }
-        }
-        
-        const inProgress = createdData.filter(quiz => inProgressQuizIds.includes(quiz.id));
-        setInProgressQuizzes(inProgress);
-
-        if (createdData && createdData.length >= 3) {
-          const { data: responseData } = await supabase
-            .rpc('get_first_three_quizzes_response_count', {
-              creator_uuid: user.id
-            });
-            
-          setResponseCount(responseData || 0);
+      const inProgressQuizIds = [];
+      
+      for (const quiz of createdData || []) {
+        const { count: questionsCount } = await supabase
+          .from('quiz_questions')
+          .select('*', { count: 'exact', head: true })
+          .eq('quiz_id', quiz.id);
           
-          const currentUnlockedSlots = Math.floor((responseData || 0) / 10);
-          if (currentUnlockedSlots > previousUnlockedSlots) {
-            toast({
-              title: "New Quiz Slot Unlocked! 🎉",
-              description: "You can now create another quiz!",
-            });
-            setPreviousUnlockedSlots(currentUnlockedSlots);
-          }
+        if (questionsCount < 7) {
+          inProgressQuizIds.push(quiz.id);
         }
-      } catch (error) {
-        console.error('Error fetching quizzes:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load quizzes. Please try again.",
-        });
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      const inProgress = (createdData || []).filter(quiz => inProgressQuizIds.includes(quiz.id));
+      setInProgressQuizzes(inProgress);
 
-    fetchQuizzes();
-  }, [user, navigate, toast, previousUnlockedSlots]);
+      if (createdData && createdData.length >= 3) {
+        const { data: responseData } = await supabase
+          .rpc('get_first_three_quizzes_response_count', {
+            creator_uuid: user?.id
+          });
+          
+        setResponseCount(responseData || 0);
+        
+        const currentUnlockedSlots = Math.floor((responseData || 0) / 10);
+        if (currentUnlockedSlots > previousUnlockedSlots) {
+          toast({
+            title: "New Quiz Slot Unlocked! 🎉",
+            description: "You can now create another quiz!",
+          });
+          setPreviousUnlockedSlots(currentUnlockedSlots);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching quizzes:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load quizzes. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopyLink = (shareableLink: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/quiz/${shareableLink}`);
@@ -176,6 +159,11 @@ const Dashboard = () => {
 
   if (loading) {
     return <QuirkyLoading />;
+  }
+
+  // If user is not defined, we'll let ProtectedRoute handle the redirection
+  if (!user) {
+    return null;
   }
 
   return (

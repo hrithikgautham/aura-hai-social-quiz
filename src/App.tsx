@@ -28,6 +28,7 @@ const AuthRedirectHandler = () => {
   const { user, loading } = useAuth();
   const [isAuthRedirect, setIsAuthRedirect] = useState(false);
   const redirectProcessed = useRef(false);
+  const navigationAttempted = useRef(false);
   
   useEffect(() => {
     // Check if the URL contains an access_token (OAuth redirect)
@@ -46,21 +47,14 @@ const AuthRedirectHandler = () => {
 
   // Add a second effect to handle navigation once user is loaded
   useEffect(() => {
-    const checkUserAndNavigate = async () => {
-      if (!loading) {
-        if (user) {
-          console.log("User is authenticated, navigating to dashboard:", user);
-          // Add a small delay to ensure the auth state is fully processed
-          setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 1000); // Increased delay for extra safety
-        } else if (isAuthRedirect) {
-          console.log("Auth redirect processed but no user found, staying on current page");
-        }
-      }
-    };
-    
-    checkUserAndNavigate();
+    // Only attempt navigation once to prevent infinite redirects
+    if (!loading && user && isAuthRedirect && !navigationAttempted.current) {
+      console.log("User is authenticated after redirect, navigating to dashboard:", user);
+      navigationAttempted.current = true;
+      
+      // Navigate to dashboard with replace to prevent back button issues
+      navigate('/dashboard', { replace: true });
+    }
   }, [user, loading, navigate, isAuthRedirect]);
   
   return null;
@@ -70,11 +64,13 @@ const AuthRedirectHandler = () => {
 const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const navigationAttempted = useRef(false);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !navigationAttempted.current) {
       console.log("User is already logged in, redirecting to dashboard");
-      navigate('/dashboard');
+      navigationAttempted.current = true;
+      navigate('/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -86,7 +82,8 @@ const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return <>{children}</>;
+  // Only render children if user is not authenticated
+  return !user ? <>{children}</> : null;
 };
 
 const FloatingMenuWrapper = () => {
@@ -113,24 +110,18 @@ const App = () => (
             } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <PageLayout>
-                  <Dashboard />
-                </PageLayout>
+                <Dashboard />
               </ProtectedRoute>
             } />
             <Route path="/quiz/create" element={
               <ProtectedRoute>
-                <PageLayout isQuizCreate>
-                  <QuizCreate />
-                </PageLayout>
+                <QuizCreate />
               </ProtectedRoute>
             } />
             <Route path="/quiz/:quizId" element={<QuizTake />} />
             <Route path="/quiz/:quizId/analytics" element={
               <ProtectedRoute>
-                <PageLayout>
-                  <QuizAnalytics />
-                </PageLayout>
+                <QuizAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
