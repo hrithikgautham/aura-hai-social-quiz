@@ -2,20 +2,13 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      console.log("User detected, redirecting to dashboard");
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#FFE29F] via-[#FFA99F] to-[#FF719A] p-4">
@@ -48,6 +41,19 @@ const Index = () => {
             {isSignup ? "Log in instead" : "Sign up instead"}
           </Button>
         </div>
+        
+        {user && (
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 mb-2">Already logged in</p>
+            <Button 
+              variant="default" 
+              onClick={() => navigate('/dashboard')}
+              className="bg-[#FF007F] hover:bg-[#D6006C]"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

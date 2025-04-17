@@ -25,6 +25,7 @@ import { supabase } from "./integrations/supabase/client";
 const AuthRedirectHandler = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const redirectProcessed = useRef(false);
   
   useEffect(() => {
@@ -33,12 +34,40 @@ const AuthRedirectHandler = () => {
       console.log("Detected OAuth redirect - handling authentication");
       redirectProcessed.current = true;
       
-      // Just clear the hash, the AuthProvider will handle the session
+      // Clear the hash, the AuthProvider will handle the session
       window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // If user is authenticated, redirect to dashboard
+      if (user) {
+        console.log("User is authenticated, redirecting to dashboard");
+        setTimeout(() => navigate('/dashboard'), 100);
+      }
     }
-  }, [location, navigate]);
+  }, [location, navigate, user]);
   
   return null;
+};
+
+// New component for unauthorized routes
+const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 };
 
 const FloatingMenuWrapper = () => {
