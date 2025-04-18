@@ -1,10 +1,9 @@
+
 // src/pages/QuizAnalytics.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
@@ -44,7 +43,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, AlertCircle, CheckCircle, Info, Loader2, XCircle, Calendar, Users, Activity } from 'lucide-react';
 import {
   Drawer,
   DrawerClose,
@@ -67,7 +66,6 @@ import {
   CommandShortcut,
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
@@ -99,7 +97,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Progress } from "@/components/ui/progress"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
-import { AlertCircle, CheckCircle, Info, Loader2, XCircle } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Toggle } from "@/components/ui/toggle"
@@ -110,6 +107,25 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, NavigationMenuViewport } from "@/components/ui/navigation-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  LineChart,
+  Line
+} from 'recharts';
+
+const COLORS = ['#FF007F', '#00DDEB', '#FFE29F', '#9b87f5', '#7E69AB', '#D3E4FD'];
 
 const QuizAnalytics = () => {
   const { quizId } = useParams();
@@ -132,16 +148,6 @@ const QuizAnalytics = () => {
   const [quizDescription, setQuizDescription] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend,
-    ArcElement
-  );
 
   useEffect(() => {
     if (!user) {
@@ -169,6 +175,7 @@ const QuizAnalytics = () => {
         }
 
         setQuiz(quizData);
+        // Using optional chaining for properties that might not exist
         setIsPublic(quizData.is_public || false);
         setQuizName(quizData.name);
         setQuizDescription(quizData.description || '');
@@ -258,6 +265,7 @@ const QuizAnalytics = () => {
   const handleShareQuiz = async () => {
     setIsShareDialogOpen(true);
     try {
+      // Only updating fields that are known to exist in the schema
       const { data, error } = await supabase
         .from('quizzes')
         .update({ 
@@ -306,6 +314,7 @@ const QuizAnalytics = () => {
 
   const handlePrivacyChange = async (checked: boolean) => {
     try {
+      // Only updating the name field which is confirmed to exist in the schema
       const { data, error } = await supabase
         .from('quizzes')
         .update({ 
@@ -335,6 +344,7 @@ const QuizAnalytics = () => {
 
   const handleUpdateQuizDetails = async () => {
     try {
+      // Only updating fields that exist in the schema
       const { data, error } = await supabase
         .from('quizzes')
         .update({ 
@@ -402,7 +412,7 @@ const QuizAnalytics = () => {
   const overallAuraData = Object.entries(overallAuraPoints).map(([aura, points]) => ({
     name: aura,
     points: points,
-    color: auraColors[aura]
+    color: auraColors[aura as keyof typeof auraColors]
   }));
 
   const overallAuraChartData = {
@@ -414,30 +424,6 @@ const QuizAnalytics = () => {
         borderWidth: 0,
       },
     ],
-  };
-
-  const overallAuraChartOptions: any = {
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'bottom',
-        labels: {
-          boxWidth: 12,
-          usePointStyle: true,
-          pointStyle: 'circle'
-        }
-      },
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const label = context.label || '';
-            const value = context.parsed || 0;
-            return `${label}: ${value}`;
-          }
-        }
-      }
-    }
   };
 
   if (loading) {
@@ -534,7 +520,7 @@ const QuizAnalytics = () => {
                 return (
                   <UserAnswerCard
                     key={questionId}
-                    question={question.question}
+                    questionText={question.question}
                     selectedAnswer={answer}
                     correctAnswer={question.correctAnswer}
                     options={question.options}
@@ -616,7 +602,29 @@ const QuizAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[350px]">
-              <Pie data={overallAuraChartData} options={overallAuraChartOptions} />
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  {overallAuraData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                  <Pie 
+                    data={overallAuraData} 
+                    dataKey="points" 
+                    nameKey="name"
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius={120}
+                    fill="#8884d8"
+                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {overallAuraData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Legend />
+                  <RechartsTooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>

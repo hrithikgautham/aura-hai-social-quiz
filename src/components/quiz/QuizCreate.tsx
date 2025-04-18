@@ -1,13 +1,14 @@
 
-// This file needs to import Button and PlusCircle, and define handleShowQuestionSelector
+// This file contains the QuizCreate component for selecting custom questions
 
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 
-// Find the "Select custom questions" button and update its responsive styling
-// This is a partial update to fix just the button styling
+interface QuizCreateProps {
+  handleShowQuestionSelector: () => void;
+}
 
-const QuizCreate = ({ handleShowQuestionSelector }) => {
+const QuizCreate = ({ handleShowQuestionSelector }: QuizCreateProps) => {
   return (
     <Button
       onClick={handleShowQuestionSelector}
