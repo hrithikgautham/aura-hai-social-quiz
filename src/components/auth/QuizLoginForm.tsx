@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 
 export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, quizId?: string }) => {
   const { loginWithGoogle, signInWithIdToken } = useAuth();

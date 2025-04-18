@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -31,9 +32,8 @@ const AuthRedirectHandler = () => {
       redirectProcessed.current = true;
       setIsAuthRedirect(true);
       
-      setTimeout(() => {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }, 1000);
+      // Clean up URL immediately
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [location]);
 
@@ -47,7 +47,7 @@ const AuthRedirectHandler = () => {
           navigationAttempted.current = true;
           navigate('/dashboard', { replace: true });
         }
-      }, 5000);
+      }, 3000); // Reduced timeout from 5s to 3s
       
       if (!loading && user) {
         console.log("User is authenticated after redirect, navigating to dashboard:", user);
@@ -77,7 +77,19 @@ const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, loading, navigate]);
 
-  if (loading && !user) {
+  useEffect(() => {
+    // Add a safety timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading && !navigationAttempted.current) {
+        console.log("Loading timed out in UnauthorizedRoute, allowing content to show");
+        navigationAttempted.current = true;
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
+
+  if (loading && !user && !navigationAttempted.current) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>

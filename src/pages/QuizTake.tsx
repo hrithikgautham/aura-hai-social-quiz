@@ -37,6 +37,19 @@ const QuizTake = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [quizCreator, setQuizCreator] = useState<string | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log("Quiz loading timed out after 5 seconds");
+        setLoadingTimeout(true);
+        setLoading(false);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
 
   useEffect(() => {
     if (!quizId) return;
@@ -55,17 +68,17 @@ const QuizTake = () => {
         setQuiz(quizData);
         setQuizCreator(quizData.users?.username || null);
 
-        if (user && quizData.creator_id === user.id) {
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "You cannot take your own quiz. View analytics instead.",
-          });
-          navigate(`/quiz/${quizData.id}/analytics`);
-          return;
-        }
-
         if (user) {
+          if (quizData.creator_id === user.id) {
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "You cannot take your own quiz. View analytics instead.",
+            });
+            navigate(`/quiz/${quizData.id}/analytics`);
+            return;
+          }
+
           const { data: responseData, error: responseError } = await supabase
             .from('responses')
             .select('*')
@@ -257,6 +270,35 @@ const QuizTake = () => {
 
   if (loading) {
     return <QuirkyLoading />;
+  }
+
+  if (loadingTimeout) {
+    return (
+      <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
+        <div className="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+            Something went wrong
+          </h1>
+          <p className="text-gray-600 text-center mb-8">
+            We couldn't load the quiz. Please try refreshing the page or go back to the dashboard.
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Button 
+              onClick={() => window.location.reload()}
+              className="bg-[#00DDEB] hover:bg-[#00BBCC]"
+            >
+              Refresh
+            </Button>
+            <Button 
+              onClick={() => navigate('/dashboard')}
+              className="bg-[#FF007F] hover:bg-[#D6006C]"
+            >
+              Dashboard
+            </Button>
+          </div>
+        </div>
+      </PageLayout>
+    );
   }
 
   if (!user) {
