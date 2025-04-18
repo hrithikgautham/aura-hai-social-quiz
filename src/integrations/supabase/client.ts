@@ -11,7 +11,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true,
-    storageKey: 'sb-auth-token', // Change storage key to reduce conflicts
+    storageKey: 'sb-auth-token',
     flowType: 'pkce'
   }
 });

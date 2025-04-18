@@ -15,7 +15,6 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
   const { loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
-  const navigate = useNavigate();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [quizId, setQuizId] = useState<string | null>(null);
@@ -64,7 +63,7 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
       
       console.log(`Initiating Google ${isSignup ? 'signup' : 'login'} for production`);
       
-      // Use explicit production domain for redirection to solve the issue
+      // Use current domain for redirection
       const productionDomain = window.location.origin;
       console.log("Using redirect domain:", productionDomain);
       
@@ -74,16 +73,14 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
         redirectPath = `/quiz/${quizId}`;
       }
       
-      // Use a more reliable redirect approach by setting redirect_to properly
+      // Use improved OAuth approach with proper redirect handling
       await loginWithGoogle(isSignup, productionDomain, redirectPath);
       
-      // Only show one toast message
       toast({
         title: isSignup ? "Signing you up..." : "Logging you in...",
         description: "Please wait while we connect to Google.",
       });
       
-      // We don't reset isLoggingIn because we're navigating away from this page
     } catch (error) {
       console.error("Google authentication error:", error);
       toast({

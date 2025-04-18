@@ -9,22 +9,27 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+  const { user, loading, authChecked } = useAuth();
   const [forceRender, setForceRender] = useState(false);
   
-  console.log("ProtectedRoute - User:", user, "Loading:", loading);
+  console.log("ProtectedRoute - User:", user, "Loading:", loading, "AuthChecked:", authChecked);
   
   useEffect(() => {
-    // Set a very short timeout to prevent long loading screens
+    // Set a timeout to prevent long loading screens
     const timeoutId = setTimeout(() => {
       if (loading) {
         console.log("Loading timed out in ProtectedRoute, forcing navigation decision");
         setForceRender(true);
       }
-    }, 200); // Further reduced for faster experience
+    }, 1000); // Increased for more reliable auth checking
     
     return () => clearTimeout(timeoutId);
   }, [loading]);
+
+  // Don't make any navigation decisions until auth has been checked at least once
+  if (!authChecked && !forceRender) {
+    return <QuirkyLoading />;
+  }
 
   // If we have a user, render content immediately
   if (user) {
@@ -32,12 +37,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <>{children}</>;
   }
   
-  // Show loading only very briefly
+  // Show loading only if explicitly loading and timeout not reached
   if (loading && !forceRender) {
     return <QuirkyLoading />;
   }
 
-  // If not loading or timeout reached, and no user, redirect
+  // If auth checked and no user, redirect
   console.log("No user found in ProtectedRoute, redirecting to home");
   return <Navigate to="/" replace />;
 };

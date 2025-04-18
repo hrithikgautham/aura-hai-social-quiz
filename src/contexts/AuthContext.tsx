@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,6 +12,7 @@ type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  authChecked: boolean;
   login: (username: string) => Promise<void>;
   signup: (username: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -51,8 +51,9 @@ const PLACEHOLDER_IMAGES = [
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
-  // New method to fetch and set user data
   const fetchAndSetUserData = useCallback(async (userId: string) => {
     try {
       const { data: existingUser, error } = await supabase
@@ -61,12 +62,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        return null;
+      }
       
       if (existingUser) {
         console.log("User found in database:", existingUser);
         setUser(existingUser);
-        localStorage.setItem('user', JSON.stringify(existingUser));
         return existingUser;
       }
       
@@ -74,10 +77,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('Error fetching user data:', error);
       return null;
+    } finally {
+      setAuthChecked(true);
     }
   }, []);
 
-  // New method to create user record
   const createUserRecord = useCallback(async (authUser: any) => {
     try {
       const avatarUrl = authUser.user_metadata?.avatar_url || 
@@ -101,12 +105,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating user record:", error);
+        return null;
+      }
       
       if (newUser) {
         console.log("Created new user:", newUser);
         setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
         return newUser;
       }
       
@@ -117,70 +123,87 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Initialize auth state
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    if (authInitialized) return;
     
-    // Set loading timeout to prevent UI from being stuck
-    timeoutId = setTimeout(() => {
+    console.log("Initializing Auth with environment:", process.env.NODE_ENV || "development");
+    setAuthInitialized(true);
+    
+    const backupTimeoutId = setTimeout(() => {
       if (loading) {
         console.log("Auth loading timed out");
         setLoading(false);
+        setAuthChecked(true);
       }
-    }, 1500); // Further reduced timeout
+    }, 3000);
 
-    const initializeAuth = async () => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email);
+      
+      if (session?.user) {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          console.log(`Auth event: ${event} - Getting user data for ${session.user.email}`);
+          setLoading(true);
+          
+          const userData = await fetchAndSetUserData(session.user.id);
+          
+          if (!userData && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+            await createUserRecord(session.user);
+          }
+          
+          setLoading(false);
+          setAuthChecked(true);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log("User signed out");
+        setUser(null);
+        setAuthChecked(true);
+        setLoading(false);
+      }
+    });
+
+    const checkExistingSession = async () => {
       try {
-        // First check if we have a session
-        const { data: sessionData } = await supabase.auth.getSession();
+        const { data: sessionData, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error checking session:", error);
+          setLoading(false);
+          setAuthChecked(true);
+          return;
+        }
+        
         const session = sessionData.session;
         
         if (session?.user) {
           console.log("Found existing session:", session.user.email);
           const userData = await fetchAndSetUserData(session.user.id);
+          
           if (!userData) {
             await createUserRecord(session.user);
           }
+          
+          setLoading(false);
+          setAuthChecked(true);
         } else {
           console.log("No session found");
           setLoading(false);
+          setAuthChecked(true);
         }
       } catch (error) {
-        console.error("Error checking session:", error);
+        console.error("Error in session check:", error);
         setLoading(false);
+        setAuthChecked(true);
       }
     };
     
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.email);
-
-      // Handle different auth events
-      if (session?.user) {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          const userData = await fetchAndSetUserData(session.user.id);
-          if (!userData && event === 'SIGNED_IN') {
-            await createUserRecord(session.user);
-          }
-        }
-      } else if (event === 'SIGNED_OUT') {
-        console.log("User signed out");
-        setUser(null);
-        localStorage.removeItem('user');
-      }
-      
-      setLoading(false);
-      clearTimeout(timeoutId);
-    });
-
-    // Initialize auth
-    initializeAuth();
+    checkExistingSession();
 
     return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeoutId);
+      subscription?.unsubscribe();
+      clearTimeout(backupTimeoutId);
     };
-  }, [fetchAndSetUserData, createUserRecord]);
+  }, [fetchAndSetUserData, createUserRecord, authInitialized]);
 
   const login = async (username: string) => {
     try {
@@ -254,22 +277,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = async (isSignup?: boolean, redirectDomain?: string, redirectPath?: string) => {
     try {
-      // Always use the current origin if none provided
       const baseUrl = redirectDomain || window.location.origin;
-      // Default redirect to dashboard if no path provided
       const redirectUrl = `${baseUrl}${redirectPath || '/dashboard'}`;
       
       console.log(`Initiating Google login with redirect to: ${redirectUrl}`);
       
-      // Improved OAuth configuration
+      localStorage.setItem('auth_redirect_path', redirectPath || '/dashboard');
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-            // Pass signup flag if needed
+            prompt: 'select_account',
             ...(isSignup ? { signup: 'true' } : {})
           }
         }
@@ -344,12 +365,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
+      setLoading(true);
       await supabase.auth.signOut();
       
       setUser(null);
-      localStorage.removeItem('user');
+      setLoading(false);
+      
+      console.log("User logged out successfully");
     } catch (error) {
       console.error('Error signing out:', error);
+      setLoading(false);
       throw error;
     }
   };
@@ -394,6 +419,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     <AuthContext.Provider value={{ 
       user, 
       loading, 
+      authChecked,
       login, 
       signup, 
       logout, 
