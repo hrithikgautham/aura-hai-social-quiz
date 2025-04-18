@@ -11,7 +11,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,  // Look for #access_token/#id_token on page load
     persistSession: true,      // Store session in localStorage
     autoRefreshToken: true,    // Automatically refresh the token
-    storageKey: 'sb-access-token'  // Custom storage key for better control
+    storageKey: 'sb-access-token',  // Custom storage key for better control
+    flowType: 'pkce'           // Use PKCE flow for better security
   }
 });
 

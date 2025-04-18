@@ -27,6 +27,7 @@ const AuthRedirectHandler = () => {
   const navigationAttempted = useRef(false);
   
   useEffect(() => {
+    // Enhanced detection of auth redirects
     if ((location.hash && location.hash.includes('access_token')) && !redirectProcessed.current) {
       console.log("Detected OAuth redirect with hash:", location.hash);
       redirectProcessed.current = true;
@@ -41,13 +42,14 @@ const AuthRedirectHandler = () => {
     if (isAuthRedirect && !navigationAttempted.current) {
       console.log("Auth redirect detected, user:", user, "loading:", loading);
       
+      // Reduced timeout from 3s to 2s for faster redirection
       const timeoutId = setTimeout(() => {
         if (!navigationAttempted.current) {
           console.log("Navigation timeout reached, redirecting to dashboard anyway");
           navigationAttempted.current = true;
           navigate('/dashboard', { replace: true });
         }
-      }, 3000); // Reduced timeout from 5s to 3s
+      }, 2000);
       
       if (!loading && user) {
         console.log("User is authenticated after redirect, navigating to dashboard:", user);

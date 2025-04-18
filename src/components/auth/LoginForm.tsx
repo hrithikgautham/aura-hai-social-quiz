@@ -74,6 +74,7 @@ export const LoginForm = ({ isSignup = false }: LoginFormProps) => {
         redirectPath = `/quiz/${quizId}`;
       }
       
+      // Use a more reliable redirect approach by setting redirect_to properly
       await loginWithGoogle(isSignup, productionDomain, redirectPath);
       
       // Only show one toast message

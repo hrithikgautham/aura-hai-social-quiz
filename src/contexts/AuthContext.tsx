@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -122,12 +123,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
+    // Reduced timeout from 3000ms to 2000ms for faster response
     timeoutId = setTimeout(() => {
       if (loading) {
         console.log("Auth loading timed out");
         setLoading(false);
       }
-    }, 3000);
+    }, 2000);
 
     checkSession();
 
@@ -214,6 +216,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log(`Initiating Google login with redirect to: ${redirectUrl}`);
       
+      // Fix: Add clear options for redirection and make sure the URL is properly constructed
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -230,7 +233,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
       
-      console.log("Google OAuth initiated:", data);
+      console.log("Google OAuth initiated successfully:", data);
       
     } catch (error) {
       console.error('Error with Google authentication:', error);

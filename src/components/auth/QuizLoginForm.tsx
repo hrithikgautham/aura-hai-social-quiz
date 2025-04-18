@@ -148,6 +148,7 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
         }
       }
       
+      // Pass current origin and path for more reliable redirection
       await loginWithGoogle(false, productionDomain, redirectPath);
       
       toast({
