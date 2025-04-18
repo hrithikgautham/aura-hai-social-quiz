@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,7 +41,9 @@ const QuizTake = () => {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [initialFetchComplete, setInitialFetchComplete] = useState(false);
 
+  // Show loading timeout after a reasonable time
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (loading) {
@@ -52,17 +55,19 @@ const QuizTake = () => {
     return () => clearTimeout(timeoutId);
   }, [loading]);
 
+  // Reset error state when quiz ID changes
   useEffect(() => {
     if (quizId) {
       setLoadError(null);
     }
   }, [quizId]);
 
+  // Main quiz fetching logic with robust error handling
   useEffect(() => {
     if (!quizId) return;
 
     const fetchQuiz = async () => {
-      if (fetchAttempts > 3) {
+      if (fetchAttempts > 3 && initialFetchComplete) {
         setLoading(false);
         setLoadError("Failed to load quiz after multiple attempts. Please check your connection.");
         return;
@@ -72,6 +77,8 @@ const QuizTake = () => {
       try {
         console.log(`Attempting to fetch quiz (attempt ${fetchAttempts + 1}): ${quizId}`);
 
+        // Split the fetch operations to identify where failures occur
+        // First fetch the quiz basic info
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('*, users:creator_id(username)')
@@ -80,13 +87,14 @@ const QuizTake = () => {
 
         if (quizError) {
           console.error('Error fetching quiz:', quizError);
-          throw quizError;
+          throw new Error(`Quiz not found: ${quizError.message}`);
         }
         
         console.log("Quiz data retrieved successfully:", quizData?.id);
         setQuiz(quizData);
         setQuizCreator(quizData.users?.username || "Unknown Creator");
-
+        
+        // Check if user is trying to take their own quiz
         if (user && quizData.creator_id === user.id) {
           toast({
             variant: "destructive",
@@ -97,25 +105,33 @@ const QuizTake = () => {
           return;
         }
 
+        // If user is logged in, check for existing responses
         if (user) {
-          const { data: responseData, error: responseError } = await supabase
-            .from('responses')
-            .select('*')
-            .eq('quiz_id', quizData.id)
-            .eq('respondent_id', user.id)
-            .single();
+          try {
+            const { data: responseData, error: responseError } = await supabase
+              .from('responses')
+              .select('*')
+              .eq('quiz_id', quizData.id)
+              .eq('respondent_id', user.id)
+              .single();
 
-          if (!responseError && responseData) {
-            setAuraPoints(responseData.aura_points);
-            
-            if (responseData.aura_points >= 75000) {
-              setTimeout(() => {
-                setShowConfetti(true);
-              }, 500);
+            if (!responseError && responseData) {
+              setAuraPoints(responseData.aura_points);
+              
+              if (responseData.aura_points >= 75000) {
+                setTimeout(() => {
+                  setShowConfetti(true);
+                }, 500);
+              }
+              
+              // Don't set submitted here, allow retaking
             }
+          } catch (err) {
+            console.log("No previous responses found (this is normal)");
           }
         }
 
+        // Then fetch the questions separately
         const { data: questionData, error: questionError } = await supabase
           .from('quiz_questions')
           .select(`
@@ -127,7 +143,7 @@ const QuizTake = () => {
 
         if (questionError) {
           console.error('Error fetching questions:', questionError);
-          throw questionError;
+          throw new Error(`Questions not found: ${questionError.message}`);
         }
 
         if (questionData && questionData.length > 0) {
@@ -174,6 +190,7 @@ const QuizTake = () => {
           
           setQuestions(processedQuestions);
           
+          // Try to restore previous answers from session storage
           const storedAnswers = sessionStorage.getItem(`quiz_answers_${quizData.id}`);
           if (storedAnswers) {
             setAnswers(JSON.parse(storedAnswers));
@@ -182,17 +199,21 @@ const QuizTake = () => {
           console.warn("No questions found for this quiz");
           setLoadError("This quiz doesn't have any questions.");
         }
+
+        setInitialFetchComplete(true);
+        setFetchAttempts(0); // Reset attempts on success
       } catch (error) {
         console.error('Error in quiz loading process:', error);
         setFetchAttempts(prev => prev + 1);
         
+        // Exponential backoff for retries
         const retryDelay = Math.min(1000 * Math.pow(2, fetchAttempts), 8000);
+        console.log(`Retrying in ${retryDelay}ms...`);
         setTimeout(() => fetchQuiz(), retryDelay);
         
         return;
       }
 
-      setFetchAttempts(0);
       setLoading(false);
       setLoadingTimeout(false);
     };
@@ -200,12 +221,14 @@ const QuizTake = () => {
     fetchQuiz();
   }, [quizId, user, navigate, toast, fetchAttempts]);
 
+  // Save answers to session storage
   useEffect(() => {
     if (quiz && Object.keys(answers).length > 0) {
       sessionStorage.setItem(`quiz_answers_${quiz.id}`, JSON.stringify(answers));
     }
   }, [answers, quiz]);
 
+  // Show confetti effect when appropriate
   useEffect(() => {
     if (showConfetti) {
       confetti({
@@ -307,10 +330,12 @@ const QuizTake = () => {
     window.location.reload();
   };
 
-  if (loading && !loadingTimeout) {
+  // Show loading animation during initial fetch
+  if (loading && !loadingTimeout && !initialFetchComplete) {
     return <QuirkyLoading />;
   }
 
+  // Show timeout or error screen
   if (loadingTimeout || loadError) {
     return (
       <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
@@ -349,6 +374,7 @@ const QuizTake = () => {
     );
   }
 
+  // Show login form for unauthenticated users
   if (!user) {
     return (
       <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
@@ -365,6 +391,7 @@ const QuizTake = () => {
     );
   }
 
+  // Handle when quiz doesn't exist
   if (!quiz) {
     return (
       <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
@@ -386,6 +413,7 @@ const QuizTake = () => {
     );
   }
 
+  // Show completion screen after submit
   if (submitted) {
     return (
       <PageLayout>
@@ -410,10 +438,12 @@ const QuizTake = () => {
     );
   }
 
+  // Show welcome screen before starting
   if (showWelcome && quiz) {
     return <QuizWelcome quiz={quiz} onStart={() => setShowWelcome(false)} />;
   }
 
+  // Handle quiz with no questions
   if (questions.length === 0) {
     return (
       <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
@@ -435,6 +465,7 @@ const QuizTake = () => {
     );
   }
 
+  // Main quiz taking UI
   return (
     <PageLayout className="bg-gradient-to-br from-[#FFE29F] via-[#FFA99F] to-[#FF719A]">
       <div className="max-w-2xl mx-auto">

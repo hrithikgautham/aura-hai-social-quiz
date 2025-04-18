@@ -16,8 +16,7 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
 
   // Google One Tap setup with better error handling
   useEffect(() => {
-    // Only initialize Google One Tap on the login/signup page
-    // and not when the user is already in a login process
+    // Only initialize Google One Tap when not already in a login process
     if (isLoggingIn || oneTapInitialized) return;
     
     // Load the Google Identity Services script
@@ -70,7 +69,8 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
       }
     };
     
-    loadGoogleScript();
+    // Short timeout before loading to avoid interfering with page load
+    setTimeout(loadGoogleScript, 500);
     
     return () => {
       // Clean up
@@ -88,8 +88,7 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
       setAuthError(null);
       
       try {
-        // For quiz takers, we want to be more flexible - try to login if account exists, 
-        // otherwise create a new account
+        // For quiz takers, try to login if account exists or create a new account
         const result = await signInWithIdToken(response.credential);
 
         if (!result.success) {
@@ -99,6 +98,7 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
             title: "Authentication Error",
             description: result.error,
           });
+          setIsLoggingIn(false);
         } else {
           toast({
             title: "Login successful!",
@@ -108,6 +108,11 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
           // Don't reload - just allow the component to re-render
           // This gives a smoother experience
           setIsLoggingIn(false);
+          
+          // If we have a quizId, reload the page to start the quiz
+          if (quizId) {
+            window.location.reload();
+          }
         }
       } catch (error) {
         console.error("Google One Tap auth error:", error);

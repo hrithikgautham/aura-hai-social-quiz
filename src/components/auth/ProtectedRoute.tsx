@@ -18,11 +18,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     let timeoutId: NodeJS.Timeout | null = null;
     
     if (loading) {
-      // Even shorter timeout (800ms) for faster decision
+      // Even shorter timeout (500ms) for faster decision
       timeoutId = setTimeout(() => {
         console.log("Loading timed out in ProtectedRoute, forcing navigation decision");
         setForceRender(true);
-      }, 800);
+      }, 500); // Reduced from 800ms to 500ms for faster response
     }
     
     return () => {
