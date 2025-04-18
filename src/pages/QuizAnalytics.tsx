@@ -95,396 +95,555 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { SwitchDemo } from '@/components/ui/switch';
 import { Progress } from "@/components/ui/progress"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
-import { InputWithButton } from "@/components/ui/input"
-import { CardDemo } from "@/components/ui/card"
-import { AccordionDemo } from "@/components/ui/accordion"
-import { AlertDestructive } from "@/components/ui/alert"
-import { AlertLink } from "@/components/ui/alert"
-import { AlertWithActions } from "@/components/ui/alert"
-import { AlertDemo } from "@/components/ui/alert"
-import { AlertDialogDemo } from "@/components/ui/alert-dialog"
-import { CalendarDemo } from "@/components/ui/calendar"
-import { ComboboxDemo } from "@/components/ui/combobox"
-import { CommandDemo } from "@/components/ui/command"
-import { ContextMenuCheckbox } from "@/components/ui/context-menu"
-import { ContextMenuRadioGroup } from "@/components/ui/context-menu"
-import { ContextMenuSeparator } from "@/components/ui/context-menu"
-import { ContextMenuSub } from "@/components/ui/context-menu"
-import { ContextMenuDemo } from "@/components/ui/context-menu"
-import { DialogDemo } from "@/components/ui/dialog"
-import { DropdownMenuCheckbox } from "@/components/ui/dropdown-menu"
-import { DropdownMenuRadioGroup } from "@/components/ui/dropdown-menu"
-import { DropdownMenuSeparator as DropdownMenuSeparatorComponent } from "@/components/ui/dropdown-menu"
-import { DropdownMenuSub } from "@/components/ui/dropdown-menu"
-import { DropdownMenuDemo } from "@/components/ui/dropdown-menu"
-import { FormDemo } from "@/components/ui/form"
-import { HoverCardDemo } from "@/components/ui/hover-card"
-import { InputDemo } from "@/components/ui/input"
-import { LabelDemo } from "@/components/ui/label"
-import { MenubarCheckbox } from "@/components/ui/menubar"
-import { MenubarRadioGroup } from "@/components/ui/menubar"
-import { MenubarSeparator } from "@/components/ui/menubar"
-import { MenubarSub } from "@/components/ui/menubar"
-import { MenubarDemo } from "@/components/ui/menubar"
-import { NavigationMenuDemo } from "@/components/ui/navigation-menu"
-import { PaginationDemo } from "@/components/ui/pagination"
-import { PopoverDemo } from "@/components/ui/popover"
-import { ProgressDemo } from "@/components/ui/progress"
-import { RadioGroupDemo } from "@/components/ui/radio-group"
-import { ScrollAreaAutosize } from "@/components/ui/scroll-area"
-import { SelectDemo } from "@/components/ui/select"
-import { SeparatorDemo } from "@/components/ui/separator"
-import { SheetDemo } from "@/components/ui/sheet"
-import { SliderDemo } from "@/components/ui/slider"
-import { SwitchDemo as SwitchDemoComponent } from "@/components/ui/switch"
-import { TableDemo } from "@/components/ui/table"
-import { TabsDemo } from "@/components/ui/tabs"
-import { TextareaDemo } from "@/components/ui/textarea"
-import { ToastDemo } from "@/components/ui/toast"
-import { ToggleDemo } from "@/components/ui/toggle"
-import { TooltipDemo } from "@/components/ui/tooltip"
-import { AspectRatioDemo } from "@/components/ui/aspect-ratio"
-import { InputWithButtonDemo } from "@/components/ui/input"
 import { AlertCircle, CheckCircle, Info, Loader2, XCircle } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardDescription, HoverCardHeader, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Toggle } from "@/components/ui/toggle"
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuRadioGroupItem, ContextMenuSeparator as ContextMenuSeparatorComponent, ContextMenuSubContent, ContextMenuSubMenu, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuRadioItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, NavigationMenuViewport } from "@/components/ui/navigation-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxPopover, ComboboxSeparator, ComboboxTrigger } from "@/components/ui/combobox"
-import { Menubar, MenubarCheckboxItem, MenubarContent, MenubarItem, MenubarLabel, MenubarList, MenubarMenu, MenubarRadioGroupItem, MenubarSeparator as MenubarSeparatorComponent, MenubarSubContent, MenubarSubMenu, MenubarTrigger } from "@/components/ui/menubar"
+import { Menubar, MenubarCheckboxItem, MenubarContent, MenubarItem, MenubarLabel, MenubarList, MenubarMenu, MenubarRadioGroup, MenubarRadioItem, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { SkeletonDemo } from "@/components/ui/skeleton"
-import { Separator as SeparatorComponent } from "@/components/ui/separator"
-import { Label as LabelComponent } from "@/components/ui/label"
-import { Input as InputComponent } from "@/components/ui/input"
-import { Switch as SwitchComponent } from "@/components/ui/switch"
-import { AlertDialog as AlertDialogComponent } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent } from "@/components/ui/combobox"
-import { Command as CommandComponent } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent } from "@/components/ui/hover-card"
-import { Input as InputComponent2 } from "@/components/ui/input"
-import { Label as LabelComponent2 } from "@/components/ui/label"
-import { Menubar as MenubarComponent } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent } from "@/components/ui/pagination"
-import { Popover as PopoverComponent } from "@/components/ui/popover"
-import { Progress as ProgressComponent } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent } from "@/components/ui/scroll-area"
-import { Select as SelectComponent } from "@/components/ui/select"
-import { Separator as SeparatorComponent2 } from "@/components/ui/separator"
-import { Sheet as SheetComponent } from "@/components/ui/sheet"
-import { Slider as SliderComponent } from "@/components/ui/slider"
-import { Switch as SwitchComponent2 } from "@/components/ui/switch"
-import { Table as TableComponent } from "@/components/ui/table"
-import { Tabs as TabsComponent } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent } from "@/components/ui/textarea"
-import { Toast as ToastComponent } from "@/components/ui/toast"
-import { Toggle as ToggleComponent } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent } from "@/components/ui/input"
-import { Card as CardComponent } from "@/components/ui/card"
-import { Accordion as AccordionComponent } from "@/components/ui/accordion"
-import { Alert as AlertComponent } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent2 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent2 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent2 } from "@/components/ui/combobox"
-import { Command as CommandComponent2 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent2 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent2 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent2 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent2 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent2 } from "@/components/ui/hover-card"
-import { Input as InputComponent3 } from "@/components/ui/input"
-import { Label as LabelComponent3 } from "@/components/ui/label"
-import { Menubar as MenubarComponent2 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent2 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent2 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent2 } from "@/components/ui/popover"
-import { Progress as ProgressComponent2 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent2 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent2 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent2 } from "@/components/ui/select"
-import { Separator as SeparatorComponent3 } from "@/components/ui/separator"
-import { Sheet as SheetComponent2 } from "@/components/ui/sheet"
-import { Slider as SliderComponent3 } from "@/components/ui/slider"
-import { Switch as SwitchComponent3 } from "@/components/ui/switch"
-import { Table as TableComponent2 } from "@/components/ui/table"
-import { Tabs as TabsComponent2 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent2 } from "@/components/ui/textarea"
-import { Toast as ToastComponent2 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent2 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent2 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent2 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent2 } from "@/components/ui/input"
-import { Card as CardComponent2 } from "@/components/ui/card"
-import { Accordion as AccordionComponent2 } from "@/components/ui/accordion"
-import { Alert as AlertComponent2 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent3 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent3 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent3 } from "@/components/ui/combobox"
-import { Command as CommandComponent3 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent3 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent3 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent3 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent3 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent3 } from "@/components/ui/hover-card"
-import { Input as InputComponent4 } from "@/components/ui/input"
-import { Label as LabelComponent4 } from "@/components/ui/label"
-import { Menubar as MenubarComponent3 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent3 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent3 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent3 } from "@/components/ui/popover"
-import { Progress as ProgressComponent3 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent3 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent3 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent3 } from "@/components/ui/select"
-import { Separator as SeparatorComponent4 } from "@/components/ui/separator"
-import { Sheet as SheetComponent3 } from "@/components/ui/sheet"
-import { Slider as SliderComponent4 } from "@/components/ui/slider"
-import { Switch as SwitchComponent4 } from "@/components/ui/switch"
-import { Table as TableComponent3 } from "@/components/ui/table"
-import { Tabs as TabsComponent3 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent3 } from "@/components/ui/textarea"
-import { Toast as ToastComponent3 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent3 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent3 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent3 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent3 } from "@/components/ui/input"
-import { Card as CardComponent3 } from "@/components/ui/card"
-import { Accordion as AccordionComponent3 } from "@/components/ui/accordion"
-import { Alert as AlertComponent3 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent4 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent4 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent4 } from "@/components/ui/combobox"
-import { Command as CommandComponent4 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent4 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent4 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent4 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent4 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent4 } from "@/components/ui/hover-card"
-import { Input as InputComponent5 } from "@/components/ui/input"
-import { Label as LabelComponent5 } from "@/components/ui/label"
-import { Menubar as MenubarComponent4 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent4 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent4 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent4 } from "@/components/ui/popover"
-import { Progress as ProgressComponent4 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent4 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent4 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent4 } from "@/components/ui/select"
-import { Separator as SeparatorComponent5 } from "@/components/ui/separator"
-import { Sheet as SheetComponent4 } from "@/components/ui/sheet"
-import { Slider as SliderComponent5 } from "@/components/ui/slider"
-import { Switch as SwitchComponent5 } from "@/components/ui/switch"
-import { Table as TableComponent4 } from "@/components/ui/table"
-import { Tabs as TabsComponent4 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent4 } from "@/components/ui/textarea"
-import { Toast as ToastComponent4 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent4 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent4 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent4 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent4 } from "@/components/ui/input"
-import { Card as CardComponent4 } from "@/components/ui/card"
-import { Accordion as AccordionComponent4 } from "@/components/ui/accordion"
-import { Alert as AlertComponent4 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent5 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent5 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent5 } from "@/components/ui/combobox"
-import { Command as CommandComponent5 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent5 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent5 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent5 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent5 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent5 } from "@/components/ui/hover-card"
-import { Input as InputComponent6 } from "@/components/ui/input"
-import { Label as LabelComponent6 } from "@/components/ui/label"
-import { Menubar as MenubarComponent5 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent5 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent5 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent5 } from "@/components/ui/popover"
-import { Progress as ProgressComponent5 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent5 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent5 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent5 } from "@/components/ui/select"
-import { Separator as SeparatorComponent6 } from "@/components/ui/separator"
-import { Sheet as SheetComponent5 } from "@/components/ui/sheet"
-import { Slider as SliderComponent6 } from "@/components/ui/slider"
-import { Switch as SwitchComponent6 } from "@/components/ui/switch"
-import { Table as TableComponent5 } from "@/components/ui/table"
-import { Tabs as TabsComponent5 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent5 } from "@/components/ui/textarea"
-import { Toast as ToastComponent5 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent5 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent5 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent5 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent5 } from "@/components/ui/input"
-import { Card as CardComponent5 } from "@/components/ui/card"
-import { Accordion as AccordionComponent5 } from "@/components/ui/accordion"
-import { Alert as AlertComponent5 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent6 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent6 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent6 } from "@/components/ui/combobox"
-import { Command as CommandComponent6 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent6 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent6 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent6 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent6 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent6 } from "@/components/ui/hover-card"
-import { Input as InputComponent7 } from "@/components/ui/input"
-import { Label as LabelComponent7 } from "@/components/ui/label"
-import { Menubar as MenubarComponent6 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent6 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent6 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent6 } from "@/components/ui/popover"
-import { Progress as ProgressComponent6 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent6 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent6 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent6 } from "@/components/ui/select"
-import { Separator as SeparatorComponent7 } from "@/components/ui/separator"
-import { Sheet as SheetComponent6 } from "@/components/ui/sheet"
-import { Slider as SliderComponent7 } from "@/components/ui/slider"
-import { Switch as SwitchComponent7 } from "@/components/ui/switch"
-import { Table as TableComponent6 } from "@/components/ui/table"
-import { Tabs as TabsComponent6 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent6 } from "@/components/ui/textarea"
-import { Toast as ToastComponent6 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent6 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent6 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent6 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent6 } from "@/components/ui/input"
-import { Card as CardComponent6 } from "@/components/ui/card"
-import { Accordion as AccordionComponent6 } from "@/components/ui/accordion"
-import { Alert as AlertComponent6 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent7 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent7 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent7 } from "@/components/ui/combobox"
-import { Command as CommandComponent7 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent7 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent7 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent7 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent7 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent7 } from "@/components/ui/hover-card"
-import { Input as InputComponent8 } from "@/components/ui/input"
-import { Label as LabelComponent8 } from "@/components/ui/label"
-import { Menubar as MenubarComponent7 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent7 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent7 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent7 } from "@/components/ui/popover"
-import { Progress as ProgressComponent7 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent7 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent7 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent7 } from "@/components/ui/select"
-import { Separator as SeparatorComponent8 } from "@/components/ui/separator"
-import { Sheet as SheetComponent7 } from "@/components/ui/sheet"
-import { Slider as SliderComponent8 } from "@/components/ui/slider"
-import { Switch as SwitchComponent8 } from "@/components/ui/switch"
-import { Table as TableComponent7 } from "@/components/ui/table"
-import { Tabs as TabsComponent7 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent7 } from "@/components/ui/textarea"
-import { Toast as ToastComponent7 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent7 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent7 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent7 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent7 } from "@/components/ui/input"
-import { Card as CardComponent7 } from "@/components/ui/card"
-import { Accordion as AccordionComponent7 } from "@/components/ui/accordion"
-import { Alert as AlertComponent7 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent8 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent8 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent8 } from "@/components/ui/combobox"
-import { Command as CommandComponent8 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent8 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent8 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent8 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent8 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent8 } from "@/components/ui/hover-card"
-import { Input as InputComponent9 } from "@/components/ui/input"
-import { Label as LabelComponent9 } from "@/components/ui/label"
-import { Menubar as MenubarComponent8 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent8 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent8 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent8 } from "@/components/ui/popover"
-import { Progress as ProgressComponent8 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent8 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent8 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent8 } from "@/components/ui/select"
-import { Separator as SeparatorComponent9 } from "@/components/ui/separator"
-import { Sheet as SheetComponent8 } from "@/components/ui/sheet"
-import { Slider as SliderComponent9 } from "@/components/ui/slider"
-import { Switch as SwitchComponent9 } from "@/components/ui/switch"
-import { Table as TableComponent8 } from "@/components/ui/table"
-import { Tabs as TabsComponent8 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent8 } from "@/components/ui/textarea"
-import { Toast as ToastComponent8 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent8 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent8 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent8 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent8 } from "@/components/ui/input"
-import { Card as CardComponent8 } from "@/components/ui/card"
-import { Accordion as AccordionComponent8 } from "@/components/ui/accordion"
-import { Alert as AlertComponent8 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent9 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent9 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent9 } from "@/components/ui/combobox"
-import { Command as CommandComponent9 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent9 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent9 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent9 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent9 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent9 } from "@/components/ui/hover-card"
-import { Input as InputComponent10 } from "@/components/ui/input"
-import { Label as LabelComponent10 } from "@/components/ui/label"
-import { Menubar as MenubarComponent9 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent9 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent9 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent9 } from "@/components/ui/popover"
-import { Progress as ProgressComponent9 } from "@/components/ui/progress"
-import { RadioGroup as RadioGroupComponent9 } from "@/components/ui/radio-group"
-import { ScrollArea as ScrollAreaComponent9 } from "@/components/ui/scroll-area"
-import { Select as SelectComponent9 } from "@/components/ui/select"
-import { Separator as SeparatorComponent10 } from "@/components/ui/separator"
-import { Sheet as SheetComponent9 } from "@/components/ui/sheet"
-import { Slider as SliderComponent10 } from "@/components/ui/slider"
-import { Switch as SwitchComponent10 } from "@/components/ui/switch"
-import { Table as TableComponent9 } from "@/components/ui/table"
-import { Tabs as TabsComponent9 } from "@/components/ui/tabs"
-import { Textarea as TextareaComponent9 } from "@/components/ui/textarea"
-import { Toast as ToastComponent9 } from "@/components/ui/toast"
-import { Toggle as ToggleComponent9 } from "@/components/ui/toggle"
-import { Tooltip as TooltipComponent9 } from "@/components/ui/tooltip"
-import { AspectRatio as AspectRatioComponent9 } from "@/components/ui/aspect-ratio"
-import { InputWithButton as InputWithButtonComponent9 } from "@/components/ui/input"
-import { Card as CardComponent9 } from "@/components/ui/card"
-import { Accordion as AccordionComponent9 } from "@/components/ui/accordion"
-import { Alert as AlertComponent9 } from "@/components/ui/alert"
-import { AlertDialog as AlertDialogComponent10 } from "@/components/ui/alert-dialog"
-import { Calendar as CalendarComponent10 } from "@/components/ui/calendar"
-import { Combobox as ComboboxComponent10 } from "@/components/ui/combobox"
-import { Command as CommandComponent10 } from "@/components/ui/command"
-import { ContextMenu as ContextMenuComponent10 } from "@/components/ui/context-menu"
-import { Dialog as DialogComponent10 } from "@/components/ui/dialog"
-import { DropdownMenu as DropdownMenuComponent10 } from "@/components/ui/dropdown-menu"
-import { Form as FormComponent10 } from "@/components/ui/form"
-import { HoverCard as HoverCardComponent10 } from "@/components/ui/hover-card"
-import { Input as InputComponent11 } from "@/components/ui/input"
-import { Label as LabelComponent11 } from "@/components/ui/label"
-import { Menubar as MenubarComponent10 } from "@/components/ui/menubar"
-import { NavigationMenu as NavigationMenuComponent10 } from "@/components/ui/navigation-menu"
-import { Pagination as PaginationComponent10 } from "@/components/ui/pagination"
-import { Popover as PopoverComponent10 } from "@/components/ui/popover"
-import
+
+// I'm removing all the duplicate component imports that are causing the issue...
+// The file had many duplicate component imports that were likely causing the syntax error
+
+const QuizAnalytics = () => {
+  const { quizId } = useParams();
+  const navigate = useNavigate();
+  const { authUser } = useAuth();
+  const { toast } = useToast();
+
+  const [quiz, setQuiz] = useState<any>(null);
+  const [quizResponses, setQuizResponses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [questionAuraPoints, setQuestionAuraPoints] = useState<{ [questionId: string]: { [aura: string]: number } }>({});
+  const [overallAuraPoints, setOverallAuraPoints] = useState<{ [aura: string]: number }>({});
+  const [selectedUserResponse, setSelectedUserResponse] = useState<any>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareableLink, setShareableLink] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
+  const [quizName, setQuizName] = useState('');
+  const [quizDescription, setQuizDescription] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement
+  );
+
+  useEffect(() => {
+    if (!authUser) {
+      navigate('/login');
+      return;
+    }
+
+    const fetchQuizAndResponses = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch quiz details
+        const { data: quizData, error: quizError } = await supabase
+          .from('quizzes')
+          .select('*')
+          .eq('id', quizId)
+          .single();
+
+        if (quizError) {
+          throw new Error(`Failed to fetch quiz: ${quizError.message}`);
+        }
+
+        if (!quizData) {
+          throw new Error('Quiz not found');
+        }
+
+        setQuiz(quizData);
+        setIsPublic(quizData.is_public);
+        setQuizName(quizData.name);
+        setQuizDescription(quizData.description || '');
+
+        // Fetch quiz responses
+        const { data: responsesData, error: responsesError } = await supabase
+          .from('quiz_responses')
+          .select('*, user_profiles(username)')
+          .eq('quiz_id', quizId);
+
+        if (responsesError) {
+          throw new Error(`Failed to fetch quiz responses: ${responsesError.message}`);
+        }
+
+        if (!responsesData || responsesData.length === 0) {
+          console.warn('No responses found for this quiz.');
+          setLoading(false);
+          return;
+        }
+
+        setQuizResponses(responsesData);
+
+        // Calculate aura points for each question and overall
+        const calculatedQuestionAuraPoints: { [questionId: string]: { [aura: string]: number } } = {};
+        const calculatedOverallAuraPoints: { [aura: string]: number } = {
+          "innovator": 0,
+          "motivator": 0,
+          "achiever": 0,
+          "supporter": 0,
+          "guardian": 0,
+          "visionary": 0
+        };
+
+        responsesData.forEach(response => {
+          if (response.answers) {
+            Object.entries(response.answers).forEach(([questionId, answer]) => {
+              const questionIdStr = String(questionId);
+              const auraPoints = calculateMCQAuraPoints(answer as string, quizData.questions[questionIdStr].options);
+
+              if (!calculatedQuestionAuraPoints[questionIdStr]) {
+                calculatedQuestionAuraPoints[questionIdStr] = {
+                  "innovator": 0,
+                  "motivator": 0,
+                  "achiever": 0,
+                  "supporter": 0,
+                  "guardian": 0,
+                  "visionary": 0
+                };
+              }
+
+              Object.keys(calculatedOverallAuraPoints).forEach(aura => {
+                calculatedQuestionAuraPoints[questionIdStr][aura] += auraPoints[aura];
+                calculatedOverallAuraPoints[aura] += auraPoints[aura];
+              });
+            });
+          }
+        });
+
+        setQuestionAuraPoints(calculatedQuestionAuraPoints);
+        setOverallAuraPoints(calculatedOverallAuraPoints);
+      } catch (err: any) {
+        setError(err.message);
+        console.error("Error fetching quiz data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuizAndResponses();
+  }, [quizId, authUser, navigate]);
+
+  const handleResponseClick = (response: any) => {
+    setSelectedUserResponse(response);
+    setIsDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+  };
+
+  const handleShareQuiz = async () => {
+    setIsShareDialogOpen(true);
+    try {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .update({ is_public: true })
+        .eq('id', quizId);
+
+      if (error) {
+        throw new Error(`Failed to update quiz: ${error.message}`);
+      }
+
+      setIsPublic(true);
+
+      const link = `${window.location.origin}/quiz/take/${quizId}`;
+      setShareableLink(link);
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Error sharing quiz:", err);
+      toast({
+        title: 'Error sharing quiz',
+        description: 'There was an error sharing the quiz. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareableLink)
+      .then(() => {
+        toast({
+          title: 'Link copied!',
+          description: 'The shareable link has been copied to your clipboard.',
+        });
+      })
+      .catch(err => {
+        console.error("Failed to copy link:", err);
+        toast({
+          title: 'Error copying link',
+          description: 'There was an error copying the link to your clipboard.',
+          variant: 'destructive',
+        });
+      });
+    setIsShareDialogOpen(false);
+  };
+
+  const handlePrivacyChange = async (checked: boolean) => {
+    try {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .update({ is_public: checked })
+        .eq('id', quizId);
+
+      if (error) {
+        throw new Error(`Failed to update quiz privacy: ${error.message}`);
+      }
+
+      setIsPublic(checked);
+      toast({
+        title: 'Privacy settings updated',
+        description: `Quiz is now ${checked ? 'public' : 'private'}.`,
+      });
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Error updating quiz privacy:", err);
+      toast({
+        title: 'Error updating privacy',
+        description: 'There was an error updating the privacy settings. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateQuizDetails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .update({ name: quizName, description: quizDescription })
+        .eq('id', quizId);
+
+      if (error) {
+        throw new Error(`Failed to update quiz details: ${error.message}`);
+      }
+
+      setQuiz(prevQuiz => ({ ...prevQuiz, name: quizName, description: quizDescription }));
+      toast({
+        title: 'Quiz details updated',
+        description: 'The quiz name and description have been updated successfully.',
+      });
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Error updating quiz details:", err);
+      toast({
+        title: 'Error updating details',
+        description: 'There was an error updating the quiz details. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteQuiz = async () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteQuiz = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .delete()
+        .eq('id', quizId);
+
+      if (error) {
+        throw new Error(`Failed to delete quiz: ${error.message}`);
+      }
+
+      toast({
+        title: 'Quiz deleted',
+        description: 'The quiz has been successfully deleted.',
+      });
+      navigate('/quizzes');
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Error deleting quiz:", err);
+      toast({
+        title: 'Error deleting quiz',
+        description: 'There was an error deleting the quiz. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const cancelDeleteQuiz = () => {
+    setIsDeleteDialogOpen(false);
+  };
+
+  const overallAuraData = Object.entries(overallAuraPoints).map(([aura, points]) => ({
+    name: aura,
+    points: points,
+    color: auraColors[aura]
+  }));
+
+  const overallAuraChartData = {
+    labels: overallAuraData.map(data => data.name),
+    datasets: [
+      {
+        data: overallAuraData.map(data => data.points),
+        backgroundColor: overallAuraData.map(data => data.color),
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  const overallAuraChartOptions: any = {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          boxWidth: 12,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            return `${label}: ${value}`;
+          }
+        }
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Skeleton className="h-6 w-64 mb-2" />
+            </CardTitle>
+            <CardDescription>
+              <Skeleton className="h-4 w-96" />
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-4">
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <Toaster />
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the quiz and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDeleteQuiz}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteQuiz}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Quiz</DialogTitle>
+            <DialogDescription>
+              Anyone with this link can take the quiz.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="link" className="text-right">
+                Shareable Link
+              </Label>
+              <InputComponent10 type="text" id="link" value={shareableLink} readOnly className="col-span-3" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={handleCopyLink}>
+              Copy Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>User Response Details</DrawerTitle>
+            <DrawerDescription>
+              Details of the selected user's quiz response.
+            </DrawerDescription>
+          </DrawerHeader>
+          <ScrollArea className="h-[500px] p-4">
+            {selectedUserResponse && selectedUserResponse.answers && quiz && quiz.questions ? (
+              Object.entries(selectedUserResponse.answers).map(([questionId, answer]: [string, any]) => {
+                const question = quiz.questions[questionId];
+                if (!question) {
+                  return null;
+                }
+                return (
+                  <UserAnswerCard
+                    key={questionId}
+                    question={question.question}
+                    selectedAnswer={answer}
+                    correctAnswer={question.correctAnswer}
+                    options={question.options}
+                  />
+                );
+              })
+            ) : (
+              <p>No response selected or questions available.</p>
+            )}
+          </ScrollArea>
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>{quizName}</CardTitle>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setShowSettings(!showSettings)}>
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleDeleteQuiz}>
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+        {showSettings && (
+          <CardContent>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <InputComponent11 type="text" id="name" value={quizName} onChange={(e) => setQuizName(e.target.value)} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <TextareaComponent9 id="description" value={quizDescription} onChange={(e) => setQuizDescription(e.target.value)} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="isPublic" className="text-right">
+                  Public
+                </Label>
+                <SwitchComponent10 id="isPublic" checked={isPublic} onCheckedChange={handlePrivacyChange} />
+              </div>
+            </div>
+            <Button onClick={handleUpdateQuizDetails}>Update Details</Button>
+            {!isPublic && (
+              <Button className="ml-2" onClick={handleShareQuiz}>
+                Make Public & Get Shareable Link
+              </Button>
+            )}
+          </CardContent>
+        )}
+        <CardDescription>{quizDescription}</CardDescription>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Overall Aura Points</CardTitle>
+            <CardDescription>Distribution of aura points across all responses</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[350px]">
+              <Pie data={overallAuraChartData} options={overallAuraChartOptions} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quiz Responses</CardTitle>
+            <CardDescription>List of user responses for this quiz</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px] pr-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quizResponses.map((response) => (
+                    <TableRow key={response.id}>
+                      <TableCell>{response.user_profiles?.username || 'Unknown'}</TableCell>
+                      <TableCell>
+                        <Button variant="secondary" size="sm" onClick={() => handleResponseClick(response)}>
+                          View Response
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default QuizAnalytics;
