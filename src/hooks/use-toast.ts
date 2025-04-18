@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -74,6 +75,15 @@ const addToRemoveQueue = (toastId: string) => {
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
+      // Check if similar toast already exists to prevent duplication
+      const hasSimilarToast = state.toasts.some(
+        t => t.title === action.toast.title && t.description === action.toast.description
+      )
+      
+      if (hasSimilarToast) {
+        return state
+      }
+      
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
@@ -141,6 +151,11 @@ type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
   const id = genId()
+
+  // Auto-dismiss the toast after a delay
+  setTimeout(() => {
+    dispatch({ type: "DISMISS_TOAST", toastId: id })
+  }, TOAST_REMOVE_DELAY - 500) // Slightly shorter than the remove delay
 
   const update = (props: ToasterToast) =>
     dispatch({
