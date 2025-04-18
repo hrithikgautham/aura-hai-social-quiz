@@ -1,9 +1,24 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartCard } from './ChartCard';
+import { QuestionBreakdown } from './QuestionBreakdown';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { QuestionData, ResponseData } from '@/types/quiz';
 import { useState } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF007F'];
 
 interface ChartsSectionProps {
   questions: QuestionData[];
@@ -15,14 +30,9 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
   
   if (!questions.length || !responses.length) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Response Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No responses available for analysis.</p>
-        </CardContent>
-      </Card>
+      <ChartCard title="Response Analysis">
+        <p className="text-muted-foreground">No responses available for analysis.</p>
+      </ChartCard>
     );
   }
 
@@ -34,6 +44,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
     return parsedAnswers[currentQuestion.id];
   }).filter(answer => answer !== undefined);
 
+  // Process data for question breakdown
   const answerCounts: Record<string, number> = {};
   questionResponses.forEach(answer => {
     const answerText = currentQuestion.options && Array.isArray(currentQuestion.options) && answer < currentQuestion.options.length 
@@ -47,12 +58,26 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
     responses: value
   }));
 
+  // Calculate participation over time
+  const participationData = responses
+    .reduce((acc: Record<string, number>, response) => {
+      const date = new Date(response.created_at).toLocaleDateString();
+      acc[date] = (acc[date] || 0) + 1;
+      return acc;
+    }, {});
+
+  const timelineData = Object.entries(participationData)
+    .map(([date, count]) => ({
+      date,
+      responses: count
+    }));
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-xl">Response Analysis</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-6">
+      <ChartCard 
+        title="Response Analysis" 
+        description="Question-by-question breakdown of responses"
+      >
         <div className="space-y-6">
           <Select
             value={selectedQuestionIndex.toString()}
@@ -72,21 +97,63 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
 
           <div className="p-4 bg-gray-50 rounded-lg">
             <h3 className="text-sm md:text-base font-medium mb-4">{currentQuestion.text}</h3>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="responses" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="responses" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      dataKey="responses"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      label
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </ChartCard>
+
+      <ChartCard 
+        title="Participation Timeline" 
+        description="Response submissions over time"
+      >
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={timelineData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="responses" fill="#0088FE" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </ChartCard>
+    </div>
   );
 }
