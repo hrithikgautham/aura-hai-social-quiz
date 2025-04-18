@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import {
   Table,
   TableBody,
@@ -90,15 +91,6 @@ interface QuizData {
   id: string;
   name: string;
   shareable_link: string;
-  is_public?: boolean; // Using optional because this field isn't in the database schema
-  description?: string; // Using optional because this field isn't in the database schema
-  questions?: {
-    [key: string]: {
-      question: string;
-      options: string[];
-      correctAnswer?: string | number;
-    }
-  }
 }
 
 const QuizAnalytics = () => {
@@ -148,17 +140,11 @@ const QuizAnalytics = () => {
           throw new Error('Quiz not found');
         }
 
-        // Initialize with default empty values for missing fields
-        const enhancedQuizData: QuizData = {
-          ...quizData,
-          is_public: false, // Default value
-          description: '', // Default value
-        };
-
-        setQuiz(enhancedQuizData);
-        setIsPublic(false); // Default to false since is_public doesn't exist in schema
-        setQuizName(enhancedQuizData.name);
-        setQuizDescription(''); // Default to empty string since description doesn't exist in schema
+        // Initialize with default empty values
+        setQuiz(quizData);
+        setIsPublic(false); // Default to false
+        setQuizName(quizData.name);
+        setQuizDescription(''); // Default to empty string
 
         // Fetch quiz responses
         const { data: responsesData, error: responsesError } = await supabase
@@ -198,8 +184,8 @@ const QuizAnalytics = () => {
             Object.entries(answers).forEach(([questionId, answer]) => {
               const questionIdStr = String(questionId);
               if (quizQuestions[questionIdStr] && quizQuestions[questionIdStr].options) {
-                // Pass just the answer parameter to calculateMCQAuraPoints - fix for wrong argument count
-                const auraPoints = calculateMCQAuraPoints(answer as string, quizQuestions[questionIdStr].options);
+                // Fix: Pass only one argument to calculateMCQAuraPoints
+                const auraPoints = calculateMCQAuraPoints(answer as string);
 
                 if (!calculatedQuestionAuraPoints[questionIdStr]) {
                   calculatedQuestionAuraPoints[questionIdStr] = {
@@ -492,24 +478,13 @@ const QuizAnalytics = () => {
             </DrawerDescription>
           </DrawerHeader>
           <ScrollArea className="h-[500px] p-4">
-            {selectedUserResponse && selectedUserResponse.answers && quiz && quiz.questions ? (
-              Object.entries(selectedUserResponse.answers).map(([questionId, answer]: [string, any]) => {
-                const question = quiz.questions[questionId];
-                if (!question) {
-                  return null;
-                }
-                // Fix props to match UserAnswerCard component expectation
-                // Using the correct prop names that UserAnswerCard expects
-                return (
-                  <UserAnswerCard
-                    key={questionId}
-                    questionText={question.question}
-                    selectedAnswer={answer}
-                    correctAnswer={question.correctAnswer}
-                    options={question.options}
-                  />
-                );
-              })
+            {selectedUserResponse && selectedUserResponse.answers && quiz ? (
+              <UserAnswerCard
+                response={selectedUserResponse}
+                questions={quiz.questions || []}
+                quizName={quizName}
+                quizId={quizId}
+              />
             ) : (
               <p>No response selected or questions available.</p>
             )}
