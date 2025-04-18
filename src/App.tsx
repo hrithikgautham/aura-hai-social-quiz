@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,7 +14,6 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProfileEdit from "./pages/ProfileEdit";
 import { FloatingMenu } from "./components/layout/FloatingMenu";
-import { useAuth } from "./contexts/AuthContext";
 import { useEffect, useRef } from "react";
 
 const AuthRedirectHandler = () => {
@@ -24,7 +22,6 @@ const AuthRedirectHandler = () => {
   const { user, loading, authChecked } = useAuth();
   const hasProcessedRedirect = useRef(false);
   
-  // Handle saved redirects when user is authenticated
   useEffect(() => {
     if (user && authChecked && !loading && !hasProcessedRedirect.current) {
       const savedRedirect = localStorage.getItem('auth_redirect_path');
@@ -38,7 +35,6 @@ const AuthRedirectHandler = () => {
     }
   }, [user, loading, authChecked, navigate]);
   
-  // Handle OAuth redirects (from hash fragments)
   useEffect(() => {
     const hasAuthParams = 
       (location.hash && 
@@ -52,12 +48,10 @@ const AuthRedirectHandler = () => {
       console.log("Detected OAuth redirect with hash:", location.hash);
       hasProcessedRedirect.current = true;
       
-      // Clean URL immediately
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [location]);
   
-  // This component doesn't render anything
   return null;
 };
 
@@ -74,12 +68,10 @@ const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, loading, authChecked, navigate]);
 
-  // Allow content to be shown if auth has been checked and user is not logged in
   if (!loading && authChecked && !user) {
     return <>{children}</>;
   }
   
-  // While checking auth status, show loading
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
