@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
 type User = {
@@ -52,55 +52,116 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // New method to fetch and set user data
+  const fetchAndSetUserData = useCallback(async (userId: string) => {
+    try {
+      const { data: existingUser, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      
+      if (existingUser) {
+        console.log("User found in database:", existingUser);
+        setUser(existingUser);
+        localStorage.setItem('user', JSON.stringify(existingUser));
+        return existingUser;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
+    }
+  }, []);
+
+  // New method to create user record
+  const createUserRecord = useCallback(async (authUser: any) => {
+    try {
+      const avatarUrl = authUser.user_metadata?.avatar_url || 
+                        authUser.user_metadata?.picture ||
+                        `https://images.unsplash.com/photo-${
+                          PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
+                        }?w=150&h=150&fit=crop`;
+      
+      const username = authUser.user_metadata?.full_name?.toLowerCase().replace(/\s+/g, '_') || 
+                    authUser.email?.split('@')[0] || 
+                    `user_${Math.random().toString(36).substring(2, 10)}`;
+      
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .insert([{ 
+          id: authUser.id,
+          username: username,
+          avatar_url: avatarUrl,
+          email: authUser.email
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (newUser) {
+        console.log("Created new user:", newUser);
+        setUser(newUser);
+        localStorage.setItem('user', JSON.stringify(newUser));
+        return newUser;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error creating user record:', error);
+      return null;
+    }
+  }, []);
+
+  // Initialize auth state
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
+    
+    // Set loading timeout to prevent UI from being stuck
+    timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log("Auth loading timed out");
+        setLoading(false);
+      }
+    }, 1500); // Further reduced timeout
 
+    const initializeAuth = async () => {
+      try {
+        // First check if we have a session
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData.session;
+        
+        if (session?.user) {
+          console.log("Found existing session:", session.user.email);
+          const userData = await fetchAndSetUserData(session.user.id);
+          if (!userData) {
+            await createUserRecord(session.user);
+          }
+        } else {
+          console.log("No session found");
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+        setLoading(false);
+      }
+    };
+    
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.email);
 
+      // Handle different auth events
       if (session?.user) {
-        try {
-          const { data: existingUser, error: fetchError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (existingUser) {
-            console.log("User found in database:", existingUser);
-            setUser(existingUser);
-            localStorage.setItem('user', JSON.stringify(existingUser));
-          } else if (event === 'SIGNED_IN') {
-            console.log("Creating new user record");
-            const avatarUrl = session.user.user_metadata.avatar_url || 
-                            session.user.user_metadata.picture ||
-                            `https://images.unsplash.com/photo-${
-                              PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)]
-                            }?w=150&h=150&fit=crop`;
-            
-            const username = session.user.user_metadata.full_name?.toLowerCase().replace(/\s+/g, '_') || 
-                          session.user.email?.split('@')[0] || 
-                          `user_${Math.random().toString(36).substring(2, 10)}`;
-            
-            const { data: newUser, error: insertError } = await supabase
-              .from('users')
-              .insert([{ 
-                id: session.user.id,
-                username: username,
-                avatar_url: avatarUrl,
-                email: session.user.email
-              }])
-              .select()
-              .single();
-            
-            if (newUser) {
-              console.log("Created new user:", newUser);
-              setUser(newUser);
-              localStorage.setItem('user', JSON.stringify(newUser));
-            }
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          const userData = await fetchAndSetUserData(session.user.id);
+          if (!userData && event === 'SIGNED_IN') {
+            await createUserRecord(session.user);
           }
-        } catch (error) {
-          console.error('Error handling user data:', error);
         }
       } else if (event === 'SIGNED_OUT') {
         console.log("User signed out");
@@ -109,35 +170,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       setLoading(false);
+      clearTimeout(timeoutId);
     });
 
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-        setLoading(false);
-      }
-    };
-
-    // Reduced timeout from 3000ms to 2000ms for faster response
-    timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log("Auth loading timed out");
-        setLoading(false);
-      }
-    }, 2000);
-
-    checkSession();
+    // Initialize auth
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [fetchAndSetUserData, createUserRecord]);
 
   const login = async (username: string) => {
     try {
@@ -211,19 +254,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = async (isSignup?: boolean, redirectDomain?: string, redirectPath?: string) => {
     try {
+      // Always use the current origin if none provided
       const baseUrl = redirectDomain || window.location.origin;
+      // Default redirect to dashboard if no path provided
       const redirectUrl = `${baseUrl}${redirectPath || '/dashboard'}`;
       
       console.log(`Initiating Google login with redirect to: ${redirectUrl}`);
       
-      // Fix: Add clear options for redirection and make sure the URL is properly constructed
+      // Improved OAuth configuration
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'consent',
+            // Pass signup flag if needed
+            ...(isSignup ? { signup: 'true' } : {})
           }
         }
       });

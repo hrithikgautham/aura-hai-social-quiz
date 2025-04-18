@@ -8,11 +8,11 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    detectSessionInUrl: true,  // Look for #access_token/#id_token on page load
-    persistSession: true,      // Store session in localStorage
-    autoRefreshToken: true,    // Automatically refresh the token
-    storageKey: 'sb-access-token',  // Custom storage key for better control
-    flowType: 'pkce'           // Use PKCE flow for better security
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: 'sb-auth-token', // Change storage key to reduce conflicts
+    flowType: 'pkce'
   }
 });
 

@@ -27,13 +27,21 @@ const AuthRedirectHandler = () => {
   const navigationAttempted = useRef(false);
   
   useEffect(() => {
-    // Enhanced detection of auth redirects
-    if ((location.hash && location.hash.includes('access_token')) && !redirectProcessed.current) {
+    // Detect auth redirects immediately
+    const hasAuthParams = 
+      (location.hash && 
+       (location.hash.includes('access_token') || 
+        location.hash.includes('error') || 
+        location.hash.includes('provider')
+       )
+      );
+      
+    if (hasAuthParams && !redirectProcessed.current) {
       console.log("Detected OAuth redirect with hash:", location.hash);
       redirectProcessed.current = true;
       setIsAuthRedirect(true);
       
-      // Clean up URL immediately
+      // Clean URL immediately
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [location]);
@@ -42,26 +50,34 @@ const AuthRedirectHandler = () => {
     if (isAuthRedirect && !navigationAttempted.current) {
       console.log("Auth redirect detected, user:", user, "loading:", loading);
       
-      // Reduced timeout from 3s to 2s for faster redirection
+      // Quick timeout to avoid a stuck state
       const timeoutId = setTimeout(() => {
         if (!navigationAttempted.current) {
           console.log("Navigation timeout reached, redirecting to dashboard anyway");
           navigationAttempted.current = true;
           navigate('/dashboard', { replace: true });
         }
-      }, 2000);
+      }, 1500); // Further reduced timeout for faster experience
       
-      if (!loading && user) {
-        console.log("User is authenticated after redirect, navigating to dashboard:", user);
-        navigationAttempted.current = true;
-        clearTimeout(timeoutId);
-        
-        navigate('/dashboard', { replace: true });
+      if (!loading) {
+        if (user) {
+          console.log("User is authenticated after redirect, navigating to dashboard");
+          navigationAttempted.current = true;
+          clearTimeout(timeoutId);
+          navigate('/dashboard', { replace: true });
+        } else if (location.pathname.startsWith('/quiz/')) {
+          // If we're on a quiz page and auth failed, stay on the quiz page
+          console.log("Auth flow completed, staying on quiz page");
+          navigationAttempted.current = true;
+          clearTimeout(timeoutId);
+          // Reload the page to trigger the quiz flow again
+          window.location.reload();
+        }
       }
       
       return () => clearTimeout(timeoutId);
     }
-  }, [user, loading, navigate, isAuthRedirect]);
+  }, [user, loading, navigate, isAuthRedirect, location.pathname]);
   
   return null;
 };
@@ -80,13 +96,13 @@ const UnauthorizedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    // Add a safety timeout to prevent infinite loading
+    // Safety timeout
     const timeoutId = setTimeout(() => {
       if (loading && !navigationAttempted.current) {
         console.log("Loading timed out in UnauthorizedRoute, allowing content to show");
         navigationAttempted.current = true;
       }
-    }, 2000);
+    }, 1500); // Further reduced timeout
     
     return () => clearTimeout(timeoutId);
   }, [loading]);
@@ -107,7 +123,14 @@ const FloatingMenuWrapper = () => {
   return user ? <FloatingMenu /> : null;
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1, // Reduce retries for faster failure detection
+      refetchOnWindowFocus: false, // Less aggressive refetching
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

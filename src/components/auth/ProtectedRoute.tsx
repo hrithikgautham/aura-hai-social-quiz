@@ -15,19 +15,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   console.log("ProtectedRoute - User:", user, "Loading:", loading);
   
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
-    
-    if (loading) {
-      // Even shorter timeout (300ms) for faster decisions
-      timeoutId = setTimeout(() => {
+    // Set a very short timeout to prevent long loading screens
+    const timeoutId = setTimeout(() => {
+      if (loading) {
         console.log("Loading timed out in ProtectedRoute, forcing navigation decision");
         setForceRender(true);
-      }, 300); // Reduced from 500ms to 300ms for faster response
-    }
+      }
+    }, 200); // Further reduced for faster experience
     
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    return () => clearTimeout(timeoutId);
   }, [loading]);
 
   // If we have a user, render content immediately
