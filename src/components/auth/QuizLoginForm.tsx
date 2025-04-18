@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,43 +12,61 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
   const navigate = useNavigate();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [oneTapInitialized, setOneTapInitialized] = useState(false);
 
-  // Google One Tap setup
+  // Google One Tap setup with better error handling
   useEffect(() => {
     // Only initialize Google One Tap on the login/signup page
     // and not when the user is already in a login process
-    if (isLoggingIn) return;
+    if (isLoggingIn || oneTapInitialized) return;
     
     // Load the Google Identity Services script
     const loadGoogleScript = () => {
+      if (document.getElementById('google-identity-script')) {
+        initializeOneTap();
+        return;
+      }
+      
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
+      script.id = 'google-identity-script';
       script.async = true;
       script.defer = true;
-      document.body.appendChild(script);
-      
+      script.onerror = () => console.error("Failed to load Google Identity script");
       script.onload = initializeOneTap;
+      document.body.appendChild(script);
     };
 
     const initializeOneTap = () => {
-      if (window.google && !document.getElementById('google-one-tap-container')) {
+      if (!window.google) {
+        console.error("Google Identity API not available");
+        return;
+      }
+
+      if (!document.getElementById('google-one-tap-container')) {
         // Create container for One Tap
         const containerDiv = document.createElement('div');
         containerDiv.id = 'google-one-tap-container';
         document.body.appendChild(containerDiv);
         
-        window.google.accounts.id.initialize({
-          client_id: '539258633496-l6fi7nsu457imj74156b9g7tu4d4iro1.apps.googleusercontent.com', // This should be your Google OAuth client ID
-          callback: handleGoogleOneTapResponse,
-          auto_select: true,
-          cancel_on_tap_outside: false
-        });
-        
-        window.google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            console.log('One Tap not displayed:', notification.getNotDisplayedReason() || notification.getSkippedReason());
-          }
-        });
+        try {
+          window.google.accounts.id.initialize({
+            client_id: '539258633496-l6fi7nsu457imj74156b9g7tu4d4iro1.apps.googleusercontent.com',
+            callback: handleGoogleOneTapResponse,
+            auto_select: true,
+            cancel_on_tap_outside: false
+          });
+          
+          window.google.accounts.id.prompt((notification: any) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              console.log('One Tap not displayed:', notification.getNotDisplayedReason() || notification.getSkippedReason());
+            }
+          });
+          
+          setOneTapInitialized(true);
+        } catch (error) {
+          console.error("Error initializing Google One Tap:", error);
+        }
       }
     };
     
@@ -60,7 +79,7 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
         document.body.removeChild(container);
       }
     };
-  }, [isLoggingIn]);
+  }, [isLoggingIn, oneTapInitialized]);
 
   // Handle Google One Tap response
   const handleGoogleOneTapResponse = async (response: any) => {
@@ -86,8 +105,9 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
             description: "Welcome to Aura Hai!",
           });
           
-          // Reload the current page to trigger the auth check again
-          window.location.reload();
+          // Don't reload - just allow the component to re-render
+          // This gives a smoother experience
+          setIsLoggingIn(false);
         }
       } catch (error) {
         console.error("Google One Tap auth error:", error);
@@ -96,7 +116,6 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
           title: "Error",
           description: "Could not log in with Google. Please try again.",
         });
-      } finally {
         setIsLoggingIn(false);
       }
     }
@@ -126,7 +145,6 @@ export const QuizLoginForm = ({ quizCreator, quizId }: { quizCreator?: string, q
       
       await loginWithGoogle(false, productionDomain, redirectPath);
       
-      // We only show the toast once here
       toast({
         title: "Logging you in...",
         description: "Please wait while we connect to Google.",

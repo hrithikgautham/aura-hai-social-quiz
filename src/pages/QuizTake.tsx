@@ -38,47 +38,66 @@ const QuizTake = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   const [quizCreator, setQuizCreator] = useState<string | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [fetchAttempts, setFetchAttempts] = useState(0);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (loading) {
-        console.log("Quiz loading timed out after 5 seconds");
+        console.log("Quiz loading timed out after 3 seconds");
         setLoadingTimeout(true);
-        setLoading(false);
       }
-    }, 5000);
+    }, 3000);
     
     return () => clearTimeout(timeoutId);
   }, [loading]);
 
   useEffect(() => {
+    if (quizId) {
+      setLoadError(null);
+    }
+  }, [quizId]);
+
+  useEffect(() => {
     if (!quizId) return;
 
     const fetchQuiz = async () => {
+      if (fetchAttempts > 3) {
+        setLoading(false);
+        setLoadError("Failed to load quiz after multiple attempts. Please check your connection.");
+        return;
+      }
+
       setLoading(true);
       try {
+        console.log(`Attempting to fetch quiz (attempt ${fetchAttempts + 1}): ${quizId}`);
+
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('*, users:creator_id(username)')
           .or(`id.eq.${quizId},shareable_link.eq.${quizId}`)
           .single();
 
-        if (quizError) throw quizError;
+        if (quizError) {
+          console.error('Error fetching quiz:', quizError);
+          throw quizError;
+        }
         
+        console.log("Quiz data retrieved successfully:", quizData?.id);
         setQuiz(quizData);
-        setQuizCreator(quizData.users?.username || null);
+        setQuizCreator(quizData.users?.username || "Unknown Creator");
+
+        if (user && quizData.creator_id === user.id) {
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: "You cannot take your own quiz. View analytics instead.",
+          });
+          navigate(`/quiz/${quizData.id}/analytics`);
+          return;
+        }
 
         if (user) {
-          if (quizData.creator_id === user.id) {
-            toast({
-              variant: "destructive",
-              title: "Access Denied",
-              description: "You cannot take your own quiz. View analytics instead.",
-            });
-            navigate(`/quiz/${quizData.id}/analytics`);
-            return;
-          }
-
           const { data: responseData, error: responseError } = await supabase
             .from('responses')
             .select('*')
@@ -95,79 +114,91 @@ const QuizTake = () => {
               }, 500);
             }
           }
+        }
 
-          const { data: questionData, error: questionError } = await supabase
-            .from('quiz_questions')
-            .select(`
-              id,
-              priority_order,
-              questions:question_id(id, text, type, options)
-            `)
-            .eq('quiz_id', quizData.id);
+        const { data: questionData, error: questionError } = await supabase
+          .from('quiz_questions')
+          .select(`
+            id,
+            priority_order,
+            questions:question_id(id, text, type, options)
+          `)
+          .eq('quiz_id', quizData.id);
 
-          if (questionError) throw questionError;
+        if (questionError) {
+          console.error('Error fetching questions:', questionError);
+          throw questionError;
+        }
 
-          if (questionData) {
-            setQuestions(questionData.map(item => {
-              let parsedOptions;
-              if (item.questions.options) {
-                if (typeof item.questions.options === 'string') {
-                  try {
-                    parsedOptions = JSON.parse(item.questions.options);
-                  } catch (e) {
-                    parsedOptions = item.questions.options.split(',').map(opt => opt.trim());
-                    console.warn('Options were not in valid JSON format, falling back to comma-separated parsing', item.questions.options);
-                  }
-                } else {
-                  parsedOptions = item.questions.options;
+        if (questionData && questionData.length > 0) {
+          console.log(`Successfully loaded ${questionData.length} questions`);
+          
+          const processedQuestions = questionData.map(item => {
+            let parsedOptions;
+            if (item.questions.options) {
+              if (typeof item.questions.options === 'string') {
+                try {
+                  parsedOptions = JSON.parse(item.questions.options);
+                } catch (e) {
+                  parsedOptions = item.questions.options.split(',').map(opt => opt.trim());
+                  console.warn('Options were not in valid JSON format, falling back to comma-separated parsing', item.questions.options);
                 }
+              } else {
+                parsedOptions = item.questions.options;
               }
-              
-              let parsedPriorityOrder;
-              if (item.priority_order) {
-                if (typeof item.priority_order === 'string') {
-                  try {
-                    parsedPriorityOrder = JSON.parse(item.priority_order);
-                  } catch (e) {
-                    console.error('Failed to parse priority_order', e);
-                    parsedPriorityOrder = undefined;
-                  }
-                } else {
-                  parsedPriorityOrder = item.priority_order;
-                }
-              }
-
-              return {
-                id: item.id,
-                questionId: item.questions.id,
-                text: item.questions.text,
-                type: item.questions.type as 'mcq',
-                options: parsedOptions,
-                priority_order: parsedPriorityOrder,
-              };
-            }));
-            
-            const storedAnswers = sessionStorage.getItem(`quiz_answers_${quizData.id}`);
-            if (storedAnswers) {
-              setAnswers(JSON.parse(storedAnswers));
             }
+            
+            let parsedPriorityOrder;
+            if (item.priority_order) {
+              if (typeof item.priority_order === 'string') {
+                try {
+                  parsedPriorityOrder = JSON.parse(item.priority_order);
+                } catch (e) {
+                  console.error('Failed to parse priority_order', e);
+                  parsedPriorityOrder = undefined;
+                }
+              } else {
+                parsedPriorityOrder = item.priority_order;
+              }
+            }
+
+            return {
+              id: item.id,
+              questionId: item.questions.id,
+              text: item.questions.text,
+              type: item.questions.type as 'mcq',
+              options: parsedOptions,
+              priority_order: parsedPriorityOrder,
+            };
+          });
+          
+          setQuestions(processedQuestions);
+          
+          const storedAnswers = sessionStorage.getItem(`quiz_answers_${quizData.id}`);
+          if (storedAnswers) {
+            setAnswers(JSON.parse(storedAnswers));
           }
+        } else {
+          console.warn("No questions found for this quiz");
+          setLoadError("This quiz doesn't have any questions.");
         }
       } catch (error) {
-        console.error('Error fetching quiz:', error);
-        toast({
-          variant: "destructive",
-          title: "Quiz not found",
-          description: "The quiz you're looking for doesn't exist or has been removed.",
-        });
-        navigate('/');
-      } finally {
-        setLoading(false);
+        console.error('Error in quiz loading process:', error);
+        setFetchAttempts(prev => prev + 1);
+        
+        const retryDelay = Math.min(1000 * Math.pow(2, fetchAttempts), 8000);
+        setTimeout(() => fetchQuiz(), retryDelay);
+        
+        return;
       }
+
+      setFetchAttempts(0);
+      setLoading(false);
+      setLoadingTimeout(false);
     };
 
     fetchQuiz();
-  }, [quizId, user, navigate, toast]);
+  }, [quizId, user, navigate, toast, fetchAttempts]);
 
   useEffect(() => {
     if (quiz && Object.keys(answers).length > 0) {
@@ -268,34 +299,51 @@ const QuizTake = () => {
     }
   };
 
-  if (loading) {
+  const handleRetry = () => {
+    setLoading(true);
+    setLoadingTimeout(false);
+    setLoadError(null);
+    setFetchAttempts(0);
+    window.location.reload();
+  };
+
+  if (loading && !loadingTimeout) {
     return <QuirkyLoading />;
   }
 
-  if (loadingTimeout) {
+  if (loadingTimeout || loadError) {
     return (
       <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
         <div className="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
-            Something went wrong
+          <h1 className="text-2xl font-bold text-center mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+            {loadError ? "Oops!" : "Taking longer than expected..."}
           </h1>
-          <p className="text-gray-600 text-center mb-8">
-            We couldn't load the quiz. Please try refreshing the page or go back to the dashboard.
+          <p className="text-gray-600 text-center mb-6">
+            {loadError || "We're having trouble loading the quiz. Would you like to wait a bit longer or try reloading?"}
           </p>
           <div className="flex justify-center space-x-4">
             <Button 
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
               className="bg-[#00DDEB] hover:bg-[#00BBCC]"
             >
-              Refresh
+              Try Again
             </Button>
             <Button 
               onClick={() => navigate('/dashboard')}
-              className="bg-[#FF007F] hover:bg-[#D6006C]"
+              variant="outline"
             >
-              Dashboard
+              Go to Dashboard
             </Button>
           </div>
+          
+          {!loadError && !user && quizCreator && (
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h2 className="text-lg font-medium text-center mb-4">
+                Don't want to wait? You can login now:
+              </h2>
+              <QuizLoginForm quizCreator={quizCreator} quizId={quizId} />
+            </div>
+          )}
         </div>
       </PageLayout>
     );
@@ -312,6 +360,27 @@ const QuizTake = () => {
             You need to be logged in to take this quiz and measure your aura.
           </p>
           <QuizLoginForm quizCreator={quizCreator || undefined} quizId={quizId} />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (!quiz) {
+    return (
+      <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
+        <div className="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+            Quiz Not Found
+          </h1>
+          <p className="text-gray-600 text-center mb-8">
+            We couldn't find the quiz you're looking for. It may have been removed or the link is incorrect.
+          </p>
+          <Button 
+            onClick={() => navigate('/dashboard')}
+            className="w-full bg-[#FF007F] hover:bg-[#D6006C]"
+          >
+            Go to Dashboard
+          </Button>
         </div>
       </PageLayout>
     );
@@ -343,6 +412,27 @@ const QuizTake = () => {
 
   if (showWelcome && quiz) {
     return <QuizWelcome quiz={quiz} onStart={() => setShowWelcome(false)} />;
+  }
+
+  if (questions.length === 0) {
+    return (
+      <PageLayout className="bg-gradient-to-r from-[#FFE29F] to-[#FF719A]">
+        <div className="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+            No Questions Found
+          </h1>
+          <p className="text-gray-600 text-center mb-8">
+            This quiz doesn't have any questions yet. Please check back later.
+          </p>
+          <Button 
+            onClick={() => navigate('/dashboard')}
+            className="w-full bg-[#FF007F] hover:bg-[#D6006C]"
+          >
+            Go to Dashboard
+          </Button>
+        </div>
+      </PageLayout>
+    );
   }
 
   return (
