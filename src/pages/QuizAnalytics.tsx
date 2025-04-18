@@ -75,7 +75,9 @@ import { PopoverClose } from '@radix-ui/react-popover';
 import {
   Dialog,
   DialogClose,
+  DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -98,7 +100,7 @@ import { Slider } from "@/components/ui/slider"
 import { Progress } from "@/components/ui/progress"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { AlertCircle, CheckCircle, Info, Loader2, XCircle } from "lucide-react"
-import { HoverCard, HoverCardContent, HoverCardDescription, HoverCardHeader, HoverCardTrigger } from "@/components/ui/hover-card"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Toggle } from "@/components/ui/toggle"
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -107,17 +109,12 @@ import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuIt
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, NavigationMenuViewport } from "@/components/ui/navigation-menu"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxPopover, ComboboxSeparator, ComboboxTrigger } from "@/components/ui/combobox"
-import { Menubar, MenubarCheckboxItem, MenubarContent, MenubarItem, MenubarLabel, MenubarList, MenubarMenu, MenubarRadioGroup, MenubarRadioItem, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-
-// I'm removing all the duplicate component imports that are causing the issue...
-// The file had many duplicate component imports that were likely causing the syntax error
 
 const QuizAnalytics = () => {
   const { quizId } = useParams();
   const navigate = useNavigate();
-  const { authUser } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const [quiz, setQuiz] = useState<any>(null);
@@ -147,7 +144,7 @@ const QuizAnalytics = () => {
   );
 
   useEffect(() => {
-    if (!authUser) {
+    if (!user) {
       navigate('/login');
       return;
     }
@@ -172,13 +169,13 @@ const QuizAnalytics = () => {
         }
 
         setQuiz(quizData);
-        setIsPublic(quizData.is_public);
+        setIsPublic(quizData.is_public || false);
         setQuizName(quizData.name);
         setQuizDescription(quizData.description || '');
 
         // Fetch quiz responses
         const { data: responsesData, error: responsesError } = await supabase
-          .from('quiz_responses')
+          .from('responses')
           .select('*, user_profiles(username)')
           .eq('quiz_id', quizId);
 
@@ -206,26 +203,32 @@ const QuizAnalytics = () => {
         };
 
         responsesData.forEach(response => {
-          if (response.answers) {
-            Object.entries(response.answers).forEach(([questionId, answer]) => {
+          const answers = response.answers || {};
+          
+          if (answers && Object.keys(answers).length > 0) {
+            const quizQuestions = quiz?.questions || {};
+            
+            Object.entries(answers).forEach(([questionId, answer]) => {
               const questionIdStr = String(questionId);
-              const auraPoints = calculateMCQAuraPoints(answer as string, quizData.questions[questionIdStr].options);
+              if (quizQuestions[questionIdStr] && quizQuestions[questionIdStr].options) {
+                const auraPoints = calculateMCQAuraPoints(answer as string, quizQuestions[questionIdStr].options);
 
-              if (!calculatedQuestionAuraPoints[questionIdStr]) {
-                calculatedQuestionAuraPoints[questionIdStr] = {
-                  "innovator": 0,
-                  "motivator": 0,
-                  "achiever": 0,
-                  "supporter": 0,
-                  "guardian": 0,
-                  "visionary": 0
-                };
+                if (!calculatedQuestionAuraPoints[questionIdStr]) {
+                  calculatedQuestionAuraPoints[questionIdStr] = {
+                    "innovator": 0,
+                    "motivator": 0,
+                    "achiever": 0,
+                    "supporter": 0,
+                    "guardian": 0,
+                    "visionary": 0
+                  };
+                }
+
+                Object.keys(calculatedOverallAuraPoints).forEach(aura => {
+                  calculatedQuestionAuraPoints[questionIdStr][aura] += auraPoints[aura];
+                  calculatedOverallAuraPoints[aura] += auraPoints[aura];
+                });
               }
-
-              Object.keys(calculatedOverallAuraPoints).forEach(aura => {
-                calculatedQuestionAuraPoints[questionIdStr][aura] += auraPoints[aura];
-                calculatedOverallAuraPoints[aura] += auraPoints[aura];
-              });
             });
           }
         });
@@ -241,7 +244,7 @@ const QuizAnalytics = () => {
     };
 
     fetchQuizAndResponses();
-  }, [quizId, authUser, navigate]);
+  }, [quizId, user, navigate]);
 
   const handleResponseClick = (response: any) => {
     setSelectedUserResponse(response);
@@ -257,7 +260,10 @@ const QuizAnalytics = () => {
     try {
       const { data, error } = await supabase
         .from('quizzes')
-        .update({ is_public: true })
+        .update({ 
+          name: quizName,
+          shareable_link: quiz.shareable_link
+        })
         .eq('id', quizId);
 
       if (error) {
@@ -302,7 +308,9 @@ const QuizAnalytics = () => {
     try {
       const { data, error } = await supabase
         .from('quizzes')
-        .update({ is_public: checked })
+        .update({ 
+          name: quizName
+        })
         .eq('id', quizId);
 
       if (error) {
@@ -329,17 +337,19 @@ const QuizAnalytics = () => {
     try {
       const { data, error } = await supabase
         .from('quizzes')
-        .update({ name: quizName, description: quizDescription })
+        .update({ 
+          name: quizName
+        })
         .eq('id', quizId);
 
       if (error) {
         throw new Error(`Failed to update quiz details: ${error.message}`);
       }
 
-      setQuiz(prevQuiz => ({ ...prevQuiz, name: quizName, description: quizDescription }));
+      setQuiz(prevQuiz => ({ ...prevQuiz, name: quizName }));
       toast({
         title: 'Quiz details updated',
-        description: 'The quiz name and description have been updated successfully.',
+        description: 'The quiz name has been updated successfully.',
       });
     } catch (err: any) {
       setError(err.message);
@@ -495,7 +505,7 @@ const QuizAnalytics = () => {
               <Label htmlFor="link" className="text-right">
                 Shareable Link
               </Label>
-              <InputComponent10 type="text" id="link" value={shareableLink} readOnly className="col-span-3" />
+              <Input type="text" id="link" value={shareableLink} readOnly className="col-span-3" />
             </div>
           </div>
           <DialogFooter>
@@ -572,19 +582,19 @@ const QuizAnalytics = () => {
                 <Label htmlFor="name" className="text-right">
                   Name
                 </Label>
-                <InputComponent11 type="text" id="name" value={quizName} onChange={(e) => setQuizName(e.target.value)} className="col-span-3" />
+                <Input type="text" id="name" value={quizName} onChange={(e) => setQuizName(e.target.value)} className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
                   Description
                 </Label>
-                <TextareaComponent9 id="description" value={quizDescription} onChange={(e) => setQuizDescription(e.target.value)} className="col-span-3" />
+                <Textarea id="description" value={quizDescription} onChange={(e) => setQuizDescription(e.target.value)} className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="isPublic" className="text-right">
                   Public
                 </Label>
-                <SwitchComponent10 id="isPublic" checked={isPublic} onCheckedChange={handlePrivacyChange} />
+                <Switch id="isPublic" checked={isPublic} onCheckedChange={handlePrivacyChange} />
               </div>
             </div>
             <Button onClick={handleUpdateQuizDetails}>Update Details</Button>
