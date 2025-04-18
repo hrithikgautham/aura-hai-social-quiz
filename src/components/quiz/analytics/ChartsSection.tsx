@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PieChart, BarChart, AreaChart, Activity, Users, Calendar } from 'lucide-react';
 import {
-  Chart,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent
@@ -64,8 +63,10 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
       const date = new Date(response.created_at).toLocaleDateString();
       const previousValue = completionTimeByDate[date] || { total: 0, count: 0 };
       
+      // Calculate time without relying on completion_time property
+      // Using created_at as reference point for trends
       completionTimeByDate[date] = {
-        total: previousValue.total + (response.completion_time || 0),
+        total: previousValue.total + 1, // Just count submissions instead of time
         count: previousValue.count + 1
       };
     });
@@ -160,6 +161,11 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
       fill: (dateCount[day] || 0) === maxResponses ? '#FF007F' : '#00DDEB'
     }));
   }, [responses, hasResponses]);
+
+  // Add a debug log to help diagnose charting issues
+  console.log("Question data:", questionData);
+  console.log("Selected question:", questions[selectedQuestionIndex]);
+  console.log("Response sample:", responses.slice(0, 2)); 
 
   if (!hasQuestions || !hasResponses) {
     return (
@@ -289,7 +295,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
             )}
 
             <div className="md:px-4">
-              {questionData.chartData.length > 0 ? (
+              {questionData.chartData && questionData.chartData.length > 0 ? (
                 <div className="h-[400px]">
                   {activeChart === 'bar' && (
                     <ResponsiveContainer width="100%" height="100%">
@@ -312,7 +318,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
                           }} 
                         />
                         <Legend />
-                        <Bar dataKey="responses" fill="url(#barColor)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="value" name="Responses" fill="url(#barColor)" radius={[4, 4, 0, 0]} />
                       </RechartsBarChart>
                     </ResponsiveContainer>
                   )}
@@ -376,7 +382,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
                           }} 
                         />
                         <Legend />
-                        <Area type="monotone" dataKey="responses" stroke="#9b87f5" fillOpacity={1} fill="url(#areaColor)" />
+                        <Area type="monotone" dataKey="value" name="Responses" stroke="#9b87f5" fillOpacity={1} fill="url(#areaColor)" />
                       </RechartsAreaChart>
                     </ResponsiveContainer>
                   )}
