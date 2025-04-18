@@ -21,4 +21,5 @@ export interface AuraPoints {
   supporter: number;
   guardian: number;
   visionary: number;
+  [aura: string]: number; // Add index signature to allow access with string keys
 }

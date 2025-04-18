@@ -2,9 +2,10 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Legend, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { auraColors } from '@/utils/auraCalculations';
+import { AuraPoints } from '@/types/quiz-analytics';
 
 interface AuraPointsChartProps {
-  overallAuraPoints: { [aura: string]: number };
+  overallAuraPoints: AuraPoints;
 }
 
 export function AuraPointsChart({ overallAuraPoints }: AuraPointsChartProps) {
