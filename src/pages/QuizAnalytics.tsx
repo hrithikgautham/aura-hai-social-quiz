@@ -1,97 +1,18 @@
 
-// src/pages/QuizAnalytics.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { UserAnswerCard } from '@/components/quiz/UserAnswerCard';
-import { calculateMCQAuraPoints, auraColors } from '@/utils/auraCalculations';
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Toaster } from '@/components/ui/toaster';
-import { Skeleton } from "@/components/ui/skeleton"
-import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, AlertCircle, CheckCircle, Info, Loader2, XCircle, Calendar, Users, Activity } from 'lucide-react';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  LineChart,
-  Line
-} from 'recharts';
-
-const COLORS = ['#FF007F', '#00DDEB', '#FFE29F', '#9b87f5', '#7E69AB', '#D3E4FD'];
-
-// Define types for our quiz state data
-interface QuizData {
-  created_at: string;
-  creator_id: string;
-  id: string;
-  name: string;
-  shareable_link: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { calculateMCQAuraPoints } from '@/utils/auraCalculations';
+import { QuizAnalyticsLayout } from '@/components/quiz/analytics/QuizAnalyticsLayout';
+import { QuizHeaderCard } from '@/components/quiz/analytics/QuizHeaderCard';
+import { AuraPointsChart } from '@/components/quiz/analytics/AuraPointsChart';
+import { ResponsesTable } from '@/components/quiz/analytics/ResponsesTable';
+import { ShareDialog } from '@/components/quiz/analytics/ShareDialog';
+import { DeleteDialog } from '@/components/quiz/analytics/DeleteDialog';
+import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
+import { QuizData, AuraPoints } from '@/types/quiz-analytics';
 
 const QuizAnalytics = () => {
   const { quizId } = useParams();
@@ -103,17 +24,23 @@ const QuizAnalytics = () => {
   const [quizResponses, setQuizResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [questionAuraPoints, setQuestionAuraPoints] = useState<{ [questionId: string]: { [aura: string]: number } }>({});
-  const [overallAuraPoints, setOverallAuraPoints] = useState<{ [aura: string]: number }>({});
-  const [selectedUserResponse, setSelectedUserResponse] = useState<any>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [questionAuraPoints, setQuestionAuraPoints] = useState<{ [questionId: string]: AuraPoints }>({});
+  const [overallAuraPoints, setOverallAuraPoints] = useState<AuraPoints>({
+    innovator: 0,
+    motivator: 0,
+    achiever: 0,
+    supporter: 0,
+    guardian: 0,
+    visionary: 0
+  });
+  
+  // UI state
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [quizName, setQuizName] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -165,14 +92,14 @@ const QuizAnalytics = () => {
         setQuizResponses(responsesData);
 
         // Calculate aura points for each question and overall
-        const calculatedQuestionAuraPoints: { [questionId: string]: { [aura: string]: number } } = {};
-        const calculatedOverallAuraPoints: { [aura: string]: number } = {
-          "innovator": 0,
-          "motivator": 0,
-          "achiever": 0,
-          "supporter": 0,
-          "guardian": 0,
-          "visionary": 0
+        const calculatedQuestionAuraPoints: { [questionId: string]: AuraPoints } = {};
+        const calculatedOverallAuraPoints: AuraPoints = {
+          innovator: 0,
+          motivator: 0,
+          achiever: 0,
+          supporter: 0,
+          guardian: 0,
+          visionary: 0
         };
 
         responsesData.forEach(response => {
@@ -189,18 +116,19 @@ const QuizAnalytics = () => {
 
                 if (!calculatedQuestionAuraPoints[questionIdStr]) {
                   calculatedQuestionAuraPoints[questionIdStr] = {
-                    "innovator": 0,
-                    "motivator": 0,
-                    "achiever": 0,
-                    "supporter": 0,
-                    "guardian": 0,
-                    "visionary": 0
+                    innovator: 0,
+                    motivator: 0,
+                    achiever: 0,
+                    supporter: 0,
+                    guardian: 0,
+                    visionary: 0
                   };
                 }
 
                 Object.keys(calculatedOverallAuraPoints).forEach(aura => {
-                  calculatedQuestionAuraPoints[questionIdStr][aura] += auraPoints[aura];
-                  calculatedOverallAuraPoints[aura] += auraPoints[aura];
+                  const auraKey = aura as keyof AuraPoints;
+                  calculatedQuestionAuraPoints[questionIdStr][auraKey] += auraPoints[auraKey];
+                  calculatedOverallAuraPoints[auraKey] += auraPoints[auraKey];
                 });
               }
             });
@@ -220,17 +148,7 @@ const QuizAnalytics = () => {
     fetchQuizAndResponses();
   }, [quizId, user, navigate]);
 
-  const handleResponseClick = (response: any) => {
-    setSelectedUserResponse(response);
-    setIsDrawerOpen(true);
-  };
-
-  const handleDrawerClose = () => {
-    setIsDrawerOpen(false);
-  };
-
   const handleShareQuiz = async () => {
-    setIsShareDialogOpen(true);
     try {
       // Only updating fields that are known to exist in the schema
       const { data, error } = await supabase
@@ -249,6 +167,7 @@ const QuizAnalytics = () => {
 
       const link = `${window.location.origin}/quiz/take/${quizId}`;
       setShareableLink(link);
+      setIsShareDialogOpen(true);
     } catch (err: any) {
       setError(err.message);
       console.error("Error sharing quiz:", err);
@@ -260,86 +179,7 @@ const QuizAnalytics = () => {
     }
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareableLink)
-      .then(() => {
-        toast({
-          title: 'Link copied!',
-          description: 'The shareable link has been copied to your clipboard.',
-        });
-      })
-      .catch(err => {
-        console.error("Failed to copy link:", err);
-        toast({
-          title: 'Error copying link',
-          description: 'There was an error copying the link to your clipboard.',
-          variant: 'destructive',
-        });
-      });
-    setIsShareDialogOpen(false);
-  };
-
-  const handlePrivacyChange = async (checked: boolean) => {
-    try {
-      // Only updating the name field which is confirmed to exist in the schema
-      const { data, error } = await supabase
-        .from('quizzes')
-        .update({ 
-          name: quizName
-        })
-        .eq('id', quizId);
-
-      if (error) {
-        throw new Error(`Failed to update quiz privacy: ${error.message}`);
-      }
-
-      setIsPublic(checked);
-      toast({
-        title: 'Privacy settings updated',
-        description: `Quiz is now ${checked ? 'public' : 'private'}.`,
-      });
-    } catch (err: any) {
-      setError(err.message);
-      console.error("Error updating quiz privacy:", err);
-      toast({
-        title: 'Error updating privacy',
-        description: 'There was an error updating the privacy settings. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleUpdateQuizDetails = async () => {
-    try {
-      // Only updating fields that exist in the schema
-      const { data, error } = await supabase
-        .from('quizzes')
-        .update({ 
-          name: quizName
-        })
-        .eq('id', quizId);
-
-      if (error) {
-        throw new Error(`Failed to update quiz details: ${error.message}`);
-      }
-
-      setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, name: quizName } : null);
-      toast({
-        title: 'Quiz details updated',
-        description: 'The quiz name has been updated successfully.',
-      });
-    } catch (err: any) {
-      setError(err.message);
-      console.error("Error updating quiz details:", err);
-      toast({
-        title: 'Error updating details',
-        description: 'There was an error updating the quiz details. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteQuiz = async () => {
+  const handleDeleteQuiz = () => {
     setIsDeleteDialogOpen(true);
   };
 
@@ -372,253 +212,68 @@ const QuizAnalytics = () => {
     }
   };
 
-  const cancelDeleteQuiz = () => {
-    setIsDeleteDialogOpen(false);
+  const handleQuizUpdate = (name: string, description: string, isPublic: boolean) => {
+    setQuizName(name);
+    setQuizDescription(description);
+    setIsPublic(isPublic);
+    setQuiz(prev => prev ? { ...prev, name } : null);
   };
-
-  const overallAuraData = Object.entries(overallAuraPoints).map(([aura, points]) => ({
-    name: aura,
-    points: points,
-    color: auraColors[aura as keyof typeof auraColors]
-  }));
-
-  const overallAuraChartData = {
-    labels: overallAuraData.map(data => data.name),
-    datasets: [
-      {
-        data: overallAuraData.map(data => data.points),
-        backgroundColor: overallAuraData.map(data => data.color),
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Skeleton className="h-6 w-64 mb-2" />
-            </CardTitle>
-            <CardDescription>
-              <Skeleton className="h-4 w-96" />
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-4">
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto p-4">
-      <Toaster />
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the quiz and all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDeleteQuiz}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteQuiz}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <QuizAnalyticsLayout 
+      title={`${quizName} Analytics`}
+      loading={loading}
+      error={error}
+    >
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog 
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDeleteQuiz}
+        onCancel={() => setIsDeleteDialogOpen(false)}
+      />
 
-      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Share Quiz</DialogTitle>
-            <DialogDescription>
-              Anyone with this link can take the quiz.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="link" className="text-right">
-                Shareable Link
-              </Label>
-              <Input type="text" id="link" value={shareableLink} readOnly className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" onClick={handleCopyLink}>
-              Copy Link
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Share Quiz Dialog */}
+      <ShareDialog
+        isOpen={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        shareableLink={shareableLink}
+      />
 
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>User Response Details</DrawerTitle>
-            <DrawerDescription>
-              Details of the selected user's quiz response.
-            </DrawerDescription>
-          </DrawerHeader>
-          <ScrollArea className="h-[500px] p-4">
-            {selectedUserResponse && selectedUserResponse.answers && quiz ? (
-              <UserAnswerCard
-                response={selectedUserResponse}
-                questions={quiz.questions || []}
-                quizName={quizName}
-                quizId={quizId}
-              />
-            ) : (
-              <p>No response selected or questions available.</p>
-            )}
-          </ScrollArea>
-          <DrawerFooter>
-            <DrawerClose asChild>
-              <Button variant="outline">Close</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>{quizName}</CardTitle>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setShowSettings(!showSettings)}>
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDeleteQuiz}>
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </CardHeader>
-        {showSettings && (
-          <CardContent>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input type="text" id="name" value={quizName} onChange={(e) => setQuizName(e.target.value)} className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
-                </Label>
-                <Input id="description" value={quizDescription} onChange={(e) => setQuizDescription(e.target.value)} className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="isPublic" className="text-right">
-                  Public
-                </Label>
-                <Switch id="isPublic" checked={isPublic} onCheckedChange={handlePrivacyChange} />
-              </div>
-            </div>
-            <Button onClick={handleUpdateQuizDetails}>Update Details</Button>
-            {!isPublic && (
-              <Button className="ml-2" onClick={handleShareQuiz}>
-                Make Public & Get Shareable Link
-              </Button>
-            )}
-          </CardContent>
-        )}
-        <CardDescription>{quizDescription}</CardDescription>
-      </Card>
+      {/* Quiz Header Card */}
+      <QuizHeaderCard
+        quizName={quizName}
+        quizDescription={quizDescription}
+        quizId={quizId}
+        isPublic={isPublic}
+        onDelete={handleDeleteQuiz}
+        onShare={handleShareQuiz}
+        onUpdate={handleQuizUpdate}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Overall Aura Points</CardTitle>
-            <CardDescription>Distribution of aura points across all responses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  {overallAuraData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                  <Pie 
-                    data={overallAuraData} 
-                    dataKey="points" 
-                    nameKey="name"
-                    cx="50%" 
-                    cy="50%" 
-                    outerRadius={120}
-                    fill="#8884d8"
-                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {overallAuraData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Aura Points Chart */}
+        <AuraPointsChart overallAuraPoints={overallAuraPoints} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quiz Responses</CardTitle>
-            <CardDescription>List of user responses for this quiz</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px] pr-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {quizResponses.map((response) => (
-                    <TableRow key={response.id}>
-                      <TableCell>{response.user_profiles?.username || 'Unknown'}</TableCell>
-                      <TableCell>
-                        <Button variant="secondary" size="sm" onClick={() => handleResponseClick(response)}>
-                          View Response
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+        {/* Responses Table */}
+        <ResponsesTable 
+          quizResponses={quizResponses}
+          quiz={quiz}
+          quizName={quizName}
+          quizId={quizId}
+        />
       </div>
-    </div>
+
+      {/* Charts Section */}
+      <div className="mt-6">
+        <ChartsSection questions={quiz?.questions ? Object.values(quiz.questions).map((q, i) => ({
+          id: Object.keys(quiz.questions || {})[i],
+          text: q.text,
+          type: q.type,
+          options: q.options
+        })) : []} responses={quizResponses} />
+      </div>
+    </QuizAnalyticsLayout>
   );
 };
 
