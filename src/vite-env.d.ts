@@ -12,3 +12,4 @@ declare interface Window {
     };
   };
 }
+ 
