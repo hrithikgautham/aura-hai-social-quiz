@@ -1,10 +1,5 @@
 
 import { AlertCircle } from "lucide-react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 
 interface QuestionAuraInfoProps {
   type: 'mcq' | 'number';
@@ -12,30 +7,51 @@ interface QuestionAuraInfoProps {
 
 export const QuestionAuraInfo = ({ type }: QuestionAuraInfoProps) => {
   return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <AlertCircle className="h-5 w-5 text-muted-foreground hover:text-primary cursor-help" />
-      </HoverCardTrigger>
-      <HoverCardContent className="w-80">
-        <div className="space-y-2">
-          <h4 className="font-semibold">Aura Points Calculation</h4>
-          {type === 'mcq' ? (
-            <ul className="text-sm space-y-1 list-disc list-inside">
-              <li>1st choice (most like you) = 4 points</li>
-              <li>2nd choice = 3 points</li>
-              <li>3rd choice = 2 points</li>
-              <li>4th choice (least like you) = 1 point</li>
-            </ul>
-          ) : (
-            <ul className="text-sm space-y-1 list-disc list-inside">
-              <li>1-25 = 1 point</li>
-              <li>26-50 = 2 points</li>
-              <li>51-75 = 3 points</li>
-              <li>76-100 = 4 points</li>
-            </ul>
-          )}
-        </div>
-      </HoverCardContent>
-    </HoverCard>
+    <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-[#FFE29F]/10 to-[#FF719A]/10 border border-[#FF007F]/10">
+      <div className="flex items-center gap-2 mb-2">
+        <AlertCircle className="h-5 w-5 text-[#FF007F]" />
+        <h4 className="font-semibold text-[#FF007F]">Aura Points Calculation</h4>
+      </div>
+      
+      {type === 'mcq' ? (
+        <ul className="text-sm space-y-1 list-disc list-inside pl-2">
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FF007F] text-white text-xs font-semibold">1</span>
+            <span>1st choice (most like you) = <span className="font-semibold">10,000 points</span></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FF007F]/80 text-white text-xs font-semibold">2</span>
+            <span>2nd choice = <span className="font-semibold">7,500 points</span></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FF007F]/60 text-white text-xs font-semibold">3</span>
+            <span>3rd choice = <span className="font-semibold">5,000 points</span></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FF007F]/40 text-white text-xs font-semibold">4</span>
+            <span>4th choice (least like you) = <span className="font-semibold">2,500 points</span></span>
+          </li>
+        </ul>
+      ) : (
+        <ul className="text-sm space-y-1 list-disc list-inside pl-2">
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#00DDEB] text-white text-xs font-semibold">1</span>
+            <span>1-25 = <span className="font-semibold">2,500 points</span></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#00DDEB]/80 text-white text-xs font-semibold">2</span>
+            <span>26-50 = <span className="font-semibold">5,000 points</span></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#00DDEB]/60 text-white text-xs font-semibold">3</span>
+            <span>51-75 = <span className="font-semibold">7,500 points</span></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#00DDEB]/40 text-white text-xs font-semibold">4</span>
+            <span>76-100 = <span className="font-semibold">10,000 points</span></span>
+          </li>
+        </ul>
+      )}
+    </div>
   );
 };
