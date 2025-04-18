@@ -244,26 +244,32 @@ export default function ProfileEdit() {
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#FFA99F] to-[#FF719A] p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <Card className="backdrop-blur-sm bg-white/90">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center text-gray-800">
+        <Card className="backdrop-blur-sm bg-white/90 border-2 border-pink-200/50 shadow-xl hover:shadow-2xl transition-all">
+          <CardHeader className="bg-gradient-to-r from-[#FFE29F]/20 to-[#FF719A]/20 border-b-2 border-pink-100 p-6 md:p-8">
+            <CardTitle className="text-2xl md:text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
               Edit Your Profile
             </CardTitle>
+            <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-gradient-to-br from-pink-100/50 to-blue-100/50 blur-md"></div>
+            <div className="absolute bottom-2 left-10 w-8 h-8 rounded-full bg-gradient-to-br from-blue-100/50 to-purple-100/50 blur-md"></div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex flex-col items-center space-y-4">
+          <CardContent className="space-y-8 p-6 md:p-8 relative">
+            <div className="flex flex-col items-center space-y-6">
               <div className="relative group">
-                <Avatar className="w-32 h-32 border-4 border-white shadow-lg transition-transform transform hover:scale-105">
+                <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-white shadow-lg transition-transform transform group-hover:scale-105">
                   <AvatarImage src={avatarUrl || user?.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-2xl">
+                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-2xl md:text-4xl">
                     {user?.username?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-black/50 rounded-full p-2">
-                    <Camera className="w-6 h-6 text-white" />
+                  <div className="bg-black/50 rounded-full p-3 shadow-lg">
+                    <Camera className="w-8 h-8 text-white" />
                   </div>
                 </div>
+                
+                {/* Decorative elements */}
+                <div className="absolute -right-4 -bottom-2 w-8 h-8 rounded-full bg-[#FF007F]/20 animate-pulse"></div>
+                <div className="absolute -left-3 -top-1 w-6 h-6 rounded-full bg-[#00DDEB]/20 animate-pulse"></div>
               </div>
               
               <div className="flex gap-4 flex-wrap justify-center">
@@ -279,7 +285,7 @@ export default function ProfileEdit() {
                   />
                   <Label
                     htmlFor="avatar-upload"
-                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 px-4 py-2 gap-2"
+                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 px-4 py-2 gap-2 hover:scale-105 transition-transform"
                   >
                     <Upload className="w-4 h-4" />
                     {uploading ? "Uploading..." : "Upload Picture"}
@@ -289,7 +295,7 @@ export default function ProfileEdit() {
                 <Button 
                   onClick={handleRandomAvatar} 
                   disabled={uploading}
-                  className="gap-2"
+                  className="gap-2 bg-gradient-to-r from-[#FF007F] to-[#FF719A] hover:from-[#FF007F] hover:to-[#FF5A8B] hover:scale-105 transition-transform"
                 >
                   <Dice3 className="w-4 h-4" />
                   Random Picture
@@ -297,9 +303,12 @@ export default function ProfileEdit() {
               </div>
             </div>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium">
+            <div className="space-y-6 mt-8 relative">
+              {/* Decorative background element */}
+              <div className="absolute -z-10 inset-0 bg-gradient-to-br from-pink-50/50 to-blue-50/50 rounded-2xl"></div>
+              
+              <div className="space-y-2 p-4 rounded-xl">
+                <Label htmlFor="username" className="text-base md:text-lg font-medium text-pink-800">
                   Username
                 </Label>
                 
@@ -310,12 +319,12 @@ export default function ProfileEdit() {
                         id="username"
                         value={username}
                         onChange={handleUsernameChange}
-                        className={`pr-10 ${
+                        className={`pr-10 text-lg ${
                           username && !isCheckingUsername
                             ? usernameExists || usernameError 
-                              ? 'border-red-500' 
-                              : 'border-green-500'
-                            : ''
+                              ? 'border-red-500 bg-red-50' 
+                              : 'border-green-500 bg-green-50'
+                            : 'border-pink-200 bg-white'
                         }`}
                         placeholder="Enter new username"
                       />
@@ -323,24 +332,30 @@ export default function ProfileEdit() {
                       {username && !isCheckingUsername && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
                           {usernameExists || usernameError ? (
-                            <X className="w-5 h-5 text-red-500" />
+                            <div className="bg-red-100 p-1 rounded-full">
+                              <X className="w-5 h-5 text-red-500" />
+                            </div>
                           ) : (
-                            <Check className="w-5 h-5 text-green-500" />
+                            <div className="bg-green-100 p-1 rounded-full">
+                              <Check className="w-5 h-5 text-green-500" />
+                            </div>
                           )}
                         </div>
                       )}
                     </div>
                     
                     {usernameError && (
-                      <p className="text-sm text-red-500">{usernameError}</p>
+                      <p className="text-sm text-red-500 bg-red-50 p-2 rounded-md">{usernameError}</p>
                     )}
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2">
                       <Button 
                         onClick={handleUsernameUpdate}
                         disabled={usernameExists || !!usernameError || isCheckingUsername || !username || username === user?.username}
+                        className="bg-[#00DDEB] hover:bg-[#00BBCC] hover:scale-105 transition-transform"
                       >
-                        Save
+                        <Check className="w-4 h-4 mr-1" />
+                        Save Username
                       </Button>
                       
                       <Button 
@@ -350,35 +365,43 @@ export default function ProfileEdit() {
                           setUsername(user?.username || '');
                           setUsernameError('');
                         }}
+                        className="border-pink-200 hover:bg-pink-50"
                       >
+                        <X className="w-4 h-4 mr-1" />
                         Cancel
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="username"
-                      value={user?.username || ''}
-                      readOnly
-                      className="bg-gray-50"
-                    />
+                  <div className="flex items-center gap-3 bg-white/80 p-3 rounded-lg border border-pink-100 shadow-sm">
+                    <div className="flex-1">
+                      <p className="font-medium text-lg text-gray-800">{user?.username || ''}</p>
+                      <p className="text-xs text-gray-500">Your unique username across the platform</p>
+                    </div>
                     <Button 
                       variant="outline"
                       onClick={() => setIsEditingUsername(true)}
+                      className="bg-white border-pink-200 hover:bg-pink-50 hover:scale-105 transition-transform"
                     >
-                      Edit
+                      Edit Username
                     </Button>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <Button onClick={() => navigate('/dashboard')} variant="outline">
+            <div className="flex justify-end pt-4">
+              <Button 
+                onClick={() => navigate('/dashboard')} 
+                variant="outline"
+                className="border-pink-200 text-gray-700 hover:bg-pink-50 hover:scale-105 transition-transform"
+              >
                 Back to Dashboard
               </Button>
             </div>
+            
+            {/* Decorative elements */}
+            <div className="absolute bottom-4 right-6 w-20 h-20 rounded-full bg-gradient-to-br from-blue-100/20 to-pink-100/20 blur-md"></div>
           </CardContent>
         </Card>
       </div>

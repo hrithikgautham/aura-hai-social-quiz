@@ -1,10 +1,6 @@
 
 import * as React from "react"
-
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 5000
@@ -16,6 +12,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+// Action types for our reducer
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
@@ -23,8 +20,8 @@ const actionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const
 
+// Generate a unique ID for each toast
 let count = 0
-
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -33,30 +30,21 @@ function genId() {
 type ActionType = typeof actionTypes
 
 type Action =
-  | {
-      type: ActionType["ADD_TOAST"]
-      toast: ToasterToast
-    }
-  | {
-      type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
-    }
-  | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
-  | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
+  | { type: ActionType["ADD_TOAST"]; toast: ToasterToast }
+  | { type: ActionType["UPDATE_TOAST"]; toast: Partial<ToasterToast> }
+  | { type: ActionType["DISMISS_TOAST"]; toastId?: ToasterToast["id"] }
+  | { type: ActionType["REMOVE_TOAST"]; toastId?: ToasterToast["id"] }
 
 interface State {
   toasts: ToasterToast[]
 }
 
+// Track toast timeouts to avoid duplicate dismissals
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+// Add toast to removal queue after delay
 const addToRemoveQueue = (toastId: string) => {
+  // Don't add multiple timeouts for the same toast
   if (toastTimeouts.has(toastId)) {
     return
   }
@@ -72,22 +60,27 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Main reducer for toast state management
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case "ADD_TOAST":
-      // Check if similar toast already exists to prevent duplication
-      const hasSimilarToast = state.toasts.some(
-        t => t.title === action.toast.title && t.description === action.toast.description
+    case "ADD_TOAST": {
+      // Prevent duplicate toasts with same content
+      const hasDuplicate = state.toasts.some(
+        (t) => 
+          t.title === action.toast.title && 
+          t.description === action.toast.description
       )
       
-      if (hasSimilarToast) {
+      if (hasDuplicate) {
         return state
       }
       
+      // Limit number of toasts
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
+    }
 
     case "UPDATE_TOAST":
       return {
@@ -100,8 +93,7 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Set auto-removal for specified toast or all toasts
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -110,25 +102,24 @@ export const reducer = (state: State, action: Action): State => {
         })
       }
 
+      // Mark toasts as closed
       return {
         ...state,
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
+            ? { ...t, open: false }
             : t
         ),
       }
     }
+    
     case "REMOVE_TOAST":
       if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        }
+        // Clear all toasts if no ID specified
+        return { ...state, toasts: [] }
       }
+      
+      // Remove specific toast by ID
       return {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
@@ -136,10 +127,11 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
+// Global state and listeners for toast system
 const listeners: Array<(state: State) => void> = []
-
 let memoryState: State = { toasts: [] }
 
+// Central dispatch function to update state
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
   listeners.forEach((listener) => {
@@ -147,23 +139,28 @@ function dispatch(action: Action) {
   })
 }
 
+// Main toast function API
 type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
+  // Generate unique ID for this toast
   const id = genId()
-
-  // Auto-dismiss the toast after a delay
+  
+  // Auto-dismiss toast after delay
   setTimeout(() => {
     dispatch({ type: "DISMISS_TOAST", toastId: id })
-  }, TOAST_REMOVE_DELAY - 500) // Slightly shorter than the remove delay
+  }, TOAST_REMOVE_DELAY - 500)
 
+  // Prepare toast API methods
   const update = (props: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     })
+    
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
+  // Create and display the toast
   dispatch({
     type: "ADD_TOAST",
     toast: {
@@ -183,11 +180,15 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// React hook for using toasts in components
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
+    // Add this component as a listener for toast state changes
     listeners.push(setState)
+    
+    // Clean up listener on unmount
     return () => {
       const index = listeners.indexOf(setState)
       if (index > -1) {
