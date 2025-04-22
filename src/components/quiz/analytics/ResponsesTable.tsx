@@ -58,7 +58,10 @@ export function ResponsesTable({ quizResponses, quiz, quizName, quizId }: Respon
                 {quizResponses && quizResponses.length > 0 ? (
                   quizResponses.map((response) => (
                     <TableRow key={response.id}>
-                      <TableCell>{response.user_profiles?.username || 'Unknown'}</TableCell>
+                      <TableCell>
+                        {/* Use the users table username instead of user_profiles */}
+                        {response.users?.username || 'Unknown'}
+                      </TableCell>
                       <TableCell>
                         <Button variant="secondary" size="sm" onClick={() => handleResponseClick(response)}>
                           View Response

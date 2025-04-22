@@ -71,16 +71,18 @@ const QuizAnalytics = () => {
         setQuizName(quizData.name);
         setQuizDescription(''); // Default to empty string
 
-        // Fetch quiz responses
+        // Fetch quiz responses - join with users table instead of user_profiles
         const { data: responsesData, error: responsesError } = await supabase
           .from('responses')
-          .select('*, user_profiles(username)')
+          .select('*, users(username)')
           .eq('quiz_id', quizId);
 
         if (responsesError) {
           throw new Error(`Failed to fetch quiz responses: ${responsesError.message}`);
         }
 
+        console.log('Fetched responses:', responsesData);
+        
         // Initialize an empty array if no responses are found
         const responseArray = responsesData || [];
         setQuizResponses(responseArray);
