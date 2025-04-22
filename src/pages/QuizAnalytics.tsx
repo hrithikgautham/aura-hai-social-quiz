@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateMCQAuraPoints } from '@/utils/auraCalculations';
 import { QuizAnalyticsLayout } from '@/components/quiz/analytics/QuizAnalyticsLayout';
@@ -18,7 +17,6 @@ const QuizAnalytics = () => {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [quizResponses, setQuizResponses] = useState<any[]>([]);
@@ -83,13 +81,15 @@ const QuizAnalytics = () => {
           throw new Error(`Failed to fetch quiz responses: ${responsesError.message}`);
         }
 
-        if (!responsesData || responsesData.length === 0) {
-          console.warn('No responses found for this quiz.');
+        // Initialize an empty array if no responses are found
+        const responseArray = responsesData || [];
+        setQuizResponses(responseArray);
+        
+        if (responseArray.length === 0) {
+          console.log('No responses found for this quiz.');
           setLoading(false);
           return;
         }
-
-        setQuizResponses(responsesData);
 
         // Calculate aura points for each question and overall
         const calculatedQuestionAuraPoints: { [questionId: string]: AuraPoints } = {};
@@ -102,7 +102,7 @@ const QuizAnalytics = () => {
           visionary: 0
         };
 
-        responsesData.forEach(response => {
+        responseArray.forEach(response => {
           const answers = response.answers || {};
           
           if (answers && Object.keys(answers).length > 0) {
@@ -171,11 +171,6 @@ const QuizAnalytics = () => {
     } catch (err: any) {
       setError(err.message);
       console.error("Error sharing quiz:", err);
-      toast({
-        title: 'Error sharing quiz',
-        description: 'There was an error sharing the quiz. Please try again.',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -194,19 +189,11 @@ const QuizAnalytics = () => {
         throw new Error(`Failed to delete quiz: ${error.message}`);
       }
 
-      toast({
-        title: 'Quiz deleted',
-        description: 'The quiz has been successfully deleted.',
-      });
+      console.log('Quiz deleted successfully');
       navigate('/quizzes');
     } catch (err: any) {
       setError(err.message);
       console.error("Error deleting quiz:", err);
-      toast({
-        title: 'Error deleting quiz',
-        description: 'There was an error deleting the quiz. Please try again.',
-        variant: 'destructive',
-      });
     } finally {
       setIsDeleteDialogOpen(false);
     }
@@ -266,12 +253,15 @@ const QuizAnalytics = () => {
 
       {/* Charts Section */}
       <div className="mt-6">
-        <ChartsSection questions={quiz?.questions ? Object.values(quiz.questions).map((q, i) => ({
-          id: Object.keys(quiz.questions || {})[i],
-          text: q.text,
-          type: q.type,
-          options: q.options
-        })) : []} responses={quizResponses} />
+        <ChartsSection 
+          questions={quiz?.questions ? Object.entries(quiz.questions).map(([id, q]) => ({
+            id,
+            text: q.text,
+            type: q.type,
+            options: q.options
+          })) : []} 
+          responses={quizResponses} 
+        />
       </div>
     </QuizAnalyticsLayout>
   );

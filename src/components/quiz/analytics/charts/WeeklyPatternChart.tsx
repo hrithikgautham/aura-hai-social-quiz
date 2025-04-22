@@ -14,7 +14,7 @@ export function WeeklyPatternChart({ dailyEngagementStats }: WeeklyPatternChartP
       description="Responses by day of week"
     >
       <div className="h-[300px]">
-        {dailyEngagementStats.length > 0 ? (
+        {dailyEngagementStats && dailyEngagementStats.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dailyEngagementStats} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eee" />

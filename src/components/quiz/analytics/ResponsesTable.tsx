@@ -55,16 +55,24 @@ export function ResponsesTable({ quizResponses, quiz, quizName, quizId }: Respon
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {quizResponses.map((response) => (
-                  <TableRow key={response.id}>
-                    <TableCell>{response.user_profiles?.username || 'Unknown'}</TableCell>
-                    <TableCell>
-                      <Button variant="secondary" size="sm" onClick={() => handleResponseClick(response)}>
-                        View Response
-                      </Button>
+                {quizResponses && quizResponses.length > 0 ? (
+                  quizResponses.map((response) => (
+                    <TableRow key={response.id}>
+                      <TableCell>{response.user_profiles?.username || 'Unknown'}</TableCell>
+                      <TableCell>
+                        <Button variant="secondary" size="sm" onClick={() => handleResponseClick(response)}>
+                          View Response
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                      No responses available
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </ScrollArea>

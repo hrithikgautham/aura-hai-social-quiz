@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Toaster } from '@/components/ui/toaster';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -61,7 +60,6 @@ export function QuizAnalyticsLayout({
 
   return (
     <div className="container mx-auto p-4">
-      <Toaster />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">{title}</h1>
         <Button onClick={() => navigate('/quizzes')}>Back to Quizzes</Button>

@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface QuizSettingsProps {
@@ -30,7 +29,6 @@ export function QuizSettings({
   const [name, setName] = useState(quizName);
   const [description, setDescription] = useState(quizDescription);
   const [isPublicState, setIsPublicState] = useState(isPublic);
-  const { toast } = useToast();
 
   const handleUpdateQuizDetails = async () => {
     try {
@@ -47,18 +45,9 @@ export function QuizSettings({
       }
 
       onUpdate(name, description, isPublicState);
-      
-      toast({
-        title: 'Quiz details updated',
-        description: 'The quiz name has been updated successfully.',
-      });
+      console.log('Quiz details updated successfully');
     } catch (err: any) {
       console.error("Error updating quiz details:", err);
-      toast({
-        title: 'Error updating details',
-        description: 'There was an error updating the quiz details. Please try again.',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -78,18 +67,9 @@ export function QuizSettings({
 
       setIsPublicState(checked);
       onUpdate(name, description, checked);
-      
-      toast({
-        title: 'Privacy settings updated',
-        description: `Quiz is now ${checked ? 'public' : 'private'}.`,
-      });
+      console.log(`Quiz is now ${checked ? 'public' : 'private'}`);
     } catch (err: any) {
       console.error("Error updating quiz privacy:", err);
-      toast({
-        title: 'Error updating privacy',
-        description: 'There was an error updating the privacy settings. Please try again.',
-        variant: 'destructive',
-      });
     }
   };
 

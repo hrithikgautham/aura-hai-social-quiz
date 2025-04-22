@@ -1,3 +1,3 @@
-import { useToast, toast } from "@/hooks/use-toast";
 
-export { useToast, toast };
+// This file is now a simple passthrough to maintain imports
+export {}; // Export empty object to keep file as a module

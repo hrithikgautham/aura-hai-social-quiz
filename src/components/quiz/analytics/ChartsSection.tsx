@@ -19,8 +19,8 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [activeChart, setActiveChart] = useState<'bar' | 'pie' | 'area'>('bar');
   
-  const hasResponses = useMemo(() => responses.length > 0, [responses]);
-  const hasQuestions = useMemo(() => questions.length > 0, [questions]);
+  const hasResponses = useMemo(() => responses && responses.length > 0, [responses]);
+  const hasQuestions = useMemo(() => questions && questions.length > 0, [questions]);
 
   // Calculate average aura points
   const averageAuraPoints = useMemo(() => {

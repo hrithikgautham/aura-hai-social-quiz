@@ -2,7 +2,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { 
   Dialog,
   DialogContent,
@@ -19,23 +18,14 @@ interface ShareDialogProps {
 }
 
 export function ShareDialog({ isOpen, onOpenChange, shareableLink }: ShareDialogProps) {
-  const { toast } = useToast();
-
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableLink)
       .then(() => {
-        toast({
-          title: 'Link copied!',
-          description: 'The shareable link has been copied to your clipboard.',
-        });
+        // Toast removed
+        console.log('Link copied to clipboard');
       })
       .catch(err => {
         console.error("Failed to copy link:", err);
-        toast({
-          title: 'Error copying link',
-          description: 'There was an error copying the link to your clipboard.',
-          variant: 'destructive',
-        });
       });
     onOpenChange(false);
   };

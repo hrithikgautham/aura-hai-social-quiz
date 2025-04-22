@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Copy, Twitter, Instagram, Linkedin } from 'lucide-react';
 import { ResponseData, QuestionData } from '@/types/quiz';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface UserAnswerCardProps {
@@ -19,7 +18,6 @@ export function UserAnswerCard({ response, questions, quizName, quizId }: UserAn
   const [isExpanded, setIsExpanded] = useState(false);
   const [username, setUsername] = useState<string>("");
   const formattedDate = new Date(response.created_at).toLocaleDateString();
-  const { toast } = useToast();
   const [showShareOptions, setShowShareOptions] = useState(false);
 
   useEffect(() => {
@@ -51,12 +49,13 @@ export function UserAnswerCard({ response, questions, quizName, quizId }: UserAn
     if (!quizId) return;
     
     const shareUrl = `${window.location.origin}/quiz/${quizId}`;
-    navigator.clipboard.writeText(shareUrl);
-    
-    toast({
-      title: "Link copied!",
-      description: "Share this quiz with your friends.",
-    });
+    navigator.clipboard.writeText(shareUrl)
+      .then(() => {
+        console.log("Link copied to clipboard");
+      })
+      .catch(err => {
+        console.error("Failed to copy link:", err);
+      });
   };
 
   const getShareUrl = (platform: 'twitter' | 'instagram' | 'linkedin') => {
@@ -84,12 +83,13 @@ export function UserAnswerCard({ response, questions, quizName, quizId }: UserAn
     
     if (platform === 'instagram') {
       const message = `I just scored ${response.aura_points} Aura Points on ${quizName || 'a quiz'}! Take it yourself and see your aura: ${window.location.origin}/quiz/${quizId}`;
-      navigator.clipboard.writeText(message);
-      
-      toast({
-        title: "Caption copied!",
-        description: "Now open Instagram and paste as your caption with a photo.",
-      });
+      navigator.clipboard.writeText(message)
+        .then(() => {
+          console.log("Caption copied for Instagram");
+        })
+        .catch(err => {
+          console.error("Failed to copy caption:", err);
+        });
       return;
     }
     
@@ -130,7 +130,7 @@ export function UserAnswerCard({ response, questions, quizName, quizId }: UserAn
         <CardContent className="pt-4">
           <div className="space-y-3">
             {questions.map((question) => {
-              // Simply use the question.id to get the answer, no complex parsing needed
+              // Use the question.id to get the answer
               const answer = parsedAnswers[question.id];
               let displayAnswer = "No answer provided";
               
