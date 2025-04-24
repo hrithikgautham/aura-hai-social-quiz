@@ -1,4 +1,3 @@
-
 import { 
   Table, 
   TableBody, 
@@ -33,12 +32,10 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Get all unique user IDs from responses
         const userIds = responses.map(r => r.respondent_id);
         
         if (userIds.length === 0) return;
 
-        // Fetch user data for all respondents
         const { data, error } = await supabase
           .from('users')
           .select('id, username, avatar_url')
@@ -54,7 +51,6 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
           return;
         }
 
-        // Create a map of user IDs to user data
         const usersMap = data?.reduce((acc: Record<string, UserData>, user) => {
           acc[user.id] = user;
           return acc;
@@ -70,10 +66,8 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
       try {
         if (responses.length === 0) return;
         
-        // Get quiz ID from the first response
         const quizId = responses[0].quiz_id;
         
-        // Fetch quiz data to get creator ID
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('creator_id')
@@ -86,7 +80,6 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
         }
         
         if (quizData && quizData.creator_id) {
-          // Fetch creator user data
           const { data: creatorUserData, error: creatorError } = await supabase
             .from('users')
             .select('id, username, avatar_url')
@@ -111,7 +104,6 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
     }
   }, [responses, toast]);
 
-  // Sort responses by aura points in descending order
   const sortedResponses = [...responses]
     .sort((a, b) => b.aura_points - a.aura_points);
 
@@ -168,7 +160,6 @@ export function LeaderboardCard({ responses }: LeaderboardCardProps) {
               {sortedResponses.map((response, index) => {
                 const user = usersData[response.respondent_id];
                 
-                // Render placeholder if user data isn't loaded yet
                 if (!user) {
                   return (
                     <TableRow key={response.id}>

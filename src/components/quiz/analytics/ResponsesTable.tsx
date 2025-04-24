@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -39,48 +38,45 @@ export function ResponsesTable({ quizResponses, quiz, quizName, quizId }: Respon
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Quiz Responses</CardTitle>
-          <CardDescription>List of user responses for this quiz</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[400px] pr-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {quizResponses && quizResponses.length > 0 ? (
-                  quizResponses.map((response) => (
-                    <TableRow key={response.id}>
-                      <TableCell>
-                        {/* Use the users table username instead of user_profiles */}
-                        {response.users?.username || 'Unknown'}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="secondary" size="sm" onClick={() => handleResponseClick(response)}>
-                          View Response
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
-                      No responses available
+    <Card>
+      <CardHeader>
+        <CardTitle>Your Responses</CardTitle>
+        <CardDescription>Your answers to this quiz</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[400px] pr-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {quizResponses && quizResponses.length > 0 ? (
+                quizResponses.map((response) => (
+                  <TableRow key={response.id}>
+                    <TableCell>
+                      {new Date(response.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="secondary" size="sm" onClick={() => handleResponseClick(response)}>
+                        View Response
+                      </Button>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                    You haven't taken this quiz yet
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </CardContent>
 
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <DrawerContent>
@@ -109,6 +105,6 @@ export function ResponsesTable({ quizResponses, quiz, quizName, quizId }: Respon
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-    </>
+    </Card>
   );
 }

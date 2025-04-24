@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { ChartCard } from './ChartCard';
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ interface ChartsSectionProps {
 
 export function ChartsSection({ questions, responses }: ChartsSectionProps) {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
-  const [activeChart, setActiveChart] = useState<'bar' | 'pie' | 'area'>('bar');
+  const [activeChart, setActiveChart] = useState<'bar' | 'pie' | 'area'>('pie');
   
   const hasResponses = useMemo(() => responses && responses.length > 0, [responses]);
   const hasQuestions = useMemo(() => questions && questions.length > 0, [questions]);
@@ -67,7 +66,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
     }));
   }, [responses, hasResponses]);
 
-  // Process question data
+  // Process question data with percentages
   const questionData = useMemo(() => {
     if (!hasQuestions || !hasResponses || selectedQuestionIndex >= questions.length) {
       return { chartData: [], currentQuestion: null };
@@ -75,6 +74,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
 
     const currentQuestion = questions[selectedQuestionIndex];
     const answerCounts: Record<string, number> = {};
+    let totalResponses = 0;
 
     responses.forEach(response => {
       if (!response.answers) return;
@@ -94,15 +94,17 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
       }
       
       answerCounts[answerLabel] = (answerCounts[answerLabel] || 0) + 1;
+      totalResponses++;
     });
 
     return {
       chartData: Object.entries(answerCounts).map(([name, value]) => ({
         name,
         value,
-        responses: value
+        percentage: Math.round((value / totalResponses) * 100)
       })),
-      currentQuestion
+      currentQuestion,
+      totalResponses
     };
   }, [questions, responses, selectedQuestionIndex, hasQuestions, hasResponses]);
 

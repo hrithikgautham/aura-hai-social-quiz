@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +10,7 @@ import { ResponsesTable } from '@/components/quiz/analytics/ResponsesTable';
 import { ShareDialog } from '@/components/quiz/analytics/ShareDialog';
 import { DeleteDialog } from '@/components/quiz/analytics/DeleteDialog';
 import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
+import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { QuizData, AuraPoints } from '@/types/quiz-analytics';
 
 const QuizAnalytics = () => {
@@ -32,7 +32,6 @@ const QuizAnalytics = () => {
     visionary: 0
   });
   
-  // UI state
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
@@ -50,7 +49,6 @@ const QuizAnalytics = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch quiz details
         const { data: quizData, error: quizError } = await supabase
           .from('quizzes')
           .select('*')
@@ -65,16 +63,20 @@ const QuizAnalytics = () => {
           throw new Error('Quiz not found');
         }
 
-        // Initialize with default empty values
         setQuiz(quizData);
-        setIsPublic(false); // Default to false
+        setIsPublic(false);
         setQuizName(quizData.name);
-        setQuizDescription(''); // Default to empty string
+        setQuizDescription('');
 
-        // Fetch quiz responses - join with users table instead of user_profiles
         const { data: responsesData, error: responsesError } = await supabase
           .from('responses')
-          .select('*, users(username)')
+          .select(`
+            *,
+            users (
+              username,
+              avatar_url
+            )
+          `)
           .eq('quiz_id', quizId);
 
         if (responsesError) {
@@ -83,7 +85,6 @@ const QuizAnalytics = () => {
 
         console.log('Fetched responses:', responsesData);
         
-        // Initialize an empty array if no responses are found
         const responseArray = responsesData || [];
         setQuizResponses(responseArray);
         
@@ -93,7 +94,6 @@ const QuizAnalytics = () => {
           return;
         }
 
-        // Calculate aura points for each question and overall
         const calculatedQuestionAuraPoints: { [questionId: string]: AuraPoints } = {};
         const calculatedOverallAuraPoints: AuraPoints = {
           innovator: 0,
@@ -113,7 +113,6 @@ const QuizAnalytics = () => {
             Object.entries(answers).forEach(([questionId, answer]) => {
               const questionIdStr = String(questionId);
               if (quizQuestions[questionIdStr] && quizQuestions[questionIdStr].options) {
-                // Fix: Pass only one argument to calculateMCQAuraPoints
                 const auraPoints = calculateMCQAuraPoints(answer as string);
 
                 if (!calculatedQuestionAuraPoints[questionIdStr]) {
@@ -152,7 +151,6 @@ const QuizAnalytics = () => {
 
   const handleShareQuiz = async () => {
     try {
-      // Only updating fields that are known to exist in the schema
       const { data, error } = await supabase
         .from('quizzes')
         .update({ 
@@ -214,7 +212,6 @@ const QuizAnalytics = () => {
       loading={loading}
       error={error}
     >
-      {/* Delete Confirmation Dialog */}
       <DeleteDialog 
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -222,14 +219,12 @@ const QuizAnalytics = () => {
         onCancel={() => setIsDeleteDialogOpen(false)}
       />
 
-      {/* Share Quiz Dialog */}
       <ShareDialog
         isOpen={isShareDialogOpen}
         onOpenChange={setIsShareDialogOpen}
         shareableLink={shareableLink}
       />
 
-      {/* Quiz Header Card */}
       <QuizHeaderCard
         quizName={quizName}
         quizDescription={quizDescription}
@@ -240,20 +235,23 @@ const QuizAnalytics = () => {
         onUpdate={handleQuizUpdate}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        {/* Aura Points Chart */}
-        <AuraPointsChart overallAuraPoints={overallAuraPoints} />
-
-        {/* Responses Table */}
-        <ResponsesTable 
-          quizResponses={quizResponses}
-          quiz={quiz}
-          quizName={quizName}
-          quizId={quizId}
-        />
+      <div className="mt-6">
+        <LeaderboardCard responses={quizResponses} />
       </div>
 
-      {/* Charts Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <AuraPointsChart overallAuraPoints={overallAuraPoints} />
+
+        {user && (
+          <ResponsesTable 
+            quizResponses={quizResponses.filter(r => r.respondent_id === user.id)}
+            quiz={quiz}
+            quizName={quizName}
+            quizId={quizId}
+          />
+        )}
+      </div>
+
       <div className="mt-6">
         <ChartsSection 
           questions={quiz?.questions ? Object.entries(quiz.questions).map(([id, q]) => ({
