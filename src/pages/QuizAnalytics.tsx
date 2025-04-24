@@ -12,7 +12,7 @@ import { DeleteDialog } from '@/components/quiz/analytics/DeleteDialog';
 import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { QuizData, AuraPoints } from '@/types/quiz-analytics';
-import { PageLayout } from '@/components/PageLayout';
+import { PageLayout } from '@/components/layout/PageLayout';
 
 const QuizAnalytics = () => {
   const { quizId } = useParams();
