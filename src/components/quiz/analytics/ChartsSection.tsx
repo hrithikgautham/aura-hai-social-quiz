@@ -10,6 +10,7 @@ import { TimelineChart } from './charts/TimelineChart';
 import { WeeklyPatternChart } from './charts/WeeklyPatternChart';
 import { QuestionAnalysisChart } from './charts/QuestionAnalysisChart';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface ChartsSectionProps {
   questions: QuestionData[];
@@ -20,19 +21,23 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [activeChart, setActiveChart] = useState<'bar' | 'pie' | 'area'>('pie');
   const { toast } = useToast();
+  const [isVisible, setIsVisible] = useState(false);
   
   const hasResponses = useMemo(() => responses && responses.length > 0, [responses]);
   const hasQuestions = useMemo(() => questions && questions.length > 0, [questions]);
 
   useEffect(() => {
+    // Add animation on mount
+    setTimeout(() => setIsVisible(true), 100);
+    
     if (hasResponses && hasQuestions) {
       toast({
-        title: "Data loaded",
-        description: `Showing analysis for ${responses.length} responses`,
+        title: "Analysis ready",
+        description: `Showing insights from ${responses.length} responses`,
         duration: 2000,
       });
     }
-  }, [hasResponses, hasQuestions, responses.length, toast]);
+  }, [hasResponses, hasQuestions, responses?.length, toast]);
 
   // Calculate average aura points
   const averageAuraPoints = useMemo(() => {
@@ -85,59 +90,52 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
       return { chartData: [], currentQuestion: null };
     }
 
-    console.log('Processing question data, questions:', questions);
-    console.log('Selected question index:', selectedQuestionIndex);
-    console.log('Responses:', responses);
-
+    console.log('Processing responses for chart data:', responses);
+    console.log('Current questions:', questions);
+    
     const currentQuestion = questions[selectedQuestionIndex];
-    console.log('Current question:', currentQuestion);
+    console.log('Selected question:', currentQuestion);
 
     const answerCounts: Record<string, number> = {};
     let totalResponses = 0;
 
     responses.forEach(response => {
-      if (!response.answers) {
-        console.log('Response has no answers:', response);
-        return;
-      }
-      
-      const parsedAnswers = typeof response.answers === 'string' 
-        ? JSON.parse(response.answers) 
-        : response.answers;
-      
-      console.log('Parsed answers for response:', parsedAnswers);
-      
-      // Check if the question ID exists in the answers
-      if (parsedAnswers[currentQuestion.id] === undefined) {
-        console.log('No answer for question ID:', currentQuestion.id);
-        return;
-      }
-      
-      const questionAnswer = parsedAnswers[currentQuestion.id];
-      console.log('Found answer:', questionAnswer, 'for question ID:', currentQuestion.id);
-      
-      let answerLabel: string;
-      
-      // Handle MCQ questions where the answer is the index of the selected option
-      if (currentQuestion.type === 'mcq' && currentQuestion.options && Array.isArray(currentQuestion.options)) {
-        // Make sure the answer is within the options array bounds
-        if (typeof questionAnswer === 'number' && questionAnswer >= 0 && questionAnswer < currentQuestion.options.length) {
-          answerLabel = currentQuestion.options[questionAnswer];
+      try {
+        if (!response.answers) return;
+        
+        // Make sure we handle both string and object formats
+        const parsedAnswers = typeof response.answers === 'string' 
+          ? JSON.parse(response.answers) 
+          : response.answers;
+        
+        // Check if current question ID exists in the answers
+        if (!parsedAnswers[currentQuestion.id]) return;
+        
+        // Extract the answer for this question
+        const questionAnswer = parsedAnswers[currentQuestion.id];
+        let answerLabel: string;
+        
+        // For MCQ questions, get the option text if applicable
+        if (currentQuestion.type === 'mcq' && currentQuestion.options && Array.isArray(currentQuestion.options)) {
+          if (typeof questionAnswer === 'number' && questionAnswer >= 0 && questionAnswer < currentQuestion.options.length) {
+            answerLabel = currentQuestion.options[questionAnswer];
+          } else {
+            answerLabel = String(questionAnswer);
+          }
         } else {
           answerLabel = String(questionAnswer);
         }
-      } else {
-        answerLabel = String(questionAnswer);
+        
+        answerCounts[answerLabel] = (answerCounts[answerLabel] || 0) + 1;
+        totalResponses++;
+      } catch (error) {
+        console.error('Error processing response answers:', error);
       }
-      
-      console.log('Using answer label:', answerLabel);
-      
-      answerCounts[answerLabel] = (answerCounts[answerLabel] || 0) + 1;
-      totalResponses++;
     });
 
-    console.log('Answer counts:', answerCounts, 'Total responses:', totalResponses);
+    console.log('Processed answer counts:', answerCounts, 'Total responses:', totalResponses);
 
+    // Convert to chart data format with percentages
     const chartData = Object.entries(answerCounts).map(([name, value]) => ({
       name,
       value,
@@ -145,25 +143,20 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
     }));
 
     console.log('Generated chart data:', chartData);
-
-    return {
-      chartData,
-      currentQuestion,
-      totalResponses
-    };
+    return { chartData, currentQuestion, totalResponses };
   }, [questions, responses, selectedQuestionIndex, hasQuestions, hasResponses]);
 
   const handleChartChange = (chartType: 'bar' | 'pie' | 'area') => {
     setActiveChart(chartType);
     toast({
-      title: "Chart type changed",
-      description: `Switched to ${chartType} chart view`,
+      title: "Chart style updated",
+      description: `Now showing ${chartType} chart visualization`,
     });
   };
 
   if (!hasQuestions && !hasResponses) {
     return (
-      <ChartCard title="Response Analysis">
+      <ChartCard title="Response Analysis" className="border-2 border-dashed border-gray-200">
         <div className="text-center py-10">
           <p className="text-muted-foreground mb-2">No responses or questions available for analysis yet.</p>
           <div className="inline-flex items-center justify-center p-4 bg-gradient-to-r from-[#FFE29F]/20 to-[#FF719A]/20 rounded-full">
@@ -178,7 +171,10 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className={cn(
+      "space-y-8 transition-all duration-700",
+      isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+    )}>
       <StatsCards
         totalResponses={responses.length}
         averageAuraPoints={averageAuraPoints}
@@ -188,20 +184,39 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
       <ChartCard 
         title="Response Analysis" 
         description="Question-by-question breakdown of responses"
+        className={cn(
+          "border-2 transition-all duration-300",
+          questions.length > 0 && responses.length > 0 ? "border-[#9b87f5]/30 shadow-lg hover:shadow-xl" : "border-gray-200"
+        )}
       >
         <div className="space-y-6">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div className={cn(
+            "flex flex-col md:flex-row gap-4 items-start md:items-center justify-between",
+            isVisible ? "animate-fade-in" : ""
+          )}>
             <Select
               value={selectedQuestionIndex.toString()}
               onValueChange={(value) => setSelectedQuestionIndex(parseInt(value))}
+              disabled={!hasQuestions || questions.length === 0}
             >
-              <SelectTrigger className="w-full md:w-[300px] border-2 border-[#FF007F]/20 focus:border-[#FF007F] bg-white">
-                <SelectValue placeholder="Select a question to analyze" />
+              <SelectTrigger 
+                className={cn(
+                  "w-full md:w-[300px] transition-all duration-300",
+                  hasQuestions ? "border-2 border-[#FF007F]/20 focus:border-[#FF007F] bg-white" : "bg-gray-50 border-gray-200"
+                )}
+              >
+                <SelectValue placeholder={
+                  hasQuestions ? "Select a question to analyze" : "No questions available"
+                } />
               </SelectTrigger>
               <SelectContent>
                 {questions.length > 0 ? 
                   questions.map((question, index) => (
-                    <SelectItem key={question.id} value={index.toString()}>
+                    <SelectItem 
+                      key={question.id} 
+                      value={index.toString()}
+                      className="cursor-pointer hover:bg-[#FF007F]/10"
+                    >
                       Question {index + 1}: {question.text.substring(0, 40)}{question.text.length > 40 ? '...' : ''}
                     </SelectItem>
                   )) : 
@@ -216,6 +231,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
                 size="sm"
                 onClick={() => handleChartChange('bar')}
                 className={activeChart === 'bar' ? "bg-[#FF007F] hover:bg-[#FF007F]/90" : ""}
+                disabled={!hasQuestions || !hasResponses}
               >
                 <BarChart className="h-4 w-4 mr-1" />
                 Bar
@@ -225,6 +241,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
                 size="sm"
                 onClick={() => handleChartChange('pie')}
                 className={activeChart === 'pie' ? "bg-[#00DDEB] hover:bg-[#00DDEB]/90" : ""}
+                disabled={!hasQuestions || !hasResponses}
               >
                 <PieChart className="h-4 w-4 mr-1" />
                 Pie
@@ -234,6 +251,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
                 size="sm"
                 onClick={() => handleChartChange('area')}
                 className={activeChart === 'area' ? "bg-[#9b87f5] hover:bg-[#9b87f5]/90" : ""}
+                disabled={!hasQuestions || !hasResponses}
               >
                 <Activity className="h-4 w-4 mr-1" />
                 Area
@@ -245,14 +263,19 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
             questions={questions}
             selectedQuestionIndex={selectedQuestionIndex}
             setSelectedQuestionIndex={setSelectedQuestionIndex}
-            chartData={questionData.chartData}
+            chartData={questionData.chartData || []}
             activeChart={activeChart}
             setActiveChart={handleChartChange}
           />
         </div>
       </ChartCard>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className={cn(
+        "grid md:grid-cols-2 gap-6 transition-all duration-700",
+        isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
+        // Add delay to these components
+        "transition-delay-300"
+      )}>
         <TimelineChart participationData={participationData} />
         <WeeklyPatternChart dailyEngagementStats={dailyEngagementStats} />
       </div>
