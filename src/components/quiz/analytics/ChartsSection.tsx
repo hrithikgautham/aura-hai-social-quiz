@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { ChartCard } from './ChartCard';
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { StatsCards } from './charts/StatsCards';
 import { TimelineChart } from './charts/TimelineChart';
 import { WeeklyPatternChart } from './charts/WeeklyPatternChart';
 import { QuestionAnalysisChart } from './charts/QuestionAnalysisChart';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChartsSectionProps {
   questions: QuestionData[];
@@ -17,6 +19,7 @@ interface ChartsSectionProps {
 export function ChartsSection({ questions, responses }: ChartsSectionProps) {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [activeChart, setActiveChart] = useState<'bar' | 'pie' | 'area'>('pie');
+  const { toast } = useToast();
   
   const hasResponses = useMemo(() => responses && responses.length > 0, [responses]);
   const hasQuestions = useMemo(() => questions && questions.length > 0, [questions]);
@@ -108,14 +111,25 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
     };
   }, [questions, responses, selectedQuestionIndex, hasQuestions, hasResponses]);
 
-  if (!hasQuestions || !hasResponses) {
+  const handleChartChange = (chartType: 'bar' | 'pie' | 'area') => {
+    setActiveChart(chartType);
+    toast({
+      title: "Chart type changed",
+      description: `Switched to ${chartType} chart view`,
+    });
+  };
+
+  if (!hasQuestions && !hasResponses) {
     return (
       <ChartCard title="Response Analysis">
         <div className="text-center py-10">
-          <p className="text-muted-foreground mb-2">No responses available for analysis yet.</p>
+          <p className="text-muted-foreground mb-2">No responses or questions available for analysis yet.</p>
           <div className="inline-flex items-center justify-center p-4 bg-gradient-to-r from-[#FFE29F]/20 to-[#FF719A]/20 rounded-full">
             <Activity className="h-12 w-12 text-[#FF007F] opacity-60" />
           </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            When participants respond to your quiz, charts and analytics will appear here.
+          </p>
         </div>
       </ChartCard>
     );
@@ -143,11 +157,14 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
                 <SelectValue placeholder="Select a question to analyze" />
               </SelectTrigger>
               <SelectContent>
-                {questions.map((question, index) => (
-                  <SelectItem key={question.id} value={index.toString()}>
-                    Question {index + 1}: {question.text.substring(0, 40)}{question.text.length > 40 ? '...' : ''}
-                  </SelectItem>
-                ))}
+                {questions.length > 0 ? 
+                  questions.map((question, index) => (
+                    <SelectItem key={question.id} value={index.toString()}>
+                      Question {index + 1}: {question.text.substring(0, 40)}{question.text.length > 40 ? '...' : ''}
+                    </SelectItem>
+                  )) : 
+                  <SelectItem value="0" disabled>No questions available</SelectItem>
+                }
               </SelectContent>
             </Select>
 
@@ -155,7 +172,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
               <Button
                 variant={activeChart === 'bar' ? "default" : "outline"}
                 size="sm"
-                onClick={() => setActiveChart('bar')}
+                onClick={() => handleChartChange('bar')}
                 className={activeChart === 'bar' ? "bg-[#FF007F] hover:bg-[#FF007F]/90" : ""}
               >
                 <BarChart className="h-4 w-4 mr-1" />
@@ -164,7 +181,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
               <Button
                 variant={activeChart === 'pie' ? "default" : "outline"}
                 size="sm"
-                onClick={() => setActiveChart('pie')}
+                onClick={() => handleChartChange('pie')}
                 className={activeChart === 'pie' ? "bg-[#00DDEB] hover:bg-[#00DDEB]/90" : ""}
               >
                 <PieChart className="h-4 w-4 mr-1" />
@@ -173,7 +190,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
               <Button
                 variant={activeChart === 'area' ? "default" : "outline"}
                 size="sm"
-                onClick={() => setActiveChart('area')}
+                onClick={() => handleChartChange('area')}
                 className={activeChart === 'area' ? "bg-[#9b87f5] hover:bg-[#9b87f5]/90" : ""}
               >
                 <Activity className="h-4 w-4 mr-1" />
@@ -188,7 +205,7 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
             setSelectedQuestionIndex={setSelectedQuestionIndex}
             chartData={questionData.chartData}
             activeChart={activeChart}
-            setActiveChart={setActiveChart}
+            setActiveChart={handleChartChange}
           />
         </div>
       </ChartCard>

@@ -2,12 +2,25 @@
 import { ChartCard } from '../ChartCard';
 import { Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useToast } from '@/hooks/use-toast';
 
 interface TimelineChartProps {
   participationData: Array<{ date: string; responses: number }>;
 }
 
 export function TimelineChart({ participationData }: TimelineChartProps) {
+  const { toast } = useToast();
+  
+  const handleTooltipOpen = () => {
+    if (participationData.length > 0) {
+      toast({
+        title: "Data point selected",
+        description: "Viewing response count for this date",
+        duration: 1500,
+      });
+    }
+  };
+
   return (
     <ChartCard 
       title="Participation Timeline" 
@@ -16,7 +29,11 @@ export function TimelineChart({ participationData }: TimelineChartProps) {
       <div className="h-[300px]">
         {participationData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={participationData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <AreaChart 
+              data={participationData} 
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+              onMouseDown={handleTooltipOpen}
+            >
               <defs>
                 <linearGradient id="participationGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#00DDEB" stopOpacity={0.8}/>
@@ -41,6 +58,9 @@ export function TimelineChart({ participationData }: TimelineChartProps) {
           <div className="flex flex-col items-center justify-center h-full bg-white/50 rounded-lg border border-dashed border-gray-300">
             <Activity className="h-12 w-12 text-gray-300 mb-3" />
             <p className="text-muted-foreground">No timeline data available</p>
+            <p className="text-xs text-muted-foreground mt-2 text-center max-w-[80%]">
+              Once responses start coming in, you'll see a timeline of participation here
+            </p>
           </div>
         )}
       </div>

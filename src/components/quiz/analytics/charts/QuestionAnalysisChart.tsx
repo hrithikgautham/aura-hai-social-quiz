@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Area, AreaChart } from 'recharts';
 import { QuestionData } from '@/types/quiz';
+import { useToast } from '@/hooks/use-toast';
 
 const COLORS = ['#FF007F', '#00DDEB', '#FFE29F', '#9b87f5', '#7E69AB', '#D3E4FD'];
 
@@ -26,15 +27,29 @@ export function QuestionAnalysisChart({
   setActiveChart
 }: QuestionAnalysisChartProps) {
   const currentQuestion = questions[selectedQuestionIndex];
+  const { toast } = useToast();
+  
+  const handleChartTypeChange = (type: 'bar' | 'pie' | 'area') => {
+    setActiveChart(type);
+    toast({
+      title: "Chart type changed",
+      description: `Now showing ${type} chart visualization`,
+      duration: 1500,
+    });
+  };
 
   return (
     <div className="p-4 bg-gradient-to-r from-[#FFE29F]/5 to-[#FF719A]/5 rounded-lg border border-[#FF007F]/10">
-      {currentQuestion && (
+      {currentQuestion ? (
         <h3 className="text-sm md:text-base font-medium mb-6 p-3 bg-white/80 rounded-lg border border-[#FF007F]/10 shadow-sm">
           {currentQuestion.text}
           <Badge className="ml-2 bg-[#FF007F]/10 text-[#FF007F] hover:bg-[#FF007F]/20">
             {currentQuestion.type === 'mcq' ? 'Multiple Choice' : 'Number Input'}
           </Badge>
+        </h3>
+      ) : (
+        <h3 className="text-sm md:text-base font-medium mb-6 p-3 bg-white/80 rounded-lg border border-[#FF007F]/10 shadow-sm">
+          No question selected
         </h3>
       )}
 
@@ -127,6 +142,9 @@ export function QuestionAnalysisChart({
           <div className="flex flex-col items-center justify-center h-[300px] bg-white/50 rounded-lg border border-dashed border-gray-300 p-6">
             <Activity className="h-12 w-12 text-gray-300 mb-3" />
             <p className="text-muted-foreground text-center">No response data available for this question</p>
+            <p className="text-xs text-muted-foreground mt-2 text-center max-w-[80%]">
+              As participants answer this question, their responses will be visualized here
+            </p>
           </div>
         )}
       </div>

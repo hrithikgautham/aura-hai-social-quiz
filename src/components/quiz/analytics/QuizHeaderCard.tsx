@@ -74,6 +74,16 @@ export function QuizHeaderCard({
     }
   };
 
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+    if (!showSettings) {
+      toast({
+        title: "Settings opened",
+        description: "You can now edit your quiz settings",
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -87,7 +97,7 @@ export function QuizHeaderCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => setShowSettings(!showSettings)}>
+            <DropdownMenuItem onClick={toggleSettings}>
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
