@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,7 @@ export function QuizHeaderCard({
 
   const handleUpdateQuizDetails = async () => {
     try {
-      onUpdate(name, description, isPublicState);
+      onUpdate(quizName, quizDescription, isPublicState);
       toast({
         title: "Success",
         description: "Quiz details have been updated",
@@ -56,7 +57,7 @@ export function QuizHeaderCard({
   const handlePrivacyChange = async (checked: boolean) => {
     try {
       setIsPublicState(checked);
-      onUpdate(name, description, checked);
+      onUpdate(quizName, quizDescription, checked);
       toast({
         title: checked ? "Quiz made public" : "Quiz made private",
         description: checked 
