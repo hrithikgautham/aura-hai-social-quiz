@@ -12,6 +12,7 @@ import { DeleteDialog } from '@/components/quiz/analytics/DeleteDialog';
 import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { QuizData, AuraPoints } from '@/types/quiz-analytics';
+import { PageLayout } from '@/components/PageLayout';
 
 const QuizAnalytics = () => {
   const { quizId } = useParams();
@@ -207,11 +208,7 @@ const QuizAnalytics = () => {
   };
 
   return (
-    <QuizAnalyticsLayout 
-      title={`${quizName} Analytics`}
-      loading={loading}
-      error={error}
-    >
+    <PageLayout isAnalytics>
       <DeleteDialog 
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -239,9 +236,8 @@ const QuizAnalytics = () => {
         <LeaderboardCard responses={quizResponses} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <AuraPointsChart overallAuraPoints={overallAuraPoints} />
-
         {user && (
           <ResponsesTable 
             quizResponses={quizResponses.filter(r => r.respondent_id === user.id)}
@@ -263,7 +259,7 @@ const QuizAnalytics = () => {
           responses={quizResponses} 
         />
       </div>
-    </QuizAnalyticsLayout>
+    </PageLayout>
   );
 };
 

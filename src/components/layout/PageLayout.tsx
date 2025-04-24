@@ -1,13 +1,29 @@
-
 import { cn } from "@/lib/utils"
 
 interface PageLayoutProps {
   children: React.ReactNode;
   className?: string;
   isQuizCreate?: boolean;
+  isAnalytics?: boolean;
 }
 
-const PageLayout = ({ children, className, isQuizCreate }: PageLayoutProps) => {
+const PageLayout = ({ children, className, isQuizCreate, isAnalytics }: PageLayoutProps) => {
+  if (isAnalytics) {
+    return (
+      <div 
+        className={cn(
+          "min-h-screen bg-gradient-to-br from-[#FFE29F] via-[#FFA99F] to-[#FF719A] p-4 md:p-8",
+          "before:content-[''] before:fixed before:inset-0 before:bg-[url('/lovable-uploads/sparkles-pattern.png')] before:opacity-5 before:z-0",
+          className
+        )}
+      >
+        <div className="relative z-10 max-w-7xl mx-auto space-y-6">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   if (isQuizCreate) {
     return (
       <div 
