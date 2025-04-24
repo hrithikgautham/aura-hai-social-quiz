@@ -6,6 +6,7 @@ import { Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Area, AreaChart } from 'recharts';
 import { QuestionData } from '@/types/quiz';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 const COLORS = ['#FF007F', '#00DDEB', '#FFE29F', '#9b87f5', '#7E69AB', '#D3E4FD'];
 
@@ -29,6 +30,14 @@ export function QuestionAnalysisChart({
   const currentQuestion = questions[selectedQuestionIndex];
   const { toast } = useToast();
   
+  useEffect(() => {
+    if (chartData && chartData.length > 0) {
+      console.log('QuestionAnalysisChart received chart data:', chartData);
+    } else {
+      console.log('QuestionAnalysisChart has no chart data');
+    }
+  }, [chartData]);
+
   const handleChartTypeChange = (type: 'bar' | 'pie' | 'area') => {
     setActiveChart(type);
     toast({
@@ -143,7 +152,9 @@ export function QuestionAnalysisChart({
             <Activity className="h-12 w-12 text-gray-300 mb-3" />
             <p className="text-muted-foreground text-center">No response data available for this question</p>
             <p className="text-xs text-muted-foreground mt-2 text-center max-w-[80%]">
-              As participants answer this question, their responses will be visualized here
+              {questions && questions.length > 0 ? 
+                "This question has not received any responses yet or the data format doesn't match what's expected" :
+                "No questions are available for analysis"}
             </p>
           </div>
         )}

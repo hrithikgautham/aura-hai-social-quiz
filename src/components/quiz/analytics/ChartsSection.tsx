@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChartCard } from './ChartCard';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +23,16 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
   
   const hasResponses = useMemo(() => responses && responses.length > 0, [responses]);
   const hasQuestions = useMemo(() => questions && questions.length > 0, [questions]);
+
+  useEffect(() => {
+    if (hasResponses && hasQuestions) {
+      toast({
+        title: "Data loaded",
+        description: `Showing analysis for ${responses.length} responses`,
+        duration: 2000,
+      });
+    }
+  }, [hasResponses, hasQuestions, responses.length, toast]);
 
   // Calculate average aura points
   const averageAuraPoints = useMemo(() => {
@@ -69,43 +79,75 @@ export function ChartsSection({ questions, responses }: ChartsSectionProps) {
     }));
   }, [responses, hasResponses]);
 
-  // Process question data with percentages
+  // Process question data with percentages - Fixed to properly handle answer parsing
   const questionData = useMemo(() => {
     if (!hasQuestions || !hasResponses || selectedQuestionIndex >= questions.length) {
       return { chartData: [], currentQuestion: null };
     }
 
+    console.log('Processing question data, questions:', questions);
+    console.log('Selected question index:', selectedQuestionIndex);
+    console.log('Responses:', responses);
+
     const currentQuestion = questions[selectedQuestionIndex];
+    console.log('Current question:', currentQuestion);
+
     const answerCounts: Record<string, number> = {};
     let totalResponses = 0;
 
     responses.forEach(response => {
-      if (!response.answers) return;
+      if (!response.answers) {
+        console.log('Response has no answers:', response);
+        return;
+      }
       
       const parsedAnswers = typeof response.answers === 'string' 
         ? JSON.parse(response.answers) 
         : response.answers;
       
+      console.log('Parsed answers for response:', parsedAnswers);
+      
+      // Check if the question ID exists in the answers
+      if (parsedAnswers[currentQuestion.id] === undefined) {
+        console.log('No answer for question ID:', currentQuestion.id);
+        return;
+      }
+      
       const questionAnswer = parsedAnswers[currentQuestion.id];
-      if (questionAnswer === undefined) return;
+      console.log('Found answer:', questionAnswer, 'for question ID:', currentQuestion.id);
       
       let answerLabel: string;
+      
+      // Handle MCQ questions where the answer is the index of the selected option
       if (currentQuestion.type === 'mcq' && currentQuestion.options && Array.isArray(currentQuestion.options)) {
-        answerLabel = currentQuestion.options[questionAnswer] || String(questionAnswer);
+        // Make sure the answer is within the options array bounds
+        if (typeof questionAnswer === 'number' && questionAnswer >= 0 && questionAnswer < currentQuestion.options.length) {
+          answerLabel = currentQuestion.options[questionAnswer];
+        } else {
+          answerLabel = String(questionAnswer);
+        }
       } else {
         answerLabel = String(questionAnswer);
       }
+      
+      console.log('Using answer label:', answerLabel);
       
       answerCounts[answerLabel] = (answerCounts[answerLabel] || 0) + 1;
       totalResponses++;
     });
 
+    console.log('Answer counts:', answerCounts, 'Total responses:', totalResponses);
+
+    const chartData = Object.entries(answerCounts).map(([name, value]) => ({
+      name,
+      value,
+      percentage: Math.round((value / totalResponses) * 100)
+    }));
+
+    console.log('Generated chart data:', chartData);
+
     return {
-      chartData: Object.entries(answerCounts).map(([name, value]) => ({
-        name,
-        value,
-        percentage: Math.round((value / totalResponses) * 100)
-      })),
+      chartData,
       currentQuestion,
       totalResponses
     };

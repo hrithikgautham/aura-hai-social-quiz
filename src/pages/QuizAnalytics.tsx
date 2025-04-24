@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,6 +67,7 @@ const QuizAnalytics = () => {
           throw new Error('Quiz not found');
         }
 
+        console.log('Fetched quiz data:', quizData);
         setQuiz(quizData);
         setIsPublic(false);
         setQuizName(quizData.name);
@@ -108,15 +110,22 @@ const QuizAnalytics = () => {
         };
 
         responseArray.forEach(response => {
-          const answers = response.answers || {};
+          const answers = typeof response.answers === 'string' 
+            ? JSON.parse(response.answers) 
+            : response.answers;
           
+          console.log('Processing response answers:', answers);
+            
           if (answers && Object.keys(answers).length > 0) {
             const quizQuestions = quiz?.questions || {};
             
             Object.entries(answers).forEach(([questionId, answer]) => {
               const questionIdStr = String(questionId);
+              console.log('Processing question:', questionIdStr, 'with answer:', answer);
+              
               if (quizQuestions[questionIdStr] && quizQuestions[questionIdStr].options) {
                 const auraPoints = calculateMCQAuraPoints(answer as string);
+                console.log('Calculated aura points:', auraPoints);
 
                 if (!calculatedQuestionAuraPoints[questionIdStr]) {
                   calculatedQuestionAuraPoints[questionIdStr] = {
@@ -139,8 +148,17 @@ const QuizAnalytics = () => {
           }
         });
 
+        console.log('Final calculated question aura points:', calculatedQuestionAuraPoints);
+        console.log('Final calculated overall aura points:', calculatedOverallAuraPoints);
+        
         setQuestionAuraPoints(calculatedQuestionAuraPoints);
         setOverallAuraPoints(calculatedOverallAuraPoints);
+        
+        toast({
+          title: "Data loaded successfully",
+          description: `Loaded ${responseArray.length} responses for analysis`,
+          duration: 2000,
+        });
       } catch (err: any) {
         setError(err.message);
         toast({
@@ -155,7 +173,7 @@ const QuizAnalytics = () => {
     };
 
     fetchQuizAndResponses();
-  }, [quizId, user, navigate]);
+  }, [quizId, user, navigate, toast]);
 
   const handleShareQuiz = async () => {
     try {
@@ -176,6 +194,11 @@ const QuizAnalytics = () => {
       const link = `${window.location.origin}/quiz/take/${quizId}`;
       setShareableLink(link);
       setIsShareDialogOpen(true);
+      
+      toast({
+        title: "Quiz shared",
+        description: "The quiz is now shareable with the provided link",
+      });
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -233,6 +256,21 @@ const QuizAnalytics = () => {
     });
   };
 
+  // Transform quiz questions into the format expected by ChartsSection
+  const transformedQuestions = useMemo(() => {
+    if (!quiz?.questions) return [];
+    
+    return Object.entries(quiz.questions).map(([id, q]) => ({
+      id,
+      text: q.text,
+      type: q.type,
+      options: q.options
+    }));
+  }, [quiz?.questions]);
+
+  console.log('Transformed questions for ChartsSection:', transformedQuestions);
+  console.log('Quiz responses for ChartsSection:', quizResponses);
+
   return (
     <PageLayout isAnalytics>
       <DeleteDialog 
@@ -276,12 +314,7 @@ const QuizAnalytics = () => {
 
       <div className="mt-6">
         <ChartsSection 
-          questions={quiz?.questions ? Object.entries(quiz.questions).map(([id, q]) => ({
-            id,
-            text: q.text,
-            type: q.type,
-            options: q.options
-          })) : []} 
+          questions={transformedQuestions} 
           responses={quizResponses} 
         />
       </div>

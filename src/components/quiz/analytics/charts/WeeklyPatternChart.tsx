@@ -3,6 +3,7 @@ import { ChartCard } from '../ChartCard';
 import { Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 interface WeeklyPatternChartProps {
   dailyEngagementStats: Array<{ name: string; responses: number; fill: string }>;
@@ -13,6 +14,14 @@ export function WeeklyPatternChart({ dailyEngagementStats }: WeeklyPatternChartP
   
   const hasData = dailyEngagementStats.some(day => day.responses > 0);
   
+  useEffect(() => {
+    if (hasData) {
+      console.log('WeeklyPatternChart has data:', dailyEngagementStats);
+    } else {
+      console.log('WeeklyPatternChart has no data');
+    }
+  }, [hasData, dailyEngagementStats]);
+
   const handleDataSelect = () => {
     if (hasData) {
       toast({
