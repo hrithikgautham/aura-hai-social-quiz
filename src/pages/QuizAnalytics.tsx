@@ -13,11 +13,13 @@ import { ChartsSection } from '@/components/quiz/analytics/ChartsSection';
 import { LeaderboardCard } from '@/components/quiz/LeaderboardCard';
 import { QuizData, AuraPoints } from '@/types/quiz-analytics';
 import PageLayout from '@/components/layout/PageLayout';
+import { useToast } from '@/hooks/use-toast';
 
 const QuizAnalytics = () => {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [quizResponses, setQuizResponses] = useState<any[]>([]);
@@ -141,6 +143,11 @@ const QuizAnalytics = () => {
         setOverallAuraPoints(calculatedOverallAuraPoints);
       } catch (err: any) {
         setError(err.message);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: err.message || "Failed to load quiz data",
+        });
         console.error("Error fetching quiz data:", err);
       } finally {
         setLoading(false);
@@ -171,6 +178,11 @@ const QuizAnalytics = () => {
       setIsShareDialogOpen(true);
     } catch (err: any) {
       setError(err.message);
+      toast({
+        variant: "destructive",
+        title: "Error sharing",
+        description: err.message || "Failed to share quiz",
+      });
       console.error("Error sharing quiz:", err);
     }
   };
@@ -190,10 +202,19 @@ const QuizAnalytics = () => {
         throw new Error(`Failed to delete quiz: ${error.message}`);
       }
 
-      console.log('Quiz deleted successfully');
+      toast({
+        title: "Quiz deleted",
+        description: "Quiz has been permanently deleted",
+      });
+      
       navigate('/quizzes');
     } catch (err: any) {
       setError(err.message);
+      toast({
+        variant: "destructive",
+        title: "Error deleting",
+        description: err.message || "Failed to delete quiz",
+      });
       console.error("Error deleting quiz:", err);
     } finally {
       setIsDeleteDialogOpen(false);
@@ -205,6 +226,11 @@ const QuizAnalytics = () => {
     setQuizDescription(description);
     setIsPublic(isPublic);
     setQuiz(prev => prev ? { ...prev, name } : null);
+    
+    toast({
+      title: "Quiz updated",
+      description: "Quiz details have been updated successfully",
+    });
   };
 
   return (

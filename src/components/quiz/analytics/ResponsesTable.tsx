@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/drawer";
 import { UserAnswerCard } from "@/components/quiz/UserAnswerCard";
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ResponsesTableProps {
   quizResponses: any[];
@@ -31,10 +32,15 @@ interface ResponsesTableProps {
 export function ResponsesTable({ quizResponses, quiz, quizName, quizId }: ResponsesTableProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedUserResponse, setSelectedUserResponse] = useState<any>(null);
+  const { toast } = useToast();
 
   const handleResponseClick = (response: any) => {
     setSelectedUserResponse(response);
     setIsDrawerOpen(true);
+    toast({
+      title: "Response details",
+      description: "Viewing response from " + new Date(response.created_at).toLocaleDateString(),
+    });
   };
 
   return (

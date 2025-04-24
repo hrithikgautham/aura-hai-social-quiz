@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { QuizSettings } from './QuizSettings';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuizHeaderCardProps {
   quizName: string;
@@ -32,7 +32,46 @@ export function QuizHeaderCard({
   onShare,
   onUpdate
 }: QuizHeaderCardProps) {
+  const { toast } = useToast();
   const [showSettings, setShowSettings] = useState(false);
+  const [isPublicState, setIsPublicState] = useState(isPublic);
+
+  const handleUpdateQuizDetails = async () => {
+    try {
+      onUpdate(name, description, isPublicState);
+      toast({
+        title: "Success",
+        description: "Quiz details have been updated",
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to update quiz details",
+      });
+      console.error("Error updating quiz details:", err);
+    }
+  };
+
+  const handlePrivacyChange = async (checked: boolean) => {
+    try {
+      setIsPublicState(checked);
+      onUpdate(name, description, checked);
+      toast({
+        title: checked ? "Quiz made public" : "Quiz made private",
+        description: checked 
+          ? "Anyone with the link can now access this quiz" 
+          : "Quiz is now private",
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to update quiz privacy",
+      });
+      console.error("Error updating quiz privacy:", err);
+    }
+  };
 
   return (
     <Card>
