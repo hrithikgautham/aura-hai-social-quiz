@@ -26,6 +26,8 @@ import { cn } from '@/lib/utils';
 import { calculateMCQAuraPoints } from "@/utils/auraCalculations";
 import { QuestionAuraInfo } from "@/components/quiz/QuestionAuraInfo";
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
+import { AuraCalculationInfo } from '@/components/quiz/AuraCalculationInfo';
+import { DotsVertical } from '@/components/ui/dots-vertical';
 
 type Question = {
   id: string;
@@ -46,7 +48,7 @@ const SortableOption = ({
   option: string;
   index: number;
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   
   const style = {
     transform: transform ? `translateY(${transform.y}px)` : undefined,
@@ -60,13 +62,15 @@ const SortableOption = ({
       style={style}
       {...attributes} 
       {...listeners}
-      className="flex items-center gap-2 p-3 my-1 bg-white border rounded-lg"
+      className={cn(
+        "flex items-center gap-2 p-3 my-1 bg-white border rounded-lg transition-all duration-200",
+        isDragging && "scale-105 shadow-lg animate-shake"
+      )}
     >
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-200">
-        {index + 1}
+      <div className="flex items-center justify-center w-6 h-6">
+        <DotsVertical className="h-4 w-4 text-gray-400" />
       </div>
       <div className="flex-grow">{option}</div>
-      <ArrowUpDown size={20} className="text-gray-400" />
     </div>
   );
 };
@@ -89,7 +93,7 @@ const QuizCreate = () => {
   const [responseCount, setResponseCount] = useState(0);
   const [quizCount, setQuizCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
-  
+  const [hasReadAuraCalculation, setHasReadAuraCalculation] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -527,66 +531,19 @@ const QuizCreate = () => {
 
   return (
     <div 
-      className="min-h-screen p-4 md:p-8 bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-cover bg-center bg-no-repeat"
       style={{ 
-        backgroundImage: "url('/lovable-uploads/4514b60b-b002-4e55-9dcd-d61473f8509f.png')",
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        backgroundBlendMode: 'overlay'
+        backgroundImage: "url('/lovable-uploads/0b17aca6-bc6e-4b19-9a06-299aff2387ae.png')",
       }}
     >
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold uppercase text-[#FF007F]">Create Your Quiz</h1>
-          
-          <div className="flex items-center space-x-2">
-            {(['name', 'fixed', 'custom', 'review'] as Step[]).map((step, index) => (
-              <div 
-                key={step} 
-                className={`w-3 h-3 rounded-full ${currentStep === step ? 'bg-[#FF007F]' : 'bg-gray-300'}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        <Card className="mb-6 backdrop-blur-sm bg-white/90 shadow-xl border-none">
-          <CardHeader>
-            {currentStep === 'name' && (
-              <>
-                <CardTitle>Name Your Quiz</CardTitle>
-                <CardDescription>Choose a catchy name for your aura quiz</CardDescription>
-              </>
-            )}
-
-            {currentStep === 'fixed' && (
-              <>
-                <CardTitle>Core Questions</CardTitle>
-                <CardDescription>
-                  Answer these questions to set up your quiz ({currentQuestionIndex + 1}/{fixedQuestions.length})
-                </CardDescription>
-              </>
-            )}
-
-            {currentStep === 'custom' && (
-              <>
-                <CardTitle>Custom Questions</CardTitle>
-                <CardDescription>
-                  {selectedCustomQuestions.length < 3 
-                    ? `Select 3 custom questions for your quiz (${selectedCustomQuestions.length}/3)`
-                    : `Configure custom question ${customQuestionIndex + 1} of ${selectedCustomQuestions.length}`}
-                </CardDescription>
-              </>
-            )}
-            
-            {currentStep === 'review' && (
-              <>
-                <CardTitle>Review Your Quiz</CardTitle>
-                <CardDescription>Make sure everything is correct before creating your quiz</CardDescription>
-              </>
-            )}
-          </CardHeader>
-
-          <CardContent>
-            {currentStep === 'name' && (
+      <div className="max-w-3xl mx-auto p-4 md:p-8">
+        {currentStep === 'name' && (
+          <Card className="backdrop-blur-xl bg-white/90 shadow-xl border-none">
+            <CardHeader>
+              <CardTitle>Name Your Quiz</CardTitle>
+              <CardDescription>Choose a catchy name for your aura quiz</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="quizName">Quiz Name</Label>
@@ -598,343 +555,336 @@ const QuizCreate = () => {
                     className="border-2 focus:border-[#FF007F]"
                   />
                 </div>
-              </div>
-            )}
 
-            {currentStep === 'fixed' && fixedQuestions.length > 0 && (
-              <div>
-                {fixedQuestions[currentQuestionIndex] && (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium">
-                        {fixedQuestions[currentQuestionIndex].text}
-                      </h3>
-                      <QuestionAuraInfo type={fixedQuestions[currentQuestionIndex].type} />
-                    </div>
-
-                    {fixedQuestions[currentQuestionIndex].type === 'mcq' && (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-500">
-                            Drag options to set their priority (1st is most like you, 4th is least)
-                          </p>
-                          <DndContext 
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={(event) => handleDragEnd(event, fixedQuestions[currentQuestionIndex].id)}
-                            modifiers={[restrictToVerticalAxis]}
-                          >
-                            <SortableContext 
-                              items={answers[fixedQuestions[currentQuestionIndex].id] || []}
-                              strategy={verticalListSortingStrategy}
-                            >
-                              {answers[fixedQuestions[currentQuestionIndex].id]?.map((option: string, index: number) => (
-                                <SortableOption 
-                                  key={option} 
-                                  id={option} 
-                                  option={option}
-                                  index={index} 
-                                />
-                              ))}
-                            </SortableContext>
-                          </DndContext>
-                        </div>
-                        <QuestionAuraInfo type="mcq" />
-                      </div>
-                    )}
-
-                    {fixedQuestions[currentQuestionIndex].type === 'number' && (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="numberInput">Enter a positive number:</Label>
-                          <Input
-                            id="numberInput"
-                            type="number"
-                            min="1"
-                            placeholder="Enter a positive number"
-                            value={answers[fixedQuestions[currentQuestionIndex].id] || ''}
-                            onChange={e => handleNumberChange(
-                              fixedQuestions[currentQuestionIndex].id, 
-                              e.target.value
-                            )}
-                            className="border-2 focus:border-[#FF007F]"
-                          />
-                        </div>
-                        <QuestionAuraInfo type="number" />
-                      </div>
-                    )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => navigateFixedQuestion('prev')}
-                        disabled={currentQuestionIndex === 0}
-                      >
-                        <ChevronLeft size={16} className="mr-2" /> Previous
-                      </Button>
-                    
-                      {currentQuestionIndex < fixedQuestions.length - 1 ? (
-                        <Button
-                          type="button"
-                          onClick={() => navigateFixedQuestion('next')}
-                          className="bg-[#00DDEB] hover:bg-[#00BBCC]"
-                          disabled={!isQuestionConfigured(fixedQuestions[currentQuestionIndex])}
-                        >
-                          Next <ChevronRight size={16} className="ml-2" />
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          onClick={() => handleNextStep()}
-                          className={cn(
-                            "bg-[#FF007F] hover:bg-[#D6006C]",
-                            !canProceedFromFixed() && "opacity-50 cursor-not-allowed"
-                          )}
-                          disabled={!canProceedFromFixed()}
-                        >
-                          Continue to Custom Questions <ChevronRight size={16} className="ml-2" />
-                        </Button>
-                      )}
-                    </div>
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-4">
+                  <h3 className="text-lg font-medium">How Aura Points Are Calculated</h3>
+                  <AuraCalculationInfo />
+                  
+                  <div className="flex items-start space-x-2 mt-4">
+                    <Checkbox
+                      id="auraCalculation"
+                      checked={hasReadAuraCalculation}
+                      onCheckedChange={(checked) => setHasReadAuraCalculation(!!checked)}
+                    />
+                    <label
+                      htmlFor="auraCalculation"
+                      className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I have read and understood how aura points are calculated
+                    </label>
                   </div>
-                )}
-              </div>
-            )}
-
-            {currentStep === 'custom' && (
-              <div className="space-y-4">
-                {selectedCustomQuestions.length < 3 && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-medium">Select Custom Questions</h3>
-                      {customQuestions.map((question, idx) => (
-                        <div key={question.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-white">
-                          <Checkbox
-                            id={`question-${idx}`}
-                            checked={selectedCustomQuestions.includes(question.id)}
-                            onCheckedChange={(checked) => handleCustomQuestionSelect(!!checked, question.id)}
-                            className="mt-1"
-                            disabled={!selectedCustomQuestions.includes(question.id) && selectedCustomQuestions.length >= 3}
-                          />
-                          <div className="space-y-1">
-                            <Label htmlFor={`question-${idx}`} className="font-medium">
-                              {question.text} <span className="text-xs text-gray-500">({question.type})</span>
-                            </Label>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {selectedCustomQuestions.length === 3 && (
-                      <Button
-                        onClick={() => {
-                          if (selectedCustomQuestions.length === 3) {
-                            setCustomQuestionIndex(0);
-                            setCurrentStep('custom');
-                          } else {
-                            toast({
-                              variant: "destructive",
-                              title: "Error",
-                              description: "Please select exactly 3 custom questions before proceeding.",
-                            });
-                          }
-                        }}
-                        className="w-full bg-[#FF007F] hover:bg-[#D6006C]"
-                      >
-                        Continue to Configure Questions
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {selectedCustomQuestions.length === 3 && customQuestionIndex >= 0 && (
-                  <div className="space-y-6">
-                    {(() => {
-                      const selectedQuestions = customQuestions.filter(q => 
-                        selectedCustomQuestions.includes(q.id)
-                      );
-                      const currentQuestion = selectedQuestions[customQuestionIndex];
-                      
-                      if (!currentQuestion) return null;
-
-                      return (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium">
-                              {currentQuestion.text}
-                            </h3>
-                            <QuestionAuraInfo type={currentQuestion.type} />
-                          </div>
-
-                          {currentQuestion.type === 'mcq' && (
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <p className="text-sm text-gray-500">
-                                  Drag options to set their priority (1st is most like you, 4th is least)
-                                </p>
-                                <DndContext 
-                                  sensors={sensors}
-                                  collisionDetection={closestCenter}
-                                  onDragEnd={(event) => handleDragEnd(event, currentQuestion.id)}
-                                  modifiers={[restrictToVerticalAxis]}
-                                >
-                                  <SortableContext 
-                                    items={answers[currentQuestion.id] || []}
-                                    strategy={verticalListSortingStrategy}
-                                  >
-                                    {answers[currentQuestion.id]?.map((option: string, index: number) => (
-                                      <SortableOption 
-                                        key={option} 
-                                        id={option} 
-                                        option={option}
-                                        index={index} 
-                                      />
-                                    ))}
-                                  </SortableContext>
-                                </DndContext>
-                              </div>
-                              <QuestionAuraInfo type="mcq" />
-                            </div>
-                          )}
-
-                          {currentQuestion.type === 'number' && (
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`number-${currentQuestion.id}`}>Enter a positive number:</Label>
-                                <Input
-                                  id={`number-${currentQuestion.id}`}
-                                  type="number"
-                                  min="1"
-                                  placeholder="Enter a positive number"
-                                  value={answers[currentQuestion.id] || ''}
-                                  onChange={e => handleNumberChange(currentQuestion.id, e.target.value)}
-                                  className="border-2 focus:border-[#FF007F]"
-                                />
-                              </div>
-                              <QuestionAuraInfo type="number" />
-                            </div>
-                          )}
-
-                          <div className="flex justify-between pt-4">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => navigateCustomQuestion('prev')}
-                              disabled={customQuestionIndex === 0}
-                            >
-                              <ChevronLeft size={16} className="mr-2" /> Previous
-                            </Button>
-                          
-                            {customQuestionIndex < selectedQuestions.length - 1 ? (
-                              <Button
-                                type="button"
-                                onClick={() => navigateCustomQuestion('next')}
-                                className="bg-[#00DDEB] hover:bg-[#00BBCC]"
-                                disabled={!isCustomQuestionConfigured(currentQuestion.id)}
-                              >
-                                Next <ChevronRight size={16} className="ml-2" />
-                              </Button>
-                            ) : (
-                              <Button
-                                type="button"
-                                onClick={handleCompleteCustomQuestionConfig}
-                                className={cn(
-                                  "bg-[#FF007F] hover:bg-[#D6006C]",
-                                  !isCustomQuestionConfigured(currentQuestion.id) && "opacity-50 cursor-not-allowed"
-                                )}
-                                disabled={!isCustomQuestionConfigured(currentQuestion.id)}
-                              >
-                                Review Quiz <ChevronRight size={16} className="ml-2" />
-                              </Button>
-                            )}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {currentStep === 'review' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-medium">Quiz Name</h3>
-                  <p className="text-lg mt-1">{quizName}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium">Fixed Questions ({fixedQuestions.length})</h3>
-                  <ul className="mt-2 space-y-2">
-                    {fixedQuestions.map(q => (
-                      <li key={q.id} className="text-sm">
-                        • {q.text} 
-                        <span className="ml-2 text-xs text-gray-500">
-                          {q.type === 'mcq' ? 
-                            `(Priority: ${answers[q.id]?.join(' > ')})` : 
-                            `(Answer: ${answers[q.id]})`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-medium">Custom Questions (3)</h3>
-                  <ul className="mt-2 space-y-2">
-                    {customQuestions
-                      .filter(q => selectedCustomQuestions.includes(q.id))
-                      .map(q => (
-                        <li key={q.id} className="text-sm">
-                          • {q.text}
-                          <span className="ml-2 text-xs text-gray-500">
-                            {q.type === 'mcq' ? 
-                              `(Priority: ${answers[q.id]?.join(' > ')})` : 
-                              `(Answer: ${answers[q.id]})`}
-                          </span>
-                        </li>
-                      ))}
-                  </ul>
                 </div>
               </div>
-            )}
-          </CardContent>
-
-          <CardFooter className="flex justify-between">
-            {currentStep !== 'name' && (
+            </CardContent>
+            <CardFooter className="flex justify-end">
               <Button
-                type="button"
-                variant="outline"
-                onClick={handlePrevStep}
-              >
-                <ChevronLeft size={16} className="mr-2" /> Back
-              </Button>
-            )}
-            
-            {currentStep !== 'review' && currentStep !== 'fixed' && currentStep !== 'custom' && (
-              <Button
-                type="button"
                 onClick={handleNextStep}
-                className="ml-auto bg-[#FF007F] hover:bg-[#D6006C]"
-                disabled={
-                  (currentStep === 'name' && quizName.trim().length < 3)
-                }
+                className="bg-[#FF007F] hover:bg-[#D6006C]"
+                disabled={quizName.trim().length < 3 || !hasReadAuraCalculation}
               >
                 Next Step <ChevronRight size={16} className="ml-2" />
               </Button>
+            </CardFooter>
+          </Card>
+        )}
+
+        {currentStep === 'fixed' && fixedQuestions.length > 0 && (
+          <div>
+            {fixedQuestions[currentQuestionIndex] && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">
+                    {fixedQuestions[currentQuestionIndex].text}
+                  </h3>
+                  <QuestionAuraInfo type={fixedQuestions[currentQuestionIndex].type} />
+                </div>
+
+                {fixedQuestions[currentQuestionIndex].type === 'mcq' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500">
+                        Drag options to set their priority (1st is most like you, 4th is least)
+                      </p>
+                      <DndContext 
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event) => handleDragEnd(event, fixedQuestions[currentQuestionIndex].id)}
+                        modifiers={[restrictToVerticalAxis]}
+                      >
+                        <SortableContext 
+                          items={answers[fixedQuestions[currentQuestionIndex].id] || []}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {answers[fixedQuestions[currentQuestionIndex].id]?.map((option: string, index: number) => (
+                            <SortableOption 
+                              key={option} 
+                              id={option} 
+                              option={option}
+                              index={index} 
+                            />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+                    <QuestionAuraInfo type="mcq" />
+                  </div>
+                )}
+
+                {fixedQuestions[currentQuestionIndex].type === 'number' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="numberInput">Enter a positive number:</Label>
+                      <Input
+                        id="numberInput"
+                        type="number"
+                        min="1"
+                        placeholder="Enter a positive number"
+                        value={answers[fixedQuestions[currentQuestionIndex].id] || ''}
+                        onChange={e => handleNumberChange(
+                          fixedQuestions[currentQuestionIndex].id, 
+                          e.target.value
+                        )}
+                        className="border-2 focus:border-[#FF007F]"
+                      />
+                    </div>
+                    <QuestionAuraInfo type="number" />
+                  </div>
+                )}
+
+                <div className="flex justify-between pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigateFixedQuestion('prev')}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    <ChevronLeft size={16} className="mr-2" /> Previous
+                  </Button>
+                
+                  {currentQuestionIndex < fixedQuestions.length - 1 ? (
+                    <Button
+                      type="button"
+                      onClick={() => navigateFixedQuestion('next')}
+                      className="bg-[#00DDEB] hover:bg-[#00BBCC]"
+                      disabled={!isQuestionConfigured(fixedQuestions[currentQuestionIndex])}
+                    >
+                      Next <ChevronRight size={16} className="ml-2" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={() => handleNextStep()}
+                      className={cn(
+                        "bg-[#FF007F] hover:bg-[#D6006C]",
+                        !canProceedFromFixed() && "opacity-50 cursor-not-allowed"
+                      )}
+                      disabled={!canProceedFromFixed()}
+                    >
+                      Continue to Custom Questions <ChevronRight size={16} className="ml-2" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
-            
-            {currentStep === 'review' && (
-              <Button
-                type="button"
-                onClick={handleCreateQuiz}
-                className="ml-auto bg-[#00DDEB] hover:bg-[#00BBCC]"
-              >
-                Create Quiz <Check size={16} className="ml-2" />
-              </Button>
+          </div>
+        )}
+
+        {currentStep === 'custom' && (
+          <div className="space-y-4">
+            {selectedCustomQuestions.length < 3 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Select Custom Questions</h3>
+                  {customQuestions.map((question, idx) => (
+                    <div key={question.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-white">
+                      <Checkbox
+                        id={`question-${idx}`}
+                        checked={selectedCustomQuestions.includes(question.id)}
+                        onCheckedChange={(checked) => handleCustomQuestionSelect(!!checked, question.id)}
+                        className="mt-1"
+                        disabled={!selectedCustomQuestions.includes(question.id) && selectedCustomQuestions.length >= 3}
+                      />
+                      <div className="space-y-1">
+                        <Label htmlFor={`question-${idx}`} className="font-medium">
+                          {question.text} <span className="text-xs text-gray-500">({question.type})</span>
+                        </Label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {selectedCustomQuestions.length === 3 && (
+                  <Button
+                    onClick={() => {
+                      if (selectedCustomQuestions.length === 3) {
+                        setCustomQuestionIndex(0);
+                        setCurrentStep('custom');
+                      } else {
+                        toast({
+                          variant: "destructive",
+                          title: "Error",
+                          description: "Please select exactly 3 custom questions before proceeding.",
+                        });
+                      }
+                    }}
+                    className="w-full bg-[#FF007F] hover:bg-[#D6006C]"
+                  >
+                    Continue to Configure Questions
+                  </Button>
+                )}
+              </div>
             )}
-          </CardFooter>
-        </Card>
+
+            {selectedCustomQuestions.length === 3 && customQuestionIndex >= 0 && (
+              <div className="space-y-6">
+                {(() => {
+                  const selectedQuestions = customQuestions.filter(q => 
+                    selectedCustomQuestions.includes(q.id)
+                  );
+                  const currentQuestion = selectedQuestions[customQuestionIndex];
+                  
+                  if (!currentQuestion) return null;
+
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium">
+                          {currentQuestion.text}
+                        </h3>
+                        <QuestionAuraInfo type={currentQuestion.type} />
+                      </div>
+
+                      {currentQuestion.type === 'mcq' && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-500">
+                              Drag options to set their priority (1st is most like you, 4th is least)
+                            </p>
+                            <DndContext 
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={(event) => handleDragEnd(event, currentQuestion.id)}
+                              modifiers={[restrictToVerticalAxis]}
+                            >
+                              <SortableContext 
+                                items={answers[currentQuestion.id] || []}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                {answers[currentQuestion.id]?.map((option: string, index: number) => (
+                                  <SortableOption 
+                                    key={option} 
+                                    id={option} 
+                                    option={option}
+                                    index={index} 
+                                  />
+                                ))}
+                              </SortableContext>
+                            </DndContext>
+                          </div>
+                          <QuestionAuraInfo type="mcq" />
+                        </div>
+                      )}
+
+                      {currentQuestion.type === 'number' && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`number-${currentQuestion.id}`}>Enter a positive number:</Label>
+                            <Input
+                              id={`number-${currentQuestion.id}`}
+                              type="number"
+                              min="1"
+                              placeholder="Enter a positive number"
+                              value={answers[currentQuestion.id] || ''}
+                              onChange={e => handleNumberChange(currentQuestion.id, e.target.value)}
+                              className="border-2 focus:border-[#FF007F]"
+                            />
+                          </div>
+                          <QuestionAuraInfo type="number" />
+                        </div>
+                      )}
+
+                      <div className="flex justify-between pt-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => navigateCustomQuestion('prev')}
+                          disabled={customQuestionIndex === 0}
+                        >
+                          <ChevronLeft size={16} className="mr-2" /> Previous
+                        </Button>
+                      
+                        {customQuestionIndex < selectedQuestions.length - 1 ? (
+                          <Button
+                            type="button"
+                            onClick={() => navigateCustomQuestion('next')}
+                            className="bg-[#00DDEB] hover:bg-[#00BBCC]"
+                            disabled={!isCustomQuestionConfigured(currentQuestion.id)}
+                          >
+                            Next <ChevronRight size={16} className="ml-2" />
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            onClick={handleCompleteCustomQuestionConfig}
+                            className={cn(
+                              "bg-[#FF007F] hover:bg-[#D6006C]",
+                              !isCustomQuestionConfigured(currentQuestion.id) && "opacity-50 cursor-not-allowed"
+                            )}
+                            disabled={!isCustomQuestionConfigured(currentQuestion.id)}
+                          >
+                            Review Quiz <ChevronRight size={16} className="ml-2" />
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentStep === 'review' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-medium">Quiz Name</h3>
+              <p className="text-lg mt-1">{quizName}</p>
+            </div>
+
+            <div>
+              <h3 className="font-medium">Fixed Questions ({fixedQuestions.length})</h3>
+              <ul className="mt-2 space-y-2">
+                {fixedQuestions.map(q => (
+                  <li key={q.id} className="text-sm">
+                    • {q.text} 
+                    <span className="ml-2 text-xs text-gray-500">
+                      {q.type === 'mcq' ? 
+                        `(Priority: ${answers[q.id]?.join(' > ')})` : 
+                        `(Answer: ${answers[q.id]})`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-medium">Custom Questions (3)</h3>
+              <ul className="mt-2 space-y-2">
+                {customQuestions
+                  .filter(q => selectedCustomQuestions.includes(q.id))
+                  .map(q => (
+                    <li key={q.id} className="text-sm">
+                      • {q.text}
+                      <span className="ml-2 text-xs text-gray-500">
+                        {q.type === 'mcq' ? 
+                          `(Priority: ${answers[q.id]?.join(' > ')})` : 
+                          `(Answer: ${answers[q.id]})`}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
       <QuizLimitModal

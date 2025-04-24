@@ -198,75 +198,35 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="created" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 relative overflow-hidden bg-gradient-to-r from-pink-100 to-blue-100">
-            <TabsTrigger 
-              value="created" 
-              className="data-[state=active]:bg-white data-[state=active]:text-[#FF007F] relative z-10 transition-all duration-300"
-            >
-              Created Quizzes
-            </TabsTrigger>
-            <TabsTrigger 
-              value="taken" 
-              className="data-[state=active]:bg-white data-[state=active]:text-[#00DDEB] relative z-10 transition-all duration-300"
-            >
-              Taken Quizzes
-            </TabsTrigger>
-            <div className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-[#FF007F] to-[#00DDEB] w-full transform origin-left scale-x-0 transition-transform data-[state=visible]:scale-x-100" />
-          </TabsList>
-          
-          <TabsContent value="created" className="space-y-4">
-            {createdQuizzes.length === 0 ? (
-              <div className="text-center p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <Rocket className="w-16 h-16 mx-auto mb-4 text-[#FF007F] animate-bounce" />
-                <h2 className="text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
-                  No quizzes created yet
-                </h2>
-                <p className="text-gray-500 mb-4">Create your first quiz to start measuring your friends' auras!</p>
-                <Button
-                  onClick={() => navigate('/quiz/create')}
-                  className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transform transition-all duration-300 animate-pulse"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Create Quiz
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {createdQuizzes.map((quiz) => (
-                  <QuizCard
-                    key={quiz.id}
-                    quiz={quiz}
-                    onViewAnalytics={() => navigate(`/quiz/${quiz.id}/analytics`)}
-                    showCopyLink
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="taken" className="space-y-4">
-            {takenQuizzes.length === 0 ? (
-              <div className="text-center p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <Baby className="w-16 h-16 mx-auto mb-4 text-[#00DDEB] animate-bounce" />
-                <h2 className="text-xl font-bold mb-2">No quizzes taken yet</h2>
-                <p className="text-gray-500">Ask your friends to share their quizzes with you!</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {takenQuizzes.map((quiz) => (
-                  <QuizCard
-                    key={quiz.id}
-                    quiz={quiz}
-                    showCreator
-                    showCopyLink
-                    onView={() => navigate(`/quiz/${quiz.id}/analytics`)}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        <div className="space-y-4">
+          {createdQuizzes.length === 0 ? (
+            <div className="text-center p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <Rocket className="w-16 h-16 mx-auto mb-4 text-[#FF007F] animate-bounce" />
+              <h2 className="text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#FF007F] to-[#00DDEB]">
+                No quizzes created yet
+              </h2>
+              <p className="text-gray-500 mb-4">Create your first quiz to start measuring your friends' auras!</p>
+              <Button
+                onClick={() => navigate('/quiz/create')}
+                className="bg-[#FF007F] hover:bg-[#D6006C] hover:scale-105 transform transition-all duration-300 animate-pulse"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Create Quiz
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {createdQuizzes.map((quiz) => (
+                <QuizCard
+                  key={quiz.id}
+                  quiz={quiz}
+                  onViewAnalytics={() => navigate(`/quiz/${quiz.id}/analytics`)}
+                  showCopyLink
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </PageLayout>
   );
