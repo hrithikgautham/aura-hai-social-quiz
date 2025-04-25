@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import QuizCreate from "./pages/QuizCreate";
 import QuizTake from "./pages/QuizTake";
-import QuizAnalytics from "./pages/QuizAnalytics";
+import QuizSummary from "./pages/QuizAnalytics";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -118,9 +118,9 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/quiz/:quizId" element={<QuizTake />} />
-            <Route path="/quiz/:quizId/analytics" element={
+            <Route path="/quiz/:quizId/summary" element={
               <ProtectedRoute>
-                <QuizAnalytics />
+                <QuizSummary />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

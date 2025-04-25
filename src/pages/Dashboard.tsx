@@ -220,7 +220,7 @@ const Dashboard = () => {
                 <QuizCard
                   key={quiz.id}
                   quiz={quiz}
-                  onViewAnalytics={() => navigate(`/quiz/${quiz.id}/analytics`)}
+                  onViewAnalytics={() => navigate(`/quiz/${quiz.id}/summary`)}
                   showCopyLink
                 />
               ))}

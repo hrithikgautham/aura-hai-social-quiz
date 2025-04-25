@@ -15,7 +15,7 @@ import { QuizData, AuraPoints } from '@/types/quiz-analytics';
 import PageLayout from '@/components/layout/PageLayout';
 import { useToast } from '@/hooks/use-toast';
 
-const QuizAnalytics = () => {
+const QuizSummary = () => {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -320,4 +320,4 @@ const QuizAnalytics = () => {
   );
 };
 
-export default QuizAnalytics;
+export default QuizSummary;
