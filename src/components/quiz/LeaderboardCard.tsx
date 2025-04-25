@@ -1,215 +1,70 @@
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ResponseData } from '@/types/quiz';
-import { Medal, Trophy } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface LeaderboardCardProps {
-  responses: ResponseData[];
+interface LeaderboardProps {
+  responses: any[];
 }
 
-interface UserData {
-  id: string;
-  username: string;
-  avatar_url?: string;
-}
-
-export function LeaderboardCard({ responses }: LeaderboardCardProps) {
-  const [usersData, setUsersData] = useState<Record<string, UserData>>({});
-  const [creatorData, setCreatorData] = useState<{ id: string; username: string; avatar_url?: string } | null>(null);
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const userIds = responses.map(r => r.respondent_id);
-        
-        if (userIds.length === 0) return;
-
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, username, avatar_url')
-          .in('id', userIds);
-
-        if (error) {
-          console.error('Error fetching users:', error);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to load user data for leaderboard.",
-          });
-          return;
-        }
-
-        const usersMap = data?.reduce((acc: Record<string, UserData>, user) => {
-          acc[user.id] = user;
-          return acc;
-        }, {}) || {};
-
-        setUsersData(usersMap);
-      } catch (err) {
-        console.error('Error in fetchUsers:', err);
-      }
-    };
-
-    const fetchCreator = async () => {
-      try {
-        if (responses.length === 0) return;
-        
-        const quizId = responses[0].quiz_id;
-        
-        const { data: quizData, error: quizError } = await supabase
-          .from('quizzes')
-          .select('creator_id')
-          .eq('id', quizId)
-          .single();
-        
-        if (quizError) {
-          console.error('Error fetching quiz creator:', quizError);
-          return;
-        }
-        
-        if (quizData && quizData.creator_id) {
-          const { data: creatorUserData, error: creatorError } = await supabase
-            .from('users')
-            .select('id, username, avatar_url')
-            .eq('id', quizData.creator_id)
-            .single();
-          
-          if (creatorError) {
-            console.error('Error fetching creator user data:', creatorError);
-            return;
-          }
-          
-          setCreatorData(creatorUserData);
-        }
-      } catch (err) {
-        console.error('Error in fetchCreator:', err);
-      }
-    };
-
-    if (responses.length > 0) {
-      fetchUsers();
-      fetchCreator();
-    }
-  }, [responses, toast]);
-
-  const sortedResponses = [...responses]
-    .sort((a, b) => b.aura_points - a.aura_points);
-
-  const getMedalIcon = (position: number) => {
-    switch (position) {
-      case 0:
-        return <Trophy className="h-4 w-4 text-yellow-500" />;
-      case 1:
-        return <Medal className="h-4 w-4 text-gray-400" />;
-      case 2:
-        return <Medal className="h-4 w-4 text-amber-700" />;
-      default:
-        return null;
-    }
-  };
+export function LeaderboardCard({ responses }: LeaderboardProps) {
+  const filteredResponses = responses
+    .filter(response => !response.is_creator) // Add this filter
+    .sort((a, b) => (b.aura_points || 0) - (a.aura_points || 0))
+    .slice(0, 10);
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Leaderboard</CardTitle>
-        <CardDescription>All respondents by aura points</CardDescription>
+        <CardTitle className="text-xl md:text-2xl">Leaderboard</CardTitle>
+        <CardDescription className="text-sm md:text-base">Top participants by aura points</CardDescription>
       </CardHeader>
-      <CardContent>
-        {sortedResponses.length > 0 || creatorData ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">Rank</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead className="text-right">Aura Points</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {creatorData && (
-                <TableRow>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <Trophy className="h-4 w-4 text-yellow-500" />
-                      Creator
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={creatorData.avatar_url || ''} alt={creatorData.username} />
-                        <AvatarFallback>{creatorData.username[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      {creatorData.username}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">100000</TableCell>
-                </TableRow>
-              )}
-              {sortedResponses.map((response, index) => {
-                const user = usersData[response.respondent_id];
-                
-                if (!user) {
-                  return (
-                    <TableRow key={response.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {getMedalIcon(index)}
-                          {index + 1}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>?</AvatarFallback>
-                          </Avatar>
-                          Loading user...
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">{response.aura_points}</TableCell>
-                    </TableRow>
-                  );
-                }
-                
-                return (
-                  <TableRow key={response.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {getMedalIcon(index)}
-                        {index + 1}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={user.avatar_url || ''} alt={user.username} />
-                          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rank
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aura Points
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredResponses.map((response, index) => (
+                <tr key={response.id}>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{index + 1}</div>
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="mr-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={response.users?.avatar_url} alt={response.users?.username} />
+                          <AvatarFallback>{response.users?.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        {user.username}
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right">{response.aura_points}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="py-6 text-center text-gray-500">
-            No responses yet
-          </div>
-        )}
+                      <div className="text-sm font-medium text-gray-900">{response.users?.username}</div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap text-right">
+                    <div className="text-sm text-gray-900">{response.aura_points}</div>
+                  </td>
+                </tr>
+              ))}
+              {filteredResponses.length === 0 && (
+                <tr>
+                  <td className="px-4 py-2 whitespace-nowrap text-center" colSpan={3}>
+                    <div className="text-sm text-gray-500">No responses yet. Be the first to take the quiz!</div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );
