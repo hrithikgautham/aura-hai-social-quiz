@@ -1,14 +1,12 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
 import { ProfileCheckModal } from '@/components/quiz/ProfileCheckModal';
 import { QuestionList } from '@/components/quiz/create/QuestionList';
-import { CustomQuestionSelector } from '@/components/quiz/create/CustomQuestionSelector';
 import { ArrangeOptionsModal } from '@/components/quiz/create/ArrangeOptionsModal';
 import { QuizNameInput } from '@/components/quiz/create/QuizNameInput';
-import QuizCreate from '@/components/quiz/QuizCreate';
+import { CustomQuestionSelectorCard } from '@/components/quiz/create/CustomQuestionSelectorCard';
 import { useQuizCreate } from '@/hooks/useQuizCreate';
 
 export default function QuizCreatePage() {
@@ -75,21 +73,13 @@ export default function QuizCreatePage() {
         emptyMessage="No custom questions selected."
       />
 
-      <Card>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4 mt-4">
-            <h3 className="text-xl font-semibold">Custom Questions</h3>
-            <QuizCreate handleShowQuestionSelector={handleShowQuestionSelector} />
-          </div>
-
-          <CustomQuestionSelector
-            customQuestions={customQuestions}
-            selectedCustomQuestions={selectedCustomQuestions}
-            onToggleQuestion={toggleCustomQuestion}
-            showQuestionSelector={showQuestionSelector}
-          />
-        </CardContent>
-      </Card>
+      <CustomQuestionSelectorCard
+        customQuestions={customQuestions}
+        selectedCustomQuestions={selectedCustomQuestions}
+        onToggleQuestion={toggleCustomQuestion}
+        showQuestionSelector={showQuestionSelector}
+        handleShowQuestionSelector={handleShowQuestionSelector}
+      />
 
       <ArrangeOptionsModal
         isOpen={!!activeQuestion}
