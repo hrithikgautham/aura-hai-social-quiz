@@ -1,4 +1,3 @@
-
 export interface ResponseData {
   id: string;
   respondent_id: string;
@@ -19,4 +18,12 @@ export interface ChartData {
   name: string;
   value: number;
   color?: string;
+}
+
+export interface Question {
+  id: string;
+  text: string;
+  type: 'mcq' | 'number';
+  options?: string[];
+  is_fixed: boolean;
 }
