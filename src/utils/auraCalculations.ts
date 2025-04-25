@@ -1,7 +1,12 @@
-
 // Points assigned based on position (1st choice = 4 points, 4th choice = 1 point)
 export const getPointsForPosition = (position: number): number => {
   return 5 - position; // 1st -> 4, 2nd -> 3, 3rd -> 2, 4th -> 1
+};
+
+// Calculate points for number-type questions based on the user's answer
+export const calculateNumberAuraPoints = (userAnswer: number, maxPoints: number = 10000): number => {
+  const normalizedAnswer = Math.min(5, Math.max(0, userAnswer));
+  return (normalizedAnswer / 5) * maxPoints;
 };
 
 // Calculate aura points based on MCQ priority order

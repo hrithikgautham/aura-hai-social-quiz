@@ -253,15 +253,6 @@ const QuizCreate = () => {
       setCurrentStep('custom');
     }
     else if (currentStep === 'custom') {
-      if (selectedCustomQuestions.length !== 3) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Please select exactly 3 custom questions.",
-        });
-        return;
-      }
-      
       if (!canProceedFromCustom()) {
         toast({
           variant: "destructive",
@@ -270,8 +261,7 @@ const QuizCreate = () => {
         });
         return;
       }
-      
-      setCurrentStep('review');
+      handleCreateQuiz();
     }
   };
 
@@ -465,7 +455,7 @@ const QuizCreate = () => {
     }
     
     if (selectedCustomQuestions.length === configuredCustomQuestions.length + 1) {
-      setCurrentStep('review');
+      handleCreateQuiz();
     } else {
       const nextUnconfiguredIndex = selectedQuestions.findIndex((q, idx) => 
         idx > customQuestionIndex && !configuredCustomQuestions.includes(q.id)
@@ -870,14 +860,14 @@ const QuizCreate = () => {
                             ) : (
                               <Button
                                 type="button"
-                                onClick={handleCompleteCustomQuestionConfig}
+                                onClick={handleCreateQuiz}
                                 className={cn(
                                   "bg-[#FF007F] hover:bg-[#D6006C]",
                                   !isCustomQuestionConfigured(currentQuestion.id) && "opacity-50 cursor-not-allowed"
                                 )}
                                 disabled={!isCustomQuestionConfigured(currentQuestion.id)}
                               >
-                                Review Quiz <ChevronRight size={16} className="ml-2" />
+                                Create Quiz <ChevronRight size={16} className="ml-2" />
                               </Button>
                             )}
                           </div>
@@ -886,49 +876,6 @@ const QuizCreate = () => {
                     })()}
                   </div>
                 )}
-              </div>
-            )}
-
-            {currentStep === 'review' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-medium">Quiz Name</h3>
-                  <p className="text-lg mt-1">{quizName}</p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium">Fixed Questions ({fixedQuestions.length})</h3>
-                  <ul className="mt-2 space-y-2">
-                    {fixedQuestions.map(q => (
-                      <li key={q.id} className="text-sm">
-                        • {q.text} 
-                        <span className="ml-2 text-xs text-gray-500">
-                          {q.type === 'mcq' ? 
-                            `(Priority: ${answers[q.id]?.join(' > ')})` : 
-                            `(Answer: ${answers[q.id]})`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-medium">Custom Questions (3)</h3>
-                  <ul className="mt-2 space-y-2">
-                    {customQuestions
-                      .filter(q => selectedCustomQuestions.includes(q.id))
-                      .map(q => (
-                        <li key={q.id} className="text-sm">
-                          • {q.text}
-                          <span className="ml-2 text-xs text-gray-500">
-                            {q.type === 'mcq' ? 
-                              `(Priority: ${answers[q.id]?.join(' > ')})` : 
-                              `(Answer: ${answers[q.id]})`}
-                          </span>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
               </div>
             )}
           </CardContent>
