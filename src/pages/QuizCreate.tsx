@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,16 +11,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { generateSequentialLink } from '@/utils/linkGenerator';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
 import { ProfileCheckModal } from '@/components/quiz/ProfileCheckModal';
+import { QuestionAuraInfo } from '@/components/quiz/QuestionAuraInfo';
 import {
-  ChevronLeft,
   ChevronRight,
   ArrowUpDown,
-  Check,
 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cn } from '@/lib/utils';
+import QuizCreate from '@/components/quiz/QuizCreate';
 
 type Question = {
   id: string;
@@ -67,7 +68,7 @@ const SortableOption = ({ id, option, index, isDragging }: { id: string, option:
   );
 };
 
-const QuizCreate = () => {
+const QuizCreatePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -83,6 +84,7 @@ const QuizCreate = () => {
   const [profileComplete, setProfileComplete] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showQuestionSelector, setShowQuestionSelector] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -102,11 +104,12 @@ const QuizCreate = () => {
 
         if (fixedError) throw fixedError;
 
-        const processed = (fixedQuestionsData || []).map(q => ({
+        // Process the data and ensure options are string arrays
+        const processed: Question[] = (fixedQuestionsData || []).map(q => ({
           id: q.id,
           text: q.text,
           type: q.type as 'mcq' | 'number',
-          options: Array.isArray(q.options) ? q.options : undefined,
+          options: Array.isArray(q.options) ? q.options.map(opt => String(opt)) : undefined,
           is_fixed: q.is_fixed
         }));
 
@@ -129,11 +132,11 @@ const QuizCreate = () => {
 
         if (customError) throw customError;
 
-        const processedCustom = (customQuestionsData || []).map(q => ({
+        const processedCustom: Question[] = (customQuestionsData || []).map(q => ({
           id: q.id,
           text: q.text,
           type: q.type as 'mcq' | 'number',
-          options: Array.isArray(q.options) ? q.options : undefined,
+          options: Array.isArray(q.options) ? q.options.map(opt => String(opt)) : undefined,
           is_fixed: q.is_fixed
         }));
 
@@ -270,6 +273,10 @@ const QuizCreate = () => {
     }
   };
 
+  const handleShowQuestionSelector = () => {
+    setShowQuestionSelector(!showQuestionSelector);
+  };
+
   const hasSelectedQuestions = fixedQuestions.length > 0 || selectedCustomQuestions.length > 0;
 
   if (loading) {
@@ -336,13 +343,15 @@ const QuizCreate = () => {
         <>
           <Card className="mb-6">
             <CardContent>
+              <CardTitle className="mb-4 pt-4">Fixed Questions</CardTitle>
               {fixedQuestions.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">No fixed questions available.</p>
               ) : (
                 <div className="space-y-4">
                   {fixedQuestions.map(question => (
                     <Card key={question.id} className="border border-gray-200">
-                      <CardContent>
+                      <CardContent className="pt-6">
+                        <div className="font-medium mb-3">{question.text}</div>
                         {question.type === 'mcq' && question.options && (
                           <Button
                             variant="outline"
@@ -356,10 +365,11 @@ const QuizCreate = () => {
                           </Button>
                         )}
                         {question.type === 'number' && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 mb-4">
                             Number input question (1-5)
                           </div>
                         )}
+                        <QuestionAuraInfo type={question.type} />
                       </CardContent>
                     </Card>
                   ))}
@@ -368,8 +378,9 @@ const QuizCreate = () => {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="mb-6">
             <CardContent>
+              <CardTitle className="mb-4 pt-4">Selected Custom Questions</CardTitle>
               {selectedCustomQuestions.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">No custom questions selected.</p>
               ) : (
@@ -378,7 +389,8 @@ const QuizCreate = () => {
                     .filter(q => selectedCustomQuestions.includes(q.id))
                     .map(question => (
                       <Card key={question.id} className="border border-gray-200">
-                        <CardContent>
+                        <CardContent className="pt-6">
+                          <div className="font-medium mb-3">{question.text}</div>
                           {question.type === 'mcq' && question.options && (
                             <Button
                               variant="outline"
@@ -392,10 +404,11 @@ const QuizCreate = () => {
                             </Button>
                           )}
                           {question.type === 'number' && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 mb-4">
                               Number input question (1-5)
                             </div>
                           )}
+                          <QuestionAuraInfo type={question.type} />
                         </CardContent>
                       </Card>
                     ))}
@@ -403,29 +416,38 @@ const QuizCreate = () => {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent>
-              {customQuestions.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No custom questions available.</p>
-              ) : (
-                <div className="space-y-4">
-                  {customQuestions.map(question => (
-                    <div key={question.id} className="flex items-center space-x-2 mb-4">
-                      <Checkbox
-                        checked={selectedCustomQuestions.includes(question.id)}
-                        onCheckedChange={() => toggleCustomQuestion(question.id)}
-                        id={`q-${question.id}`}
-                      />
-                      <label htmlFor={`q-${question.id}`} className="flex-1 cursor-pointer">
-                        <div className="font-medium">{question.text}</div>
-                        <div className="text-sm text-gray-500">
-                          {question.type === 'mcq' ? 'Multiple Choice' : 'Number'} Question
+              <div className="flex justify-between items-center mb-4 mt-4">
+                <CardTitle>Custom Questions</CardTitle>
+                <QuizCreate handleShowQuestionSelector={handleShowQuestionSelector} />
+              </div>
+
+              {showQuestionSelector && (
+                <>
+                  {customQuestions.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">No custom questions available.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {customQuestions.map(question => (
+                        <div key={question.id} className="flex items-center space-x-2 mb-4">
+                          <Checkbox
+                            checked={selectedCustomQuestions.includes(question.id)}
+                            onCheckedChange={() => toggleCustomQuestion(question.id)}
+                            id={`q-${question.id}`}
+                          />
+                          <label htmlFor={`q-${question.id}`} className="flex-1 cursor-pointer">
+                            <div className="font-medium">{question.text}</div>
+                            <div className="text-sm text-gray-500">
+                              {question.type === 'mcq' ? 'Multiple Choice' : 'Number'} Question
+                            </div>
+                          </label>
                         </div>
-                      </label>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -435,7 +457,11 @@ const QuizCreate = () => {
       {activeQuestion && answers[activeQuestion] && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
-            <CardContent>
+            <CardContent className="pt-6">
+              <CardTitle className="mb-4">Arrange Options</CardTitle>
+              <CardDescription className="mb-4">
+                Drag and drop the options to set the order. The first option will be worth more points.
+              </CardDescription>
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -458,6 +484,13 @@ const QuizCreate = () => {
                   ))}
                 </SortableContext>
               </DndContext>
+              
+              <Button 
+                onClick={() => setActiveQuestion(null)}
+                className="w-full mt-4"
+              >
+                Done
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -466,14 +499,21 @@ const QuizCreate = () => {
       <div className="flex justify-end mt-6">
         <Button 
           onClick={handleNextStep}
-          disabled={!quizName.trim() || !hasReadAuraInfo || !hasSelectedQuestions}
+          disabled={!quizName.trim() || !hasReadAuraInfo || (step === 'question_selection' && !hasSelectedQuestions)}
           className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB]"
         >
-          {step === 'name' ? 'Next' : 'Create Quiz'}
+          {step === 'name' ? (
+            <>
+              Next
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </>
+          ) : (
+            'Create Quiz'
+          )}
         </Button>
       </div>
     </div>
   );
 };
 
-export default QuizCreate;
+export default QuizCreatePage;

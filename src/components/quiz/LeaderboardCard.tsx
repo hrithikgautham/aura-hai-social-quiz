@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -7,7 +8,7 @@ interface LeaderboardProps {
 
 export function LeaderboardCard({ responses }: LeaderboardProps) {
   const filteredResponses = responses
-    .filter(response => !response.is_creator) // Add this filter
+    .filter(response => !response.is_creator) // Filter out creator responses
     .sort((a, b) => (b.aura_points || 0) - (a.aura_points || 0))
     .slice(0, 10);
 
