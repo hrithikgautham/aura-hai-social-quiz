@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,7 +89,7 @@ const QuizCreate = () => {
   const [responseCount, setResponseCount] = useState(0);
   const [quizCount, setQuizCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
-  
+  const [hasReadAuraCalculation, setHasReadAuraCalculation] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -231,11 +231,11 @@ const QuizCreate = () => {
 
   const handleNextStep = () => {
     if (currentStep === 'name') {
-      if (quizName.trim().length < 3) {
+      if (quizName.trim().length < 3 || !hasReadAuraCalculation) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Quiz name must be at least 3 characters long.",
+          description: "Quiz name must be at least 3 characters long and you must read the aura calculation method.",
         });
         return;
       }
@@ -598,6 +598,39 @@ const QuizCreate = () => {
                     className="border-2 focus:border-[#FF007F]"
                   />
                 </div>
+
+                <div className="bg-gradient-to-r from-[#FF007F]/10 to-[#00DDEB]/10 p-4 rounded-lg border border-[#FF007F]/20">
+                  <h3 className="text-lg font-semibold text-[#FF007F] mb-3">Understanding Aura Calculation</h3>
+                  <p className="text-sm text-gray-700 mb-2">
+                    In this quiz, your answers will be used to calculate your unique aura points. 
+                    Each question is designed to reveal different aspects of your personality and energy.
+                  </p>
+                  <p className="text-sm text-gray-700 mb-2">
+                    The aura calculation method involves:
+                    <ul className="list-disc list-inside ml-2">
+                      <li>Analyzing your prioritized answers</li>
+                      <li>Assigning weighted points based on your choices</li>
+                      <li>Creating a holistic representation of your personal energy</li>
+                    </ul>
+                  </p>
+                  <p className="text-sm text-gray-700 italic">
+                    Remember, there are no right or wrong answers - just your authentic self!
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2 mt-4">
+                  <Checkbox 
+                    id="auraCalculationConfirm"
+                    checked={hasReadAuraCalculation}
+                    onCheckedChange={() => setHasReadAuraCalculation(!hasReadAuraCalculation)}
+                  />
+                  <Label 
+                    htmlFor="auraCalculationConfirm"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I have read and understood the aura calculation method
+                  </Label>
+                </div>
               </div>
             )}
 
@@ -917,7 +950,7 @@ const QuizCreate = () => {
                 onClick={handleNextStep}
                 className="ml-auto bg-[#FF007F] hover:bg-[#D6006C]"
                 disabled={
-                  (currentStep === 'name' && quizName.trim().length < 3)
+                  (currentStep === 'name' && (quizName.trim().length < 3 || !hasReadAuraCalculation))
                 }
               >
                 Next Step <ChevronRight size={16} className="ml-2" />
