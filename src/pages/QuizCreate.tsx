@@ -48,7 +48,10 @@ export default function QuizCreatePage() {
   }
 
   return (
-    <div className="container max-w-3xl py-8 mx-auto">
+    <div
+      className="container max-w-3xl py-8 mx-auto"
+      style={{ backgroundImage: 'url(/create-quiz-bg.svg)', backgroundSize: 'cover' }}
+    >
       <ProfileCheckModal 
         isOpen={showProfileCheck} 
         onComplete={() => setShowProfileCheck(false)}

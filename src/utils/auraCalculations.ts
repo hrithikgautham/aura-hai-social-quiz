@@ -1,9 +1,20 @@
-
-// Points assigned based on position (1st choice = 4 points, 4th choice = 1 point)
+// Modify getPointsForPosition to assign points based on priority:
+// 1st choice = 10000 points
+// 2nd choice = 6000 points
+// 3rd choice = 3000 points
+// 4th choice = 0 points
 export const getPointsForPosition = (position: number): number => {
-  return 5 - position; // 1st -> 4, 2nd -> 3, 3rd -> 2, 4th -> 1
+  switch (position) {
+    case 1:
+      return 10000;
+    case 2:
+      return 6000;
+    case 3:
+      return 3000;
+    default:
+      return 0;
+  }
 };
-
 // Calculate points for number-type questions based on the user's answer
 export const calculateNumberAuraPoints = (userAnswer: number, maxPoints: number = 10000): number => {
   const normalizedAnswer = Math.min(5, Math.max(0, userAnswer));

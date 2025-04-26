@@ -16,7 +16,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [createdQuizzes, setCreatedQuizzes] = useState<any[]>([]);
-  const [takenQuizzes, setTakenQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [inProgressQuizzes, setInProgressQuizzes] = useState<any[]>([]);
   const [responseCount, setResponseCount] = useState(0);
@@ -53,16 +52,6 @@ const Dashboard = () => {
       if (createdError) throw createdError;
       setCreatedQuizzes(createdData || []);
 
-      const { data: takenData, error: takenError } = await supabase
-        .from('responses')
-        .select('*, quizzes(*, responses(*), users(*))')
-        .eq('respondent_id', user?.id)
-        .not('quizzes', 'is', null);
-
-      if (takenError) throw takenError;
-
-      const takenQuizList = takenData ? takenData.map(response => response.quizzes) : [];
-      setTakenQuizzes(takenQuizList || []);
 
       const inProgressQuizIds = [];
       
