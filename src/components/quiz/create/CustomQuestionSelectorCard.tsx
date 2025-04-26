@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Question } from '@/types/quiz';
 import { CustomQuestionSelector } from './CustomQuestionSelector';
-import QuizCreate from './QuizCreate';
+import QuizCreate from '@/components/quiz/QuizCreate';
 
 interface CustomQuestionSelectorCardProps {
   customQuestions: Question[];
