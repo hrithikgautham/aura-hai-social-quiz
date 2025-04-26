@@ -2,11 +2,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import QuirkyLoading from '@/components/layout/QuirkyLoading';
-import { ProfileCheckModal } from '@/components/quiz/ProfileCheckModal';
-import { QuestionList } from '@/components/quiz/create/QuestionList';
+import { ShareDialog } from '@/components/quiz/analytics/ShareDialog';
+import { CustomQuestionSelectorCard } from '@/components/quiz/create/CustomQuestionSelectorCard';
 import { ArrangeOptionsModal } from '@/components/quiz/create/ArrangeOptionsModal';
 import { QuizNameInput } from '@/components/quiz/create/QuizNameInput';
-import { CustomQuestionSelectorCard } from '@/components/quiz/create/CustomQuestionSelectorCard';
 import { useQuizCreate } from '@/hooks/useQuizCreate';
 
 export default function QuizCreatePage() {
@@ -14,34 +13,46 @@ export default function QuizCreatePage() {
     loading,
     quizName,
     setQuizName,
-    fixedQuestions,
     customQuestions,
     selectedCustomQuestions,
     answers,
-    hasReadAuraInfo,
-    setHasReadAuraInfo,
     handleCreateQuiz,
     toggleCustomQuestion,
     handleOptionReorder,
+    createdQuizLink,
   } = useQuizCreate();
 
-  const [showProfileCheck, setShowProfileCheck] = useState(false);
-  const [showQuestionSelector, setShowQuestionSelector] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showQuestionSelector, setShowQuestionSelector] = useState(true);
   const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const handleShowQuestionSelector = () => {
     setShowQuestionSelector(!showQuestionSelector);
   };
 
-  const handleArrangeOptions = (questionId: string) => {
+  // Get only 3 unselected questions for the current step
+  const availableQuestions = customQuestions.filter(q => 
+    !selectedCustomQuestions.includes(q.id)
+  ).slice((currentStep - 1) * 3, currentStep * 3);
+
+  const handleQuestionSelect = (questionId: string) => {
+    toggleCustomQuestion(questionId);
     setActiveQuestion(questionId);
   };
 
-  const selectedCustomQuestionsList = customQuestions.filter(q => 
-    selectedCustomQuestions.includes(q.id)
-  );
-  
-  const hasSelectedQuestions = fixedQuestions.length > 0 || selectedCustomQuestions.length > 0;
+  const handlePrioritySet = () => {
+    setActiveQuestion(null);
+    if (selectedCustomQuestions.length < 3 && currentStep < 3) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      handleCreateQuiz().then((success) => {
+        if (success) {
+          setShowShareDialog(true);
+        }
+      });
+    }
+  };
 
   if (loading) {
     return <QuirkyLoading />;
@@ -52,36 +63,19 @@ export default function QuizCreatePage() {
       className="container max-w-3xl py-8 mx-auto"
       style={{ backgroundImage: 'url(/create-quiz-bg.svg)', backgroundSize: 'cover' }}
     >
-      <ProfileCheckModal 
-        isOpen={showProfileCheck} 
-        onComplete={() => setShowProfileCheck(false)}
-      />
-      
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-center mb-2">Create Your Quiz</h1>
       </div>
 
       <QuizNameInput value={quizName} onChange={setQuizName} />
 
-      <QuestionList
-        title="Fixed Questions"
-        questions={fixedQuestions}
-        onArrangeOptions={handleArrangeOptions}
-      />
-
-      <QuestionList
-        title="Selected Custom Questions"
-        questions={selectedCustomQuestionsList}
-        onArrangeOptions={handleArrangeOptions}
-        emptyMessage="No custom questions selected."
-      />
-
       <CustomQuestionSelectorCard
-        customQuestions={customQuestions}
+        customQuestions={availableQuestions}
         selectedCustomQuestions={selectedCustomQuestions}
-        onToggleQuestion={toggleCustomQuestion}
+        onToggleQuestion={handleQuestionSelect}
         showQuestionSelector={showQuestionSelector}
         handleShowQuestionSelector={handleShowQuestionSelector}
+        step={currentStep}
       />
 
       <ArrangeOptionsModal
@@ -91,19 +85,16 @@ export default function QuizCreatePage() {
         onArrange={(newOrder) => {
           if (activeQuestion) {
             handleOptionReorder(activeQuestion, newOrder);
+            handlePrioritySet();
           }
         }}
       />
 
-      <div className="flex justify-end mt-6">
-        <Button 
-          onClick={handleCreateQuiz}
-          disabled={!quizName.trim() || !hasSelectedQuestions}
-          className="bg-gradient-to-r from-[#FF007F] to-[#00DDEB]"
-        >
-          Create Quiz
-        </Button>
-      </div>
+      <ShareDialog
+        isOpen={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        shareableLink={createdQuizLink || ''}
+      />
     </div>
   );
 }
