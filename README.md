@@ -91,34 +91,124 @@ The application follows a client-side rendering architecture with React as the v
 
 ## 🧭 User Flows
 
-### User Registration & Login
-1. User visits the landing page
-2. User selects "Sign Up" or "Log In"
-3. User completes authentication form
-4. User is redirected to dashboard upon success
+### User Registration & Authentication Flow
+1. User arrives at the landing page
+2. User clicks "Sign Up" or "Log In" button
+3. For new users:
+   - The signup form appears with fields for email and password
+   - User completes the form and submits it
+   - System validates the input and creates a new account
+   - User is redirected to the dashboard
+4. For returning users:
+   - The login form appears with fields for email and password
+   - User enters credentials and submits
+   - System authenticates the user
+   - User is redirected to their dashboard
+5. For logged-in users returning to the site:
+   - System automatically detects the active session
+   - User is directed straight to their dashboard
 
-### Quiz Creation
-1. User navigates to "Create Quiz" from dashboard
-2. User enters quiz name
-3. User selects 3 questions from the available question banks
-   - Shows 3 questions at a time
-   - After selecting a question, user sets answer priorities
-   - Process repeats until 3 questions are selected
-4. User receives shareable quiz link
+### Dashboard Navigation Flow
+1. After authentication, user lands on the dashboard
+2. Dashboard displays:
+   - Welcome message with username
+   - Statistics on created quizzes and responses
+   - List of quizzes created by the user
+   - Quick actions buttons (Create Quiz, View Analytics)
+3. User can:
+   - Click on a quiz card to view its analytics
+   - Click "Create Quiz" to start creating a new quiz
+   - Access profile settings via the user avatar in the navigation
+   - Log out via the user menu
 
-### Taking a Quiz
-1. User opens quiz link
-2. User views welcome screen with creator's name and quiz rules
-3. User proceeds through quiz questions
-4. User submits answers
-5. User views their aura results
-6. User can share results or return to landing page
+### Quiz Creation Flow
+1. User clicks "Create Quiz" button from the dashboard
+2. User enters a name for the quiz and continues
+3. Question selection process begins:
+   - System displays 3 questions at a time from the available question bank
+   - User selects a question they want to include in their quiz
+   - After selecting, user is prompted to arrange answer priorities
+   - User drags and drops options to set which answers are worth more "aura points"
+   - Process repeats until 3 questions have been selected and prioritized
+4. User reviews the final quiz configuration
+5. System generates a unique shareable link for the quiz
+6. User is presented with sharing options and can:
+   - Copy the link to clipboard
+   - Share directly to social media platforms
+   - Return to dashboard
 
-### Analytics Review
-1. User navigates to quiz summary from dashboard
-2. User views response count, aura distributions
-3. User can analyze question breakdown and response patterns
-4. User can share quiz or delete responses
+### Taking a Quiz Flow
+1. User receives and opens a quiz link
+2. Welcome screen appears showing:
+   - Quiz creator's name
+   - Brief explanation of the quiz
+   - Instructions for completion
+3. User clicks "Start Quiz" button
+4. For each question:
+   - Question appears with multiple-choice options
+   - User selects their answer
+   - User proceeds to the next question
+5. After answering the last question, user submits the quiz
+6. System calculates the aura score based on:
+   - Selected answers
+   - Creator's priority settings for those answers
+7. Results screen appears with:
+   - Visual representation of the user's aura
+   - Numerical score and interpretation
+   - Option to share results on social media
+   - Button to return to landing page or take another quiz
+
+### Quiz Analytics Review Flow
+1. Quiz creator navigates to their quiz from the dashboard
+2. Analytics overview page loads with:
+   - Total response count
+   - Visual chart of aura distributions
+   - Engagement metrics over time
+   - Response timeline
+3. User scrolls to see detailed question breakdown:
+   - Distribution of answers for each question
+   - Correlation between questions and final aura scores
+4. Admin controls section allows the creator to:
+   - Share the quiz link again
+   - Delete individual responses
+   - Delete the entire quiz
+   - Adjust quiz settings
+
+### Admin Question Management Flow
+1. Admin user navigates to the Admin Panel
+2. Admin selects between "Fixed Questions" or "Custom Questions" tabs
+3. For adding questions:
+   - Admin clicks "Add Fixed/Custom Question" button
+   - Form opens with fields for question text and options
+   - Admin fills out the form and saves the question
+   - New question appears in the list
+4. For updating questions:
+   - Admin clicks edit icon next to a question
+   - Form opens with pre-populated question data
+   - Admin makes changes and saves
+   - Updated question replaces the old one in the list
+5. For deactivating questions:
+   - Admin clicks delete icon next to a question
+   - Confirmation dialog appears
+   - After confirmation, question is marked inactive
+   - Question disappears from the active list
+6. For reactivating questions:
+   - Admin toggles "Show Deactivated" switch
+   - List shows previously deactivated questions
+   - Admin clicks reactivate icon next to a question
+   - Question appears back in the active list
+
+### Profile Management Flow
+1. User clicks on their avatar in the navigation bar
+2. User selects "Profile Settings" from the dropdown
+3. Profile edit page loads with:
+   - Username field
+   - Avatar upload option
+   - Account settings
+4. User makes desired changes
+5. System validates changes in real-time
+6. User saves changes and receives confirmation
+7. Updated profile is reflected across the application
 
 ## 🎨 Design System
 
